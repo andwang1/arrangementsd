@@ -54,6 +54,7 @@
 #include <sferes/modif/dummy.hpp>
 #include <sferes/phen/parameters.hpp>
 #include <sferes/run.hpp>
+
 #include <sferes/stat/best_fit.hpp>
 #include <sferes/stat/qd_container.hpp>
 #include <sferes/stat/qd_selection.hpp>
@@ -69,6 +70,7 @@
 #include "modifier/network_loader_pytorch.hpp"
 #include "modifier/dimensionality_reduction.hpp"
 
+#include "stat/stat_current_gen.hpp"
 #include "stat/utils.hpp"
 #include "stat/stat_projection.hpp"
 #include "stat/stat_images_observations.hpp"
@@ -143,47 +145,47 @@ int main(int argc, char **argv) {
     typedef ParamsMaze params_t;
     ParamsMaze::nov::l = 0;
 
-    typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, param_t>, sferes::fit::FitDummy<>, param_t> weight_t;
-    typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, param_t>, sferes::fit::FitDummy<>, param_t> bias_t;
+    typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, params_t>, sferes::fit::FitDummy<>, params_t> weight_t;
+    typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, params_t>, sferes::fit::FitDummy<>, params_t> bias_t;
     typedef nn::PfWSum<weight_t> pf_t;
     typedef nn::AfTanh<bias_t> af_t;
     typedef nn::Neuron<pf_t, af_t> neuron_t;
     typedef nn::Connection<weight_t> connection_t;
 
-    typedef sferes::gen::GenMlp<neuron_t, connection_t, param_t> gen_t;
-    typedef HardMaze<param_t> fit_t;
-    typedef sferes::phen::Dnn<gen_t, fit_t, param_t> phen_t;
+    typedef sferes::gen::GenMlp<neuron_t, connection_t, params_t> gen_t;
+    typedef HardMaze<params_t> fit_t;
+    typedef sferes::phen::Dnn<gen_t, fit_t, params_t> phen_t;
 
     typedef NetworkLoaderAutoEncoder<params_t> network_loader_t;
-    typedef sferes::modif::DimensionalityReduction<phen_t, param_t, network_loader_t> modifier_t;
+    typedef sferes::modif::DimensionalityReduction<phen_t, params_t, network_loader_t> modifier_t;
 
     // For the Archive, you can chose one of the following storage:
     // kD_tree storage, recommended for small behavioral descriptors (behav_dim<10)
     typedef  std::conditional<
-                    param_t::qd::behav_dim <= 10,
-                    sferes::qd::container::KdtreeStorage<boost::shared_ptr <phen_t>, param_t::qd::behav_dim >,
+                    params_t::qd::behav_dim <= 10,
+                    sferes::qd::container::KdtreeStorage<boost::shared_ptr <phen_t>, params_t::qd::behav_dim >,
                     sferes::qd::container::SortBasedStorage< boost::shared_ptr<phen_t>>
                 >::type storage_t;
 
-    typedef sferes::qd::container::Archive<phen_t, storage_t, param_t> container_t;
+    typedef sferes::qd::container::Archive<phen_t, storage_t, params_t> container_t;
 
-    typedef sferes::eval::Parallel<param_t> eval_t;
+    typedef sferes::eval::Parallel<params_t> eval_t;
     // typedef eval::Eval<Params> eval_t;
 
     typedef boost::fusion::vector<
-                    sferes::stat::CurrentGen<phen_t, param_t>,
-                    sferes::stat::QdContainer<phen_t, param_t>,
-                    sferes::stat::QdProgress<phen_t, param_t>,
-                    sferes::stat::Projection<phen_t, param_t>,
-                    sferes::stat::ImagesObservations<phen_t, param_t>,
-                    sferes::stat::ImagesReconstructionObs<phen_t, param_t>,
-                    sferes::stat::ModelAutoencoder<phen_t, param_t>,
-                    sferes::stat::Modifier<phen_t, param_t>
+                    sferes::stat::CurrentGen<phen_t, params_t>,
+                    sferes::stat::QdContainer<phen_t, params_t>,
+                    sferes::stat::QdProgress<phen_t, params_t>,
+                    sferes::stat::Projection<phen_t, params_t>,
+                    sferes::stat::ImagesObservations<phen_t, params_t>,
+                    sferes::stat::ImagesReconstructionObs<phen_t, params_t>,
+                    sferes::stat::ModelAutoencoder<phen_t, params_t>,
+                    sferes::stat::Modifier<phen_t, params_t>
                 > stat_t;
 
-    typedef sferes::qd::selector::Uniform<phen_t, param_t> selector_t;
+    typedef sferes::qd::selector::Uniform<phen_t, params_t> selector_t;
 
-    typedef QualityDiversity_2 <phen_t, eval_t, stat_t, modifier_t, selector_t, container_t, param_t> ea_t;
+    typedef QualityDiversity_2 <phen_t, eval_t, stat_t, modifier_t, selector_t, container_t, params_t> ea_t;
 
     ea_t ea;
 
