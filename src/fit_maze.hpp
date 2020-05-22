@@ -21,6 +21,10 @@ namespace global {
     boost::shared_ptr<fastsim::Map> map;
     boost::shared_ptr<fastsim::DisplaySurface> display;
     tbb::mutex sdl_mutex;
+
+    constexpr float R = 0.5;
+    constexpr float G = 0.85;
+    constexpr float B = 0.15;
 }
 
 void init_fastsim_settings() {
@@ -198,7 +202,9 @@ protected:
         float pixel;
 
         for (size_t i = 0; i < img_uint8.size(); i += 3) {
-            pixel = R * (float) img_uint8[i] + G * (float) img_uint8[i + 1] + B * (float) img_uint8[i + 2];
+            pixel = global::R * (float) img_uint8[i]
+                    + global::G * (float) img_uint8[i + 1]
+                    + global::B * (float) img_uint8[i + 2];
             m_image_float.push_back(pixel / 255.0);
         }
 
