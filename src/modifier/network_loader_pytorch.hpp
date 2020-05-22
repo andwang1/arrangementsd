@@ -82,8 +82,6 @@ public:
         int epoch(0);
 
         while (_continue && (epoch < nb_epochs)) {
-            this->split_dataset(data, train_db, valid_db);
-
             std::vector<torch::Tensor> batches;
             prepare_batches(batches, train_db);
 
@@ -162,8 +160,7 @@ protected:
 
     struct Options {
         // config setting
-        static const int input_dim = 2;
-        static const int batch_size = 20000;
+        static const int batch_size = 256;
         static const int nb_epochs = 10000;
         static constexpr float convergence_epsilon = 0.0000001;
         SFERES_CONST float CV_fraction = 0.75;
