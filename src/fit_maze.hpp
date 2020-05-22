@@ -42,6 +42,8 @@ public:
     HardMaze() {}
 
     typedef std::vector<std::vector<std::vector<uint8_t>>> image_t;
+    typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Mat;
+
 
     template<typename Indiv>
     void eval(Indiv &ind) {
