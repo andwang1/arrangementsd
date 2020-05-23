@@ -30,7 +30,7 @@ namespace global {
 void init_fastsim_settings() {
 
     global::settings = boost::make_shared<fastsim::Settings>(
-            "/git/sferes2/exp/example-pytorch-sferes/resources/LS_maze_hard.xml");
+            "/git/sferes2/exp/balltrajectorysd/resources/LS_maze_hard.xml");
 
     global::map = global::settings->map();
     global::display = boost::make_shared<fastsim::DisplaySurface>(global::map, *(global::settings->robot()));

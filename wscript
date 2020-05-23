@@ -12,7 +12,7 @@ from waflib.Configure import conf
 
 import sferes
 
-PROJECT_NAME = "example-pytorch-sferes"
+PROJECT_NAME = "balltrajectorysd"
 
 
 def get_relative_path(waf_tool_name):
@@ -43,11 +43,11 @@ def build(bld):
     bld.env.INCLUDES_LIBFASTSIM = ['/workspace/include']
 
     bld.program(features='cxx',
-            source='src/example_pytorch_libfastsim.cpp',
+            source='src/balltrajectorysd.cpp',
                 includes='./src . ../../',
                 uselib='TBB BOOST EIGEN PTHREAD MPI'
                        + ' PYTHON PYTORCH LIBFASTSIM SDL',
                 use='sferes2',
-                target='example_pytorch_libfastsim')
+                target='balltrajectorysd')
 
 
