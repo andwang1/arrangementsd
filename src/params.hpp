@@ -2,8 +2,8 @@
 // Created by Luca Grillotti on 29/04/2020.
 //
 
-#ifndef EXAMPLE_PYTORCH_PARAMS_MAZE_HPP
-#define EXAMPLE_PYTORCH_PARAMS_MAZE_HPP
+#ifndef PARAMS_HPP
+#define PARAMS_HPP
 
 #include <modules/nn2/gen_dnn_ff.hpp>
 #include <modules/nn2/phen_dnn.hpp>
@@ -12,7 +12,27 @@
 
 using namespace sferes::gen::evo_float;
 
-struct ParamsMaze {
+struct Params {
+    struct sim {
+    SFERES_CONST double ROOM_H = 5;
+    SFERES_CONST double ROOM_W = 5;
+
+    // fixed at first or random initialised from main?
+    SFERES_CONST double start_x = 3.13;
+    SFERES_CONST double start_y = 3.13;
+    SFERES_CONST size_t trajectory_length = 50;
+    };
+
+    struct random {
+    SFERES_CONST double pct_random = 0.2;
+    SFERES_CONST size_t max_num_random = 1;
+    SFERES_CONST bool is_random_dpf = false;
+    };
+    
+    SFERES_CONST size_t discretisation = 20;
+    
+
+    
     SFERES_CONST size_t update_period = 10;
     SFERES_CONST size_t image_width = 50;
     SFERES_CONST size_t image_height = 50;
@@ -43,10 +63,16 @@ struct ParamsMaze {
         SFERES_CONST float eta_c = 15.0f;
     };
     struct parameters {
+        // this gets used in parameters.hpp to transform the genotype to phenotype
         // maximum value of parameters
-        SFERES_CONST float min = -5.0f;
+        // 0 not needed since minimum for genotype is 0 by default
+        SFERES_CONST double max_dpf = 0.5f;
         // minimum value
-        SFERES_CONST float max = 5.0f;
+        SFERES_CONST double max_angle = 2 * M_PI;
+
+        // remove these 2 once phen is fully setup
+        SFERES_CONST double min = 0.5f;
+        SFERES_CONST double max = 0.5f;
     };
     struct dnn {
         SFERES_CONST size_t nb_inputs = 5;
@@ -80,7 +106,7 @@ struct ParamsMaze {
     };
 };
 
-double ParamsMaze::nov::l;
+double Params::nov::l;
 
 
-#endif //EXAMPLE_PYTORCH_PARAMS_MAZE_HPP
+#endif //PARAMS_HPP
