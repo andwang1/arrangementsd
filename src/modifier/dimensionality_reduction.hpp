@@ -24,7 +24,9 @@ namespace sferes {
                 network = std::make_unique<NetworkLoader>();
             }
 
+            // changing this to double gives an error downstream, try at end again
             using Mat = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+            using MatD = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
             // defining new matrix for better precision when calculating the new minimum distance l
             using Mat_dist = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -37,84 +39,160 @@ namespace sferes {
                  * assign those values to the population (every step)
                  * */
 
-                if (Params::update_frequency == -1) {           // NOTE: THERE's BEEN A CHANGE to update_period
-                    if (Params::update_period > 0 &&
-                        (ea.gen() == 1 ||
-                         ea.gen() == last_update + Params::update_period * std::pow(2, update_id - 1))) {
+                if (Params::update_frequency == -1) 
+                {// NOTE: THERE's BEEN A CHANGE to update_period
+                    if (Params::update_period > 0 && 
+                       (ea.gen() == 1 || ea.gen() == last_update + Params::update_period * std::pow(2, update_id - 1))) 
+                    {
                         update_id++;
                         last_update = ea.gen();
                         update_descriptors(ea);
                     }
-                } else if (ea.gen() > 0) {
-                    if ((ea.gen() % Params::update_frequency == 0) || ea.gen() == 1) {
+                } 
+                else if (ea.gen() > 0) 
+                {
+                    if ((ea.gen() % Params::update_frequency == 0) || ea.gen() == 1) 
+                    {
                         update_descriptors(ea);
                     }
                 }
 
-                if (!ea.offspring().size()) return;
+                if (!ea.offspring().size())
+                {return;}
 
                 assign_descriptor_to_population(ea, ea.offspring());
             }
 
             template<typename EA>
             void update_descriptors(EA &ea) {
-                Mat data;
-                collect_dataset(data, ea, true); // gather the data from the indiv in the archive into a dataset
-                train_network(data);
+                Mat phen_d, traj_d;
+                std::vector<int> is_random_d;
+                collect_dataset(phen_d, traj_d, is_random_d, ea, true); // gather the data from the indiv in the archive into a dataset
+                // change train_netework
+                train_network(phen_d, traj_d, is_random_d);
                 update_container(ea);  // clear the archive and re-fill it using the new network
-                ea.pop_advers.clear(); // clearing adversarial examples
+                // ea.pop_advers.clear(); // clearing adversarial examples
             }
 
             template<typename EA>
-            void collect_dataset(Mat &data,
-                    EA &ea,
-                    const std::vector<typename EA::indiv_t>& content,
-                    bool training = false) const {
-
-                size_t pop_size = content.size();
-                Mat pop_data, advers_data;
-                advers_data.resize(0, 0);
-
-                get_data(content, pop_data);
-
-
-                if (training && ea.pop_advers.size()) {
-                    get_data(ea.pop_advers, advers_data);
-                    int rows = pop_data.rows() + advers_data.rows();
-                    int cols = pop_data.cols();
-                    data.resize(rows, cols);
-                    data << pop_data,
-                            advers_data;
-                } else {
-                    int rows = pop_data.rows();
-                    int cols = pop_data.cols();
-                    data.resize(rows, cols);
-                    data << pop_data;
-                }
-
-                if (training) {
-                    std::cout << "training set is composed of " << data.rows() << " samples  ("
-                              << ea.gen() << " archive size : " << pop_size << ")" << std::endl;
-                }
-            }
-
-            template<typename EA>
-            void collect_dataset(Mat &data, EA &ea, bool training = false) const {
+            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_random_d, EA &ea, bool training = false) const {
                 std::vector<typename EA::indiv_t> content;
+                
+                // content will contain all phenotypes
                 if (ea.gen() > 0) {
                     ea.container().get_full_content(content);
                 } else {
                     content = ea.offspring();
                 }
-                collect_dataset(data, ea, content, training);
+
+                // shuffle content here before getting the data so that the trajectories are also shuffled effectively
+                std::random_shuffle (content.begin(), content.end());
+                
+                collect_dataset(phen_d, traj_d, is_random_d, ea, content, training);
             }
 
-            void train_network(const Mat &data) {
+            template<typename EA>
+            void collect_dataset(Mat &phen_d,
+                    Mat &traj_d,
+                    std::vector<int> &is_random_d,
+                    EA &ea,
+                    const std::vector<typename EA::indiv_t>& content,
+                    bool training = false) const {
+                
+                // number of phenotypes
+                size_t pop_size = content.size();
+                // here get one for the trajectories and one for the actions
+                // probably need to have two get_data functions
+
+                // the trajectories are stored as std::array of eigenvectors -> need to convert to eigenmatrix
+                // implement a flat obs in fitness to get those (numrows = random + 1, numcols = traj length)
+                // also return the vector of bools
+
+                // the actions are in _params in the phenotype, can call using data(), they are a vector of floats -> convert to eigen
+
+                // define directly the dimensions?
+                // MatD phen_data, trajectory_data;
+                get_phen(content, phen_d);
+                get_trajectories(content, traj_d, is_random_d);
+                
+
+                // reshape data
+                // put phen_data and trajectory data together
+
+
+                // Mat pop_data, advers_data;
+                // advers_data.resize(0, 0);
+
+                // get_data(content, pop_data);
+
+
+                // if (training && ea.pop_advers.size()) {
+                //     get_data(ea.pop_advers, advers_data);
+                //     int rows = pop_data.rows() + advers_data.rows();
+                //     int cols = pop_data.cols();
+                //     data.resize(rows, cols);
+                //     data << pop_data,
+                //             advers_data;
+                // } else {
+                //     int rows = pop_data.rows();
+                //     int cols = pop_data.cols();
+                //     data.resize(rows, cols);
+                //     data << pop_data;
+                // }
+
+                if (training) {
+                    std::cout << "training set is composed of " << phen_d.rows() << " samples of Phenotypes ("
+                              << ea.gen() << " archive size : " << pop_size << ")" << std::endl;
+                }
+            }
+
+            // test that this works
+            void get_phen(const pop_t &pop, Mat &data) const {
+                data = Mat(pop.size(), pop[0]->size());
+                for (size_t i = 0; i < pop.size(); i++) {
+                    auto row = data.row(i);
+                    pop[i]->get_flat_data(row);
+                }
+            }
+
+            void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_random_d) const {
+                data = Mat(pop.size() * (Params::sim::max_num_random + 1), Params::sim::trajectory_length);
+                for (size_t i = 0; i < pop.size() * (Params::sim::max_num_random + 1); i += (Params::sim::max_num_random + 1)) {
+                    // block of rows, populate the trajectories
+                    auto block = data.block(i, 0, (Params::sim::max_num_random + 1), Params::sim::trajectory_length);
+                    pop[i]->fit().get_flat_observations(block);
+                    // populate the vector
+                    for (size_t j {0}; j < Params::sim::max_num_random + 1; ++i)
+                    {
+                        is_random_d.push_back(pop[i]->fit().is_random(j));
+                    }
+                }
+            }
+
+//             void get_data(const pop_t &pop, Mat &data) const {
+// //                // std::cout << "get_data" << std::endl;
+// //                if(pop[0]->fit().dead())
+// //
+// //                    std::cout << '\n'; // if no flush, then EIGEN (auto row=data.row(i)) gives an error
+
+//                 data = Mat(pop.size(), pop[0]->fit().get_flat_obs_size());
+
+
+//                 for (size_t i = 0; i < pop.size(); i++) {
+//                     // std::cout << data.rows() << std::endl;
+//                     auto row = data.row(i);
+//                     // std::cout << "here" << std::endl;
+//                     pop[i]->fit().get_flat_observations(row);
+//                 }
+//                 // std::cout << "get_data done" << std::endl;
+//             }
+
+            void train_network(const Mat &phen_d, const Mat &traj_d, const std::vector<int> &is_random_d) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
-                _prep.init(data);
+                _prep.init(phen_d);
                 Mat scaled_data;
-                _prep.apply(data, scaled_data);
-                float final_entropy = network->training(scaled_data);
+                _prep.apply(phen_d, scaled_data);
+                float final_entropy = network->training(scaled_data, traj_d, is_random_d);
             }
 
             template<typename EA>
@@ -166,23 +244,7 @@ namespace sferes {
                 assign_descriptor_to_population(ea, pop, _prep);
             }
 
-            void get_data(const pop_t &pop, Mat &data) const {
-//                // std::cout << "get_data" << std::endl;
-//                if(pop[0]->fit().dead())
-//
-//                    std::cout << '\n'; // if no flush, then EIGEN (auto row=data.row(i)) gives an error
 
-                data = Mat(pop.size(), pop[0]->fit().get_flat_obs_size());
-
-
-                for (size_t i = 0; i < pop.size(); i++) {
-                    // std::cout << data.rows() << std::endl;
-                    auto row = data.row(i);
-                    // std::cout << "here" << std::endl;
-                    pop[i]->fit().get_flat_observations(row);
-                }
-                // std::cout << "get_data done" << std::endl;
-            }
 
             void get_descriptor_autoencoder(const Mat &data, Mat &res, const RescaleFeature &prep) const {
                 Mat scaled_data;

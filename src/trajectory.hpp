@@ -1,3 +1,7 @@
+//
+// Created by Andy Wang
+//
+
 #ifndef TRAJECTORY_HPP
 #define TRAJECTORY_HPP
 
@@ -47,9 +51,10 @@ FIT_QD(Trajectory)
                 }
 
                 generate_traj(trajectories[i], angle, dpf);
-                is_random_trajectories[i] = true;
+                // 1 means it is a trajectory
+                is_random_trajectories[i] = 1;
             }
-            else {is_random_trajectories[i] = false;}
+            else {is_random_trajectories[i] = 0;}
         }
 
         // FITNESS: constant because we're interested in exploration
@@ -153,6 +158,33 @@ FIT_QD(Trajectory)
         // copy initialisation so its safe
         // traj_impact_points = Eigen::Map<Eigen::VectorXd> (wall_impacts.data(), wall_impacts.size());
     }
+
+    template<typename block_t>
+    void get_flat_observations(block_t &data) const 
+    {
+        // std::cout << _image.size() << std::endl;
+        for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
+        {   
+            // assign vector to data
+
+            // if this does not work then loop over rows over columns
+            data(row) = trajectories[row];
+
+            // Eigen::Map<Eigen::VectorXd> (wall_impacts.data(), wall_impacts.size());
+            // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
+            // {data(row, i) = [i];
+        }
+
+
+        // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
+            // data(0, i) = [i];
+    }
+
+    // bool is_random(int index)
+    // {
+    //     return is_random_trajectories.at(index);
+    // }
+    
 
     // // generates images from the trajectories fed into the function
     // void generate_image(std::array<Eigen::Matrix<double, discretisation, discretisation>, trajectory_length> &image_frames,
@@ -474,7 +506,7 @@ FIT_QD(Trajectory)
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
     std::array<Eigen::VectorXd, Params::random::max_num_random + 1> trajectories;
-    std::array<bool, Params::random::max_num_random + 1> is_random_trajectories {true};
+    std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
     double angle;
     double dpf;
     std::mt19937 gen;

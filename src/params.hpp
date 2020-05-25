@@ -28,6 +28,13 @@ struct Params {
     SFERES_CONST size_t max_num_random = 1;
     SFERES_CONST bool is_random_dpf = false;
     };
+
+    struct ae {
+    SFERES_CONST size_t batch_size = 256;
+    SFERES_CONST size_t nb_epochs = 10000;
+    SFERES_CONST float convergence_epsilon = 0.0000001;
+    SFERES_CONST float CV_fraction = 0.75;
+    };
     
     SFERES_CONST size_t discretisation = 20;
     
