@@ -19,36 +19,6 @@ From: airl_lab/default/airl_env:pytorch_ci
     apt-get upgrade -y
     export DEBIAN_FRONTEND=noninteractive
     apt-get install -y  python3-matplotlib python3-numpy python3.6-dev python3-opencv python3-pip python3.6-tk graphviz xdg-utils
-
-    # Install nn2 from Szymon Repository, and libfastsim forked from JBM's repo
-    apt-get install -y libsdl1.2-dev # First install SDL1.2 for libfastsim
-
-    cd /git/sferes2/modules/
-
-    if [ ! -z "${CI_JOB_TOKEN}" ] # this enables the automated build in the CI environment
-     then
-          git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/research_projects/luca_grillotti/libfastsim.git
-          git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2018-2019/szymon_brych/nn2.git
-     elif [ ! -z "${PERSONAL_TOKEN}" ]
-     then
-          git clone https://oauth:${PERSONAL_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/research_projects/luca_grillotti/libfastsim.git
-          git clone https://oauth:${PERSONAL_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2018-2019/szymon_brych/nn2.git
-     else
-          git clone https://gitlab.doc.ic.ac.uk/AIRL/research_projects/luca_grillotti/libfastsim.git
-          git clone https://gitlab.doc.ic.ac.uk/AIRL/students_projects/2018-2019/szymon_brych/nn2.git
-     fi
-
-     # Install FastSim Library in /workspace/ directory
-     cd /git/sferes2/modules/libfastsim
-     ./waf configure --prefix=/workspace
-     ./waf build
-     ./waf install
-
-    # Add library names to configuration file of spheres
-    cd /git/sferes2/
-    echo 'libfastsim' >> modules.conf
-    echo 'nn2' >> modules.conf
-
     apt-get install -y  gdb
     alias pip="/usr/local/anaconda/bin/pip"
 

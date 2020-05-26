@@ -38,15 +38,13 @@ def build(bld):
     bld.env.LIB_PYTHON = ['python3.6m']
     bld.env.INCLUDES_PYTHON = '/usr/include/python3.6m'
 
-    bld.env.LIBPATH_LIBFASTSIM = ['/workspace/lib']
-    bld.env.LIB_LIBFASTSIM = ['fastsim']
-    bld.env.INCLUDES_LIBFASTSIM = ['/workspace/include']
+    bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
     bld.program(features='cxx',
             source='src/balltrajectorysd.cpp',
                 includes='./src . ../../',
                 uselib='TBB BOOST EIGEN PTHREAD MPI'
-                       + ' PYTHON PYTORCH LIBFASTSIM SDL',
+                       + ' PYTHON PYTORCH KDTREE SDL',
                 use='sferes2',
                 target='balltrajectorysd')
 

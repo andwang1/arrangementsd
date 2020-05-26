@@ -5,11 +5,6 @@
 #ifndef PARAMS_HPP
 #define PARAMS_HPP
 
-#include <modules/nn2/gen_dnn_ff.hpp>
-#include <modules/nn2/phen_dnn.hpp>
-#include <modules/nn2/gen_mlp.hpp>
-
-
 using namespace sferes::gen::evo_float;
 
 struct Params {
