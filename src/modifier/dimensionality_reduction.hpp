@@ -24,9 +24,8 @@ namespace sferes {
                 network = std::make_unique<NetworkLoader>();
             }
 
-            // changing this to double gives an error downstream, try at end again
+            // changing this to double gives an error downstream, as everything is in float
             using Mat = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-            using MatD = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
             // defining new matrix for better precision when calculating the new minimum distance l
             using Mat_dist = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -92,54 +91,14 @@ namespace sferes {
             }
 
             template<typename EA>
-            void collect_dataset(Mat &phen_d,
-                    Mat &traj_d,
-                    std::vector<int> &is_random_d,
-                    EA &ea,
-                    const std::vector<typename EA::indiv_t>& content,
-                    bool training = false) const {
+            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_random_d,
+                    EA &ea, const std::vector<typename EA::indiv_t>& content, bool training = false) const {
                 
                 // number of phenotypes
                 size_t pop_size = content.size();
-                // here get one for the trajectories and one for the actions
-                // probably need to have two get_data functions
-
-                // the trajectories are stored as std::array of eigenvectors -> need to convert to eigenmatrix
-                // implement a flat obs in fitness to get those (numrows = random + 1, numcols = traj length)
-                // also return the vector of bools
-
-                // the actions are in _params in the phenotype, can call using data(), they are a vector of floats -> convert to eigen
-
-                // define directly the dimensions?
-                // MatD phen_data, trajectory_data;
                 get_phen(content, phen_d);
                 get_trajectories(content, traj_d, is_random_d);
                 
-
-                // reshape data
-                // put phen_data and trajectory data together
-
-
-                // Mat pop_data, advers_data;
-                // advers_data.resize(0, 0);
-
-                // get_data(content, pop_data);
-
-
-                // if (training && ea.pop_advers.size()) {
-                //     get_data(ea.pop_advers, advers_data);
-                //     int rows = pop_data.rows() + advers_data.rows();
-                //     int cols = pop_data.cols();
-                //     data.resize(rows, cols);
-                //     data << pop_data,
-                //             advers_data;
-                // } else {
-                //     int rows = pop_data.rows();
-                //     int cols = pop_data.cols();
-                //     data.resize(rows, cols);
-                //     data << pop_data;
-                // }
-
                 if (training) {
                     std::cout << "training set is composed of " << phen_d.rows() << " samples of Phenotypes ("
                               << ea.gen() << " archive size : " << pop_size << ")" << std::endl;
@@ -169,24 +128,6 @@ namespace sferes {
                 }
             }
 
-//             void get_data(const pop_t &pop, Mat &data) const {
-// //                // std::cout << "get_data" << std::endl;
-// //                if(pop[0]->fit().dead())
-// //
-// //                    std::cout << '\n'; // if no flush, then EIGEN (auto row=data.row(i)) gives an error
-
-//                 data = Mat(pop.size(), pop[0]->fit().get_flat_obs_size());
-
-
-//                 for (size_t i = 0; i < pop.size(); i++) {
-//                     // std::cout << data.rows() << std::endl;
-//                     auto row = data.row(i);
-//                     // std::cout << "here" << std::endl;
-//                     pop[i]->fit().get_flat_observations(row);
-//                 }
-//                 // std::cout << "get_data done" << std::endl;
-//             }
-
             void train_network(const Mat &phen_d, const Mat &traj_d, const std::vector<int> &is_random_d) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
                 _prep.init(phen_d);
@@ -196,21 +137,33 @@ namespace sferes {
             }
 
             template<typename EA>
+            void assign_descriptor_to_population(EA &ea, pop_t &pop) const {
+                assign_descriptor_to_population(ea, pop, _prep);
+            }
+
+            template<typename EA>
             void assign_descriptor_to_population(EA &ea, pop_t &pop, const RescaleFeature &prep) const {
                 pop_t filtered_pop;
                 for (auto ind:pop) {
-                    if (!ind->fit().dead()) {
+                    if (!ind->fit().dead()) 
+                    {
                         filtered_pop.push_back(ind);
-                    } else {
+                    } 
+                    // if dead
+                    else 
+                    {
                         std::vector<double> dd(Params::qd::behav_dim, -1.); // CHANGED from float to double
                         ind->fit().set_desc(dd);
                     }
                 }
 
-                Mat data;
-                get_data(filtered_pop, data);
-                Mat res; //will be resized
-                get_descriptor_autoencoder(data, res, prep);
+                Mat filtered_phen, filtered_traj;
+                std::vector<int> is_trajectory;
+                get_phen(filtered_pop, filtered_phen);
+                get_trajectories(filtered_pop, filtered_traj, is_trajectory);
+
+                Mat latent_and_entropy;
+                get_descriptor_autoencoder(filtered_phen, filtered_traj, is_trajectory, latent_and_entropy, prep);
 
                 for (size_t i = 0; i < filtered_pop.size(); i++) {
                     std::vector<double> dd;
@@ -218,14 +171,12 @@ namespace sferes {
                          index_latent_space < Params::qd::behav_dim;
                          ++index_latent_space) {
 
-                        dd.push_back((double) res(i, index_latent_space));
+                        dd.push_back((double) latent_and_entropy(i, index_latent_space));
 
                     }
                     filtered_pop[i]->fit().set_desc(dd);
-                    filtered_pop[i]->fit().entropy() = (float) res(i, Params::qd::behav_dim);
+                    filtered_pop[i]->fit().entropy() = (float) latent_and_entropy(i, Params::qd::behav_dim);
                 }
-
-                    // Updating value for l
 
                 pop_t tmp_pop;
                 ea.container().get_full_content(tmp_pop);
@@ -239,20 +190,15 @@ namespace sferes {
 
             }
 
-            template<typename EA>
-            void assign_descriptor_to_population(EA &ea, pop_t &pop) const {
-                assign_descriptor_to_population(ea, pop, _prep);
-            }
-
-
-
-            void get_descriptor_autoencoder(const Mat &data, Mat &res, const RescaleFeature &prep) const {
+            void get_descriptor_autoencoder(const Mat &phen_d, const Mat &traj_d, const Eigen::VectorXi &is_trajectory, 
+                                            Mat &latent_and_entropy, const RescaleFeature &prep) const {
+                // _prep not initiialised again, uses the last one again?
                 Mat scaled_data;
-                prep.apply(data, scaled_data);
-                Mat descriptor, entropy, loss, reconst;
-                network->eval(scaled_data, descriptor, entropy, reconst);
-                res = Mat(descriptor.rows(), descriptor.cols() + entropy.cols());
-                res << descriptor, entropy;
+                prep.apply(phen_d, scaled_data);
+                Mat descriptors, reconstructed_data, recon_loss;
+                network->eval(phen_d, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss);
+                latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
+                latent_and_entropy << descriptors, recon_loss;
             }
 
 
@@ -266,13 +212,12 @@ namespace sferes {
             template<typename EA>
             void update_container(EA &ea) {
                 pop_t tmp_pop;
-                // Copy of the containt of the container into the _pop object.
+                // Copy of the content of the container into the _pop object.
                 ea.container().get_full_content(tmp_pop);
                 ea.container().erase_content();
                 std::cout << "size pop: " << tmp_pop.size() << std::endl;
 
                 this->assign_descriptor_to_population(ea, tmp_pop);
-
 
                 // update l to maintain a number of indiv lower than Params::resolution
                 std::cout << "NEW L= " << Params::nov::l << std::endl;
@@ -293,6 +238,20 @@ namespace sferes {
                 Params::nov::l *= (1 - alpha * (static_cast<float>(Params::resolution) - static_cast<float>(pop.size())));
             }
 
+            void get_matrix_behavioural_descriptors(const pop_t &pop, Mat &matrix_behavioural_descriptors) const 
+            {
+                matrix_behavioural_descriptors = Mat(pop.size(), Params::qd::behav_dim);
+
+                for (size_t i = 0; i < pop.size(); i++) 
+                {
+                    auto desc = pop[i]->fit().desc();
+                    for (size_t id = 0; id < Params::qd::behav_dim; id++) 
+                    {
+                        matrix_behavioural_descriptors(i, id) = desc[id];
+                    }
+                }
+            }
+
             void initialise_l(const pop_t &pop) const {
                 Mat matrix_behavioural_descriptors;
                 get_matrix_behavioural_descriptors(pop, matrix_behavioural_descriptors);
@@ -311,17 +270,6 @@ namespace sferes {
                 Params::nov::l = static_cast<float>(0.5 * std::pow(volume / Params::resolution, 1. / matrix_behavioural_descriptors.cols()));
             }
 
-            void get_matrix_behavioural_descriptors(const pop_t &pop, Mat &matrix_behavioural_descriptors) const {
-                matrix_behavioural_descriptors = Mat(pop.size(), Params::qd::behav_dim);
-
-                for (size_t i = 0; i < pop.size(); i++) {
-                    auto desc = pop[i]->fit().desc();
-                    for (size_t id = 0; id < Params::qd::behav_dim; id++) {
-                        matrix_behavioural_descriptors(i, id) = desc[id];
-                    }
-                }
-            }
-
             void distance(const Mat &X, Mat_dist &dist) const {
                 // Compute norms
                 Mat_dist X_double = X.cast<double>();
@@ -334,11 +282,11 @@ namespace sferes {
                 dist = dist - XY;
             }
 
-            void get_reconstruction(const Mat &data, Mat &res) const {
-                Mat scaled_data, scaled_res;
-                _prep.apply(data, scaled_data);
-                network->get_reconstruction(scaled_data, scaled_res);
-                _prep.deapply(scaled_res, res);
+            void get_reconstruction(const Mat &phen, const Mat &traj, const Eigen::VectorXi &is_traj, Mat &reconstruction) const {
+                Mat scaled_data, scaled_reconstruction;
+                _prep.apply(phen, scaled_data);
+                network->get_reconstruction(scaled_data, traj, is_traj, scaled_reconstruction);
+                _prep.deapply(scaled_reconstruction, reconstruction);
             }
 
             NetworkLoader *get_network_loader() const {

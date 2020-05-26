@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
     // kD_tree storage, recommended for small behavioral descriptors (behav_dim<10)
     typedef  std::conditional<
                     params_t::qd::behav_dim <= 10,
-                    sferes::qd::container::KdtreeStorage<boost::shared_ptr <phen_t>, params_t::qd::behav_dim >,
+                    sferes::qd::container::KdtreeStorage<boost::shared_ptr<phen_t>, params_t::qd::behav_dim>,
                     sferes::qd::container::SortBasedStorage< boost::shared_ptr<phen_t>>
                 >::type storage_t;
 

@@ -34,6 +34,9 @@ FIT_QD(Trajectory)
         // generate actual true trajectory from phenotype
         generate_traj(trajectories[0], angle, dpf);
 
+        // track number of trajectories
+        m_num_trajectories = 0;
+
         // generate random trajectories
         for (int i{1}; i < Params::random::max_num_random + 1; ++i)
         {
@@ -53,6 +56,7 @@ FIT_QD(Trajectory)
                 generate_traj(trajectories[i], angle, dpf);
                 // 1 means it is a trajectory
                 is_random_trajectories[i] = 1;
+                ++m_num_trajectories;
             }
             else {is_random_trajectories[i] = 0;}
         }
@@ -166,7 +170,6 @@ FIT_QD(Trajectory)
         for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
         {   
             // assign vector to data
-
             // if this does not work then loop over rows over columns
             data(row) = trajectories[row];
 
@@ -175,15 +178,21 @@ FIT_QD(Trajectory)
             // {data(row, i) = [i];
         }
 
-
         // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
             // data(0, i) = [i];
     }
 
-    // bool is_random(int index)
-    // {
-    //     return is_random_trajectories.at(index);
-    // }
+    float &entropy() { return m_entropy; }
+
+    size_t &num_trajectories() { return m_num_trajectories; }    
+
+    bool is_random(int index)
+    {
+        return is_random_trajectories.at(index);
+    }
+
+    protected:
+    float m_entropy;
     
 
     // // generates images from the trajectories fed into the function
@@ -507,10 +516,11 @@ FIT_QD(Trajectory)
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
     std::array<Eigen::VectorXd, Params::random::max_num_random + 1> trajectories;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
+    std::mt19937 gen;
     double angle;
     double dpf;
-    std::mt19937 gen;
-    // float _entropy;
+    size_t m_num_trajectories;
+    
 };
 
 #endif //TRAJECTORY_HPP

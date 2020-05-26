@@ -38,9 +38,9 @@ public:
               const MatrixXf_rm &traj,
               const Eigen::VectorXi &is_traj,
               MatrixXf_rm &descriptors,
-              MatrixXf_rm &recon_loss,
-              MatrixXf_rm &reconstructed_data) {
-        stc::exact(this)->eval(phen, traj, is_traj, descriptors, recon_loss, reconstructed_data);
+              MatrixXf_rm &reconstructed_data,
+              float &avg_loss) {
+        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, avg_loss);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
@@ -106,17 +106,11 @@ public:
         MatrixXf_rm train_phen, valid_phen, train_traj, valid_traj;
         size_t l_train_traj = this->split_dataset(phen_d, traj_d, train_phen, valid_phen, train_traj, valid_traj);
 
-        //create dataloader, for slicing in get, use Slice() as on torch docu, and use ellipsis as in test example
-        // create a new tensor with size = number of actual trajectories
-        // loop through and only pick those rows into tensor (as in scribbles) that belong there, then return those
-        // then load dataloader and iterate through those (randomness is done by sampler so dont forget that)
-
-
         // split the bool vector according to the same split
         std::vector<int> train_is_trajectories(is_trajectories.begin(), is_trajectories.begin() + l_train_traj);
         std::vector<int> val_is_trajectories(is_trajectories.begin() + l_train_traj, is_trajectories.end());
 
-        // // is this needed?
+        // is this needed?
         train_is_trajectories.resize(l_train_traj);
         val_is_trajectories.resize(is_trajectories.size() - l_train_traj);
 
@@ -205,20 +199,16 @@ public:
 
     void get_reconstruction(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, 
                             MatrixXf_rm &reconstruction) {
-        MatrixXf_rm descriptors;
-        float avg_loss;
-        eval(phen, traj, is_traj, descriptors, reconstruction, avg_loss);
+        MatrixXf_rm descriptors, recon_loss;
+        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss);
     }
 
 
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj) {
-        MatrixXf_rm descriptors, reconst;
-        float avg_loss;
-        eval(phen, traj, is_traj, descriptors, reconst, avg_loss);
-        return avg_loss;
+        MatrixXf_rm descriptors, reconst, recon_loss;
+        eval(phen, traj, is_traj, descriptors, reconst, recon_loss);
+        return recon_loss.mean();
     }
-
-
 
     torch::nn::AnyModule get_auto_encoder() {
         return this->m_auto_encoder_module;
@@ -227,25 +217,6 @@ public:
     torch::nn::AnyModule& auto_encoder() {
         return this->m_auto_encoder_module;
     }
-
-        // void split_dataset(const MatrixXf_rm &data, MatrixXf_rm &train, MatrixXf_rm &valid) {
-    //     Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(data.rows());
-    //     perm.setIdentity();
-    //     std::random_shuffle(perm.indices().data(), perm.indices().data() + perm.indices().size());
-    //     MatrixXf_rm tmp = perm * data;
-    //     size_t l_train{0}, l_valid{0};
-    //     if (data.rows() > 500) {
-    //         l_train = floor(data.rows() * Options::CV_fraction);
-    //         l_valid = data.rows() - l_train;
-    //     } else {
-    //         l_train = data.rows();
-    //         l_valid = data.rows();
-    //     }
-    //     assert(l_train != 0 && l_valid != 0);
-
-    //     train = tmp.topRows(l_train);
-    //     valid = tmp.bottomRows(l_valid);
-    // }
 
     int32_t m_global_step;
 
@@ -256,15 +227,11 @@ protected:
     torch::Device m_device;
 
     struct Options {
-        // config setting, this can be in the params?
+        // config setting
         static const size_t batch_size = TParams::ae::batch_size;
         static const size_t nb_epochs = TParams::ae::nb_epochs;
         static constexpr float convergence_epsilon = TParams::ae::convergence_epsilon;
         SFERES_CONST float CV_fraction = TParams::ae::CV_fraction;
-        // static const int batch_size = 256;
-        // static const int nb_epochs = 10000;
-        // static constexpr float convergence_epsilon = 0.0000001;
-        // SFERES_CONST float CV_fraction = 0.75;
     };
 
     void get_torch_tensor_from_eigen_matrix(const MatrixXf_rm &M, torch::Tensor &T) const {
@@ -324,12 +291,6 @@ public:
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
                         const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_trajectory) const 
     {
-        /*
-         * Generate all the batches for training
-         * */
-        
-        // make vector of tuples, do filtering before transforming to tensor and append tuple to batch vector
-
         if (phen.rows() <= TParentLoader::Options::batch_size) {
             batches = std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>>(1);
         } else {
@@ -337,24 +298,18 @@ public:
         }
 
         // in loop do filtering before passing to make tuple
-
-        if (batches.size() == 1) {
+        if (batches.size() == 1) 
+        {
                 // filtering
                 MatrixXf_rm filtered_traj;
                 std::vector<bool> boundaries;
-                this->filter_trajectories(traj,
-                                        is_trajectory,
-                                        filtered_traj,
-                                        boundaries);
+                this->filter_trajectories(traj, is_trajectory,filtered_traj, boundaries);
 
                 torch::Tensor T1, T2;
-                this->get_tuple_from_eigen_matrices(phen,
-                                                    filtered_traj,
-                                                    boundaries,
-                                                    T1,
-                                                    T2,
-                                                    batches[0]);
-        } else {
+                this->get_tuple_from_eigen_matrices(phen, filtered_traj, boundaries, T1, T2, batches[0]);
+        } 
+        else 
+        {
             for (size_t ind = 0; ind < batches.size(); ind++) 
             {
                 // filtering
@@ -378,15 +333,12 @@ public:
 
     }
 
-
-
-
     void eval(const MatrixXf_rm &phen,
               const MatrixXf_rm &traj,
               const Eigen::VectorXi &is_trajectory,
               MatrixXf_rm &descriptors,
               MatrixXf_rm &reconstructed_data,
-              float &avg_loss) 
+              MatrixXf_rm &recon_loss) 
     {
         AutoEncoder auto_encoder = std::static_pointer_cast<AutoEncoderImpl>(this->m_auto_encoder_module.ptr());
 
@@ -395,7 +347,6 @@ public:
         
         MatrixXf_rm filtered_traj;
         std::vector<bool> boundaries;
-
         this->filter_trajectories(traj,
                         is_trajectory,
                         filtered_traj,
@@ -405,57 +356,23 @@ public:
 
         torch::Tensor descriptors_tensor;
         torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(phen_tensor, descriptors_tensor);
+        torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
 
-        torch::Tensor loss_tensor;
         // start at -1 because first loop will take it to 0
         int index{-1};
-
         for (int i{0}; i < boundaries.size(); ++i)
         {
             if (boundaries[i])
             {++index;}
             // second arg is type of norm, here L2, third argument is which dimensions to sum over
-            loss_tensor += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {1});
+            reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {1});
         }
 
-        avg_loss = loss_tensor.item<float>() / boundaries.size();
-
-        //std::cout << "eval (reconstruction tensor sizes) - " << reconstruction_tensor.sizes() << std::endl;
         this->get_eigen_matrix_from_torch_tensor(descriptors_tensor.cpu(), descriptors);
         this->get_eigen_matrix_from_torch_tensor(reconstruction_tensor.cpu(), reconstructed_data);
+        this->get_eigen_matrix_from_torch_tensor(reconstruction_loss.cpu(), recon_loss);
+        std::cout << "Total num of trajectories " << boundaries.size() << ", Num random trajectories " << boundaries.size() - phen.rows() << " (" << float(1 - phen.rows()/boundaries.size()) <<")" << std::endl;
     }
-
-
-    // void prepare_batches(std::vector<torch::Tensor> &batches, const MatrixXf_rm &data) const {
-    //     /*
-    //      * Generate all the batches for training
-    //      * */
-    //     if (data.rows() <= TParentLoader::Options::batch_size) {
-    //         batches = std::vector<torch::Tensor>(1);
-    //     } else {
-    //         batches = std::vector<torch::Tensor>(floor(data.rows() / (TParentLoader::Options::batch_size)));
-    //     }
-
-    //     if (batches.size() == 1) {
-    //         this->get_torch_tensor_from_eigen_matrix(data, batches[0]);
-    //         if (this->m_use_colors) {
-    //             batches[0] = torch::upsample_bilinear2d(batches[0].view({-1, 3, TParams::image_height, TParams::image_width}).to(this->m_device), {32, 32}, false);
-    //         } else {
-    //             batches[0] = torch::upsample_bilinear2d(batches[0].view({-1, 1, TParams::image_height, TParams::image_width}).to(this->m_device), {32, 32}, false);
-    //         }
-    //     } else {
-    //         for (size_t ind = 0; ind < batches.size(); ind++) {
-    //             this->get_torch_tensor_from_eigen_matrix(data.middleRows(ind * TParentLoader::Options::batch_size, TParentLoader::Options::batch_size),
-    //                                                      batches[ind]);
-    //             if (this->m_use_colors) {
-    //                 batches[ind] = torch::upsample_bilinear2d(batches[ind].view({-1, 3, TParams::image_height, TParams::image_width}).to(this->m_device), {32, 32}, false);
-    //             } else {
-    //                 batches[ind] = torch::upsample_bilinear2d(batches[ind].view({-1, 1, TParams::image_height, TParams::image_width}).to(this->m_device), {32, 32}, false);
-    //             }
-    //         }
-    //     }
-
-    // }
 
 protected:
     const bool m_use_colors;
