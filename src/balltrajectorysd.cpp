@@ -149,43 +149,11 @@ int main(int argc, char **argv) {
     // why have 0?
     Params::nov::l = 0;
     typedef Trajectory<params_t> fit_t;
-    typedef sferes::gen::EvoFloat<2, params_t> gen_t;
+    typedef sferes::gen::EvoFloat<Params::qd::gen_dim, params_t> gen_t;
     typedef sferes::phen::Custom_Phen<gen_t, fit_t, params_t> phen_t;
 
-    // change below here
-
-
-
-    // can be removed after removing fastsim simulation?
-    // init_fastsim_settings();
-
-    
-
-    // need to add in gen_t, phen_t and fitness based on that
-
-    // typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, params_t>, sferes::fit::FitDummy<>, params_t> weight_t;
-    // typedef sferes::phen::Parameters<sferes::gen::EvoFloat<1, params_t>, sferes::fit::FitDummy<>, params_t> bias_t;
-    
-    // // can this be cut out? change phenotype to default phenotype, and then have the modif call the AE
-    // // i think the nn stuff is to evolve the network itself, not required here
-    // typedef nn::PfWSum<weight_t> pf_t;
-    // typedef nn::AfTanh<bias_t> af_t;
-    // typedef nn::Neuron<pf_t, af_t> neuron_t;
-    // typedef nn::Connection<weight_t> connection_t;
-
-    // typedef sferes::gen::GenMlp<neuron_t, connection_t, params_t> gen_t;
-    // typedef HardMaze<params_t> fit_t;
-    // typedef sferes::phen::Dnn<gen_t, fit_t, params_t> phen_t;
-
-    // typedef NetworkLoaderAutoEncoder<params_t> network_loader_t;
-    // typedef sferes::modif::DimensionalityReduction<phen_t, params_t, network_loader_t> modifier_t;
-
-    // ambitious
-    typedef sferes::modif::Dummy<> modifier_t;
-
-
-    // everything below here should be ok to keep
-
+    typedef NetworkLoaderAutoEncoder<params_t> network_loader_t;
+    typedef sferes::modif::DimensionalityReduction<phen_t, params_t, network_loader_t> modifier_t;
 
 
     // For the Archive, you can chose one of the following storage:

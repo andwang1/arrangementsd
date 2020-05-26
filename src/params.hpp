@@ -29,11 +29,21 @@ struct Params {
     SFERES_CONST bool is_random_dpf = false;
     };
 
-    struct ae {
-    SFERES_CONST size_t batch_size = 256;
-    SFERES_CONST size_t nb_epochs = 10000;
-    SFERES_CONST float convergence_epsilon = 0.0000001;
-    SFERES_CONST float CV_fraction = 0.75;
+    struct ae 
+    {
+        SFERES_CONST size_t batch_size = 256;
+        SFERES_CONST size_t nb_epochs = 10000;
+        SFERES_CONST float convergence_epsilon = 0.0000001;
+        SFERES_CONST float CV_fraction = 0.75;
+        SFERES_CONST float learning_rate = 1e-4;
+
+        // network neurons        
+        // input = qd::gen_dim
+        SFERES_CONST size_t en_hid_dim1 = 10;
+        // latent_dim = qd::behav_dim
+        SFERES_CONST size_t de_hid_dim1 = 10;
+        SFERES_CONST size_t de_hid_dim2 = 30;
+        // output_dim = sim::trajectory_length
     };
     
     SFERES_CONST size_t discretisation = 20;
@@ -104,6 +114,7 @@ struct Params {
     };
 
     struct qd {
+        SFERES_CONST size_t gen_dim = 2;
         SFERES_CONST size_t behav_dim = 5;
     };
 

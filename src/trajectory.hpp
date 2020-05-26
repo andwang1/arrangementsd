@@ -31,8 +31,13 @@ FIT_QD(Trajectory)
         angle = ind.data(0);
         dpf = ind.data(1);
 
+        // clear previous trajectories stored
+        // trajectories.clear();
+
         // generate actual true trajectory from phenotype
-        generate_traj(trajectories[0], angle, dpf);
+        generate_traj(single_traj, angle, dpf);
+        trajectories[0] = single_traj;
+        // trajectories.push_back(traj);
 
         // track number of trajectories
         m_num_trajectories = 0;
@@ -53,7 +58,8 @@ FIT_QD(Trajectory)
                     dpf = rng_dpf(gen);
                 }
 
-                generate_traj(trajectories[i], angle, dpf);
+                generate_traj(single_traj, angle, dpf);
+                trajectories[i] = single_traj;
                 // 1 means it is a trajectory
                 is_random_trajectories[i] = 1;
                 ++m_num_trajectories;
@@ -71,13 +77,13 @@ FIT_QD(Trajectory)
 
     // generates trajectories and the impact points
     // tried making a rref or pointer but doesnt seem to hold, so need to use array of eigenvectors instead of matrix directly
-    void generate_traj(Eigen::VectorXd &traj, double angle, double dist_per_frame)
+    void generate_traj(Eigen::VectorXf &traj, double angle, double dist_per_frame)
     {
-        double start_x = Params::sim::start_x;
-        double start_y = Params::sim::start_y;
+        float start_x = Params::sim::start_x;
+        float start_y = Params::sim::start_y;
 
-        double ROOM_H = Params::sim::ROOM_H;
-        double ROOM_W = Params::sim::ROOM_W;
+        float ROOM_H = Params::sim::ROOM_H;
+        float ROOM_W = Params::sim::ROOM_W;
 
         size_t trajectory_length = Params::sim::trajectory_length;
 
@@ -89,9 +95,9 @@ FIT_QD(Trajectory)
         // std::vector<double> wall_impacts;
 
         // assert not in wall?
-        double current_x = start_x;
-        double current_y = start_y;
-        double current_angle = angle;
+        float current_x = start_x;
+        float current_y = start_y;
+        float current_angle = angle;
 
         // put starting position as first observation
         traj(0) = start_x;
@@ -107,13 +113,13 @@ FIT_QD(Trajectory)
         {
             if (VERBOSE)
             {std::cout << "Angle" << current_angle * 180 / M_PI << std::endl;}
-            double x_delta = dist_per_frame * cos(current_angle);
-            double y_delta = dist_per_frame * sin(current_angle);
+            float x_delta = dist_per_frame * cos(current_angle);
+            float y_delta = dist_per_frame * sin(current_angle);
             
             // save these for impact point calculations
-            double previous_x = current_x;
-            double previous_y = current_y;
-            double previous_angle = current_angle;
+            float previous_x = current_x;
+            float previous_y = current_y;
+            float previous_angle = current_angle;
             bool impact{false};
             
             current_x += x_delta;
@@ -169,9 +175,12 @@ FIT_QD(Trajectory)
         // std::cout << _image.size() << std::endl;
         for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
         {   
+            for (size_t i{0}; i < Params::sim::trajectory_length; ++i)
+            {
+                data(row, i) = trajectories[row](i);
+            }
             // assign vector to data
             // if this does not work then loop over rows over columns
-            data(row) = trajectories[row];
 
             // Eigen::Map<Eigen::VectorXd> (wall_impacts.data(), wall_impacts.size());
             // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
@@ -514,12 +523,13 @@ FIT_QD(Trajectory)
     // random trajectories + 1 real one
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
-    std::array<Eigen::VectorXd, Params::random::max_num_random + 1> trajectories;
+    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
     std::mt19937 gen;
     double angle;
     double dpf;
     size_t m_num_trajectories;
+    Eigen::VectorXf single_traj;
     
 };
 
