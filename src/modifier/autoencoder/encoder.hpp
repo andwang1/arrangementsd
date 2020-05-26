@@ -5,53 +5,43 @@
 #ifndef EXAMPLE_PYTORCH_ENCODER_HPP
 #define EXAMPLE_PYTORCH_ENCODER_HPP
 
-#include <torch/torch.h>
-
-#include "utils_autoencoder.hpp"
-
 struct EncoderImpl : torch::nn::Module {
-    EncoderImpl(int image_width, int image_height, int latent_dim, bool use_colors=false) :
-            m_conv_1(torch::nn::Conv2d(
-                    torch::nn::Conv2dOptions(use_colors ? 3 : 1, 4, 3)
-                            .padding(1))),
-            m_conv_2(torch::nn::Conv2d(
-                    torch::nn::Conv2dOptions(4, 4, 3)
-                            .padding(1))),
-            m_conv_3(torch::nn::Conv2d(
-                    torch::nn::Conv2dOptions(4, 4, 3)
-                            .padding(1))),
+    EncoderImpl(int input_dim, int en_hid_dim1, int latent_dim) :
+        m_linear_1(torch::nn::Linear(input_dim, en_hid_dim1)),
+        m_linear_m(torch::nn::Linear(en_hid_dim1, latent_dim)),
+        m_linear_v(torch::nn::Linear(en_hid_dim1, latent_dim)),
+        m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+        {
 
-            m_max_pool_1(torch::nn::MaxPool2d(2)),
-            m_max_pool_2(torch::nn::MaxPool2d(2)),
-            m_max_pool_3(torch::nn::MaxPool2d(2)),
-            m_linear_1(torch::nn::Linear(4 * 4 * 4, 32)),
-            m_linear_latent(torch::nn::Linear(32, latent_dim)) {
-        register_module("conv_1", m_conv_1);
-        register_module("conv_2", m_conv_2);
-        register_module("conv_3", m_conv_3);
-        register_module("max_pool_1", m_max_pool_1);
-        register_module("max_pool_2", m_max_pool_2);
-        register_module("max_pool_3", m_max_pool_3);
-        register_module("flatten", m_flatten);
-        register_module("linear_1", m_linear_1);
-        register_module("linear_latent", m_linear_latent);
-    }
+                register_module("linear_1", m_linear_1);
+                register_module("linear_m", m_linear_m);
+                register_module("linear_v", m_linear_v);
+        }
 
-    torch::Tensor forward(const torch::Tensor &x) {
-        torch::Tensor output;
-        output = m_max_pool_1(torch::relu(m_conv_1(x)));
-        output = m_max_pool_2(torch::relu(m_conv_2(output)));
-        output = m_max_pool_3(torch::relu(m_conv_3(output)));
-        output = m_flatten(output);
-        output = torch::relu(m_linear_1(output));
-        output = m_linear_latent(output);
-        return output;
-    }
+        void encode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
+        {
+                torch::Tensor out;
+                out = torch::relu(m_linear_1(x));
+                mu = m_linear_m(out);
+                logvar = m_linear_v(out);
+        }
 
-    torch::nn::Conv2d m_conv_1, m_conv_2, m_conv_3;
-    torch::nn::MaxPool2d m_max_pool_1, m_max_pool_2, m_max_pool_3;
-    torch::nn::Linear m_linear_1, m_linear_latent;
-    Flatten m_flatten;
+        void reparametrize(const torch::Tensor &mu, const torch::Tensor &logvar, torch::Tensor &z)
+        {
+                
+                z = torch::randn_like(logvar, torch::device(m_device).requires_grad(true)) * torch::exp(0.5 * logvar) + mu;
+        }
+
+        torch::Tensor forward(const torch::Tensor &x) 
+        {
+                torch::Tensor mu, logvar, z;
+                encode(x, mu, logvar);
+                reparametrize(mu, logvar, z);
+                return z;
+        }
+
+        torch::nn::Linear m_linear_1, m_linear_m, m_linear_v;
+        torch::Device m_device;
 };
 
 TORCH_MODULE(Encoder);

@@ -109,26 +109,28 @@ namespace sferes {
             void get_phen(const pop_t &pop, Mat &data) const {
                 data = Mat(pop.size(), pop[0]->size());
                 for (size_t i = 0; i < pop.size(); i++) {
-                    auto row = data.row(i);
-                    pop[i]->get_flat_data(row);
+                    for (size_t j{0}; j < pop[0]->size(); ++j)
+                    {
+                        data(i, j) = pop[i]->data(j);
+                    }
                 }
             }
 
             void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_random_d) const {
-                data = Mat(pop.size() * (Params::sim::max_num_random + 1), Params::sim::trajectory_length);
-                for (size_t i = 0; i < pop.size() * (Params::sim::max_num_random + 1); i += (Params::sim::max_num_random + 1)) {
+                data = Mat(pop.size() * (Params::random::max_num_random + 1), Params::sim::trajectory_length);
+                for (size_t i = 0; i < pop.size() * (Params::random::max_num_random + 1); i += (Params::random::max_num_random + 1)) {
                     // block of rows, populate the trajectories
-                    auto block = data.block(i, 0, (Params::sim::max_num_random + 1), Params::sim::trajectory_length);
+                    auto block = data.block(i, 0, (Params::random::max_num_random + 1), Params::sim::trajectory_length);
                     pop[i]->fit().get_flat_observations(block);
                     // populate the vector
-                    for (size_t j {0}; j < Params::sim::max_num_random + 1; ++i)
+                    for (size_t j {0}; j < Params::random::max_num_random + 1; ++i)
                     {
                         is_random_d.push_back(pop[i]->fit().is_random(j));
                     }
                 }
             }
 
-            void train_network(const Mat &phen_d, const Mat &traj_d, const std::vector<int> &is_random_d) {
+            void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_random_d) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
                 _prep.init(phen_d);
                 Mat scaled_data;
@@ -162,8 +164,11 @@ namespace sferes {
                 get_phen(filtered_pop, filtered_phen);
                 get_trajectories(filtered_pop, filtered_traj, is_trajectory);
 
+                // convert to eigen
+                Eigen::VectorXi is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectory.data(), is_trajectory.size());
+
                 Mat latent_and_entropy;
-                get_descriptor_autoencoder(filtered_phen, filtered_traj, is_trajectory, latent_and_entropy, prep);
+                get_descriptor_autoencoder(filtered_phen, filtered_traj, is_traj, latent_and_entropy, prep);
 
                 for (size_t i = 0; i < filtered_pop.size(); i++) {
                     std::vector<double> dd;

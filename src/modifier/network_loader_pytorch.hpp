@@ -10,7 +10,6 @@
 #include "autoencoder/encoder.hpp"
 #include "autoencoder/decoder.hpp"
 #include "autoencoder/autoencoder.hpp"
-#include "autoencoder/lstm_auto_encoder.hpp"
 
 template <typename TParams, typename Exact = stc::Itself>
 class AbstractLoader : public stc::Any<Exact> {
@@ -21,9 +20,10 @@ public:
             m_global_step(0),
             m_auto_encoder_module(std::move(auto_encoder_module)),
             m_adam_optimiser(torch::optim::Adam(m_auto_encoder_module.ptr()->parameters(),
-                                                torch::optim::AdamOptions(2e-4)
+                                                torch::optim::AdamOptions(TParams::ae::learning_rate)
                                                         .beta1(0.5))),
-            m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU){
+            m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+        {
 
         if (torch::cuda::is_available()) {
             std::cout << "Torch -> Using CUDA" << std::endl;
@@ -39,8 +39,8 @@ public:
               const Eigen::VectorXi &is_traj,
               MatrixXf_rm &descriptors,
               MatrixXf_rm &reconstructed_data,
-              float &avg_loss) {
-        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, avg_loss);
+              MatrixXf_rm &recon_loss) {
+        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, recon_loss);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
@@ -77,7 +77,7 @@ public:
     }
 
     void filter_trajectories(const MatrixXf_rm &trajectories, const Eigen::VectorXi &is_trajectory, 
-                            MatrixXf_rm &filtered_trajectories, std::vector<bool> &boundaries)
+                            MatrixXf_rm &filtered_trajectories, std::vector<bool> &boundaries) const
     {
         int num_actual_trajectories = is_trajectory.sum();
 
@@ -101,7 +101,7 @@ public:
         }
     }
 
-    float training(const MatrixXf_rm &phen_d, const MatrixXf_rm &traj_d, const std::vector<int> &is_trajectories, bool full_train = false, int generation = 1000) 
+    float training(const MatrixXf_rm &phen_d, const MatrixXf_rm &traj_d, std::vector<int> &is_trajectories, bool full_train = false, int generation = 1000) 
     {
         MatrixXf_rm train_phen, valid_phen, train_traj, valid_traj;
         size_t l_train_traj = this->split_dataset(phen_d, traj_d, train_phen, valid_phen, train_traj, valid_traj);
@@ -115,8 +115,13 @@ public:
         val_is_trajectories.resize(is_trajectories.size() - l_train_traj);
 
         // change vectors to eigen
-        Eigen::VectorXi tr_is_traj = Eigen::Map<Eigen::VectorXi> (train_is_trajectories.data(), train_is_trajectories.size());
-        Eigen::VectorXi val_is_traj = Eigen::Map<Eigen::VectorXi> (val_is_trajectories.data(), val_is_trajectories.size());
+        Eigen::VectorXi tr_is_traj, val_is_traj, is_traj;
+        // Eigen::VectorXi tr_is_traj = Eigen::Map<Eigen::VectorXi> (train_is_trajectories.data(), train_is_trajectories.size());
+        // Eigen::VectorXi val_is_traj = Eigen::Map<Eigen::VectorXi> (val_is_trajectories.data(), val_is_trajectories.size());
+        // Eigen::VectorXi is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectories.data(), train_is_trajectories.size());
+        vector_to_eigen(train_is_trajectories, tr_is_traj);
+        vector_to_eigen(val_is_trajectories, val_is_traj);
+        vector_to_eigen(is_trajectories, is_traj);
 
         float init_tr_recon_loss = this->get_avg_recon_loss(train_phen, train_traj, tr_is_traj);
         float init_vl_recon_loss = this->get_avg_recon_loss(valid_phen, valid_traj, val_is_traj);
@@ -156,14 +161,14 @@ public:
                     loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {1});
                 }
 
-                loss_tensor /= std::get<2>(tup).size();
+                long num_trajectories {std::get<2>(tup).size()};
+                loss_tensor /= num_trajectories;
                 loss_tensor.backward();
                 this->m_adam_optimiser.step();
                 ++epoch;
             }
 
             this->m_global_step++;
-
 
             // early stopping
             if (!full_train) {
@@ -191,7 +196,7 @@ public:
             std::cout << std::flush << '\r';
         }
 
-        float full_dataset_recon_loss = this->get_avg_recon_loss(phen_d, traj_d, is_trajectories);
+        float full_dataset_recon_loss = this->get_avg_recon_loss(phen_d, traj_d, is_traj);
         std::cout << "Final full dataset recon loss: " << full_dataset_recon_loss << '\n';
 
         return full_dataset_recon_loss;
@@ -203,11 +208,15 @@ public:
         eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss);
     }
 
-
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj) {
         MatrixXf_rm descriptors, reconst, recon_loss;
         eval(phen, traj, is_traj, descriptors, reconst, recon_loss);
         return recon_loss.mean();
+    }
+
+    void vector_to_eigen(std::vector<int> &is_trajectories, Eigen::VectorXi &is_traj)
+    {
+        is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectories.data(), is_trajectories.size());
     }
 
     torch::nn::AnyModule get_auto_encoder() {
@@ -276,7 +285,8 @@ public:
 
     explicit NetworkLoaderAutoEncoder() :
             TParentLoader(TParams::qd::behav_dim,
-                          torch::nn::AnyModule(AutoEncoder(32, 32, TParams::qd::behav_dim, TParams::use_colors))),
+                          torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::qd::behav_dim, 
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::trajectory_length))),
             m_use_colors(TParams::use_colors) {
 
         if (this->m_use_colors) {
