@@ -17,54 +17,59 @@
 // remove this
 bool VERBOSE = false;
 
+namespace rng {
+        //     // Will be used to obtain a seed for the random number engine
+    std::random_device rd;  
+    std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> rng_prob(0, 1);
+    std::uniform_real_distribution<> rng_angle(0, Params::parameters::max_angle);
+    std::uniform_real_distribution<> rng_dpf(0, Params::parameters::max_dpf);
+}
+
 FIT_QD(Trajectory)
 {
     public:
     // Trajectory():_entropy(-1){  }
-    Trajectory():gen(std::random_device()()){}
+    Trajectory(){}
 
     template <typename Indiv> 
     void eval(Indiv & ind){
 
         // get the data from ind which is the pheno type
         // genotype specifies the size, = 2? and then need to specify the phenotype max min stuff
-        angle = ind.data(0);
-        dpf = ind.data(1);
-
-        // clear previous trajectories stored
-        // trajectories.clear();
+        float angle = ind.data(0);
+        float dpf = ind.data(1);
 
         // generate actual true trajectory from phenotype
+        Eigen::VectorXf single_traj;
+        single_traj.resize(Params::sim::num_trajectory_elements);
         generate_traj(single_traj, angle, dpf);
         trajectories[0] = single_traj;
-        // trajectories.push_back(traj);
-
+        
         // track number of trajectories
         m_num_trajectories = 0;
 
         // generate random trajectories
         for (int i{1}; i < Params::random::max_num_random + 1; ++i)
         {
-            std::uniform_real_distribution<> rng_prob(0, 1);
-            double prob = rng_prob(gen);
+            // std::uniform_real_distribution<> rng_prob(0, 1);
+            float prob = rng::rng_prob(rng::gen);
             if (prob <= Params::random::pct_random)
             {
-                std::uniform_real_distribution<> rng_angle(0, Params::parameters::max_angle);
-                angle = rng_angle(gen);
-
+                angle = rng::rng_angle(rng::gen);
                 if (Params::random::is_random_dpf)
-                {
-                    std::uniform_real_distribution<> rng_dpf(0, Params::parameters::max_dpf);
-                    dpf = rng_dpf(gen);
-                }
-
+                {dpf = rng::rng_dpf(rng::gen);}
+                // generate a random trajectory
                 generate_traj(single_traj, angle, dpf);
-                trajectories[i] = single_traj;
                 // 1 means it is a trajectory
                 is_random_trajectories[i] = 1;
                 ++m_num_trajectories;
             }
-            else {is_random_trajectories[i] = 0;}
+            else 
+            {
+                is_random_trajectories[i] = 0;
+            }
+            trajectories[i] = single_traj;
         }
 
         // FITNESS: constant because we're interested in exploration
@@ -79,6 +84,7 @@ FIT_QD(Trajectory)
     // tried making a rref or pointer but doesnt seem to hold, so need to use array of eigenvectors instead of matrix directly
     void generate_traj(Eigen::VectorXf &traj, double angle, double dist_per_frame)
     {
+        
         float start_x = Params::sim::start_x;
         float start_y = Params::sim::start_y;
 
@@ -172,23 +178,13 @@ FIT_QD(Trajectory)
     template<typename block_t>
     void get_flat_observations(block_t &data) const 
     {
-        // std::cout << _image.size() << std::endl;
         for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
         {   
-            for (size_t i{0}; i < Params::sim::trajectory_length; ++i)
+            for (size_t i{0}; i < Params::sim::num_trajectory_elements; ++i)
             {
                 data(row, i) = trajectories[row](i);
             }
-            // assign vector to data
-            // if this does not work then loop over rows over columns
-
-            // Eigen::Map<Eigen::VectorXd> (wall_impacts.data(), wall_impacts.size());
-            // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
-            // {data(row, i) = [i];
         }
-
-        // for (size_t i = 0; i < Params::sim::trajectory_length; i++) {
-            // data(0, i) = [i];
     }
 
     float &entropy() { return m_entropy; }
@@ -525,12 +521,7 @@ FIT_QD(Trajectory)
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
-    std::mt19937 gen;
-    double angle;
-    double dpf;
     size_t m_num_trajectories;
-    Eigen::VectorXf single_traj;
-    
 };
 
 #endif //TRAJECTORY_HPP

@@ -29,7 +29,7 @@ struct DecoderImpl : torch::nn::Module {
                 logvar = m_linear_v(out);
         }
 
-        void sample_output(const torch::Tensor &mu, const torch::Tensor &logvar, torch::Tensor output)
+        void sample_output(const torch::Tensor &mu, const torch::Tensor &logvar, torch::Tensor &output)
         {
                 output = torch::randn_like(logvar, torch::device(m_device).requires_grad(true)) * torch::exp(0.5 * logvar) + mu;
         }

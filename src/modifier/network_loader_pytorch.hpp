@@ -54,21 +54,27 @@ public:
         {
         size_t l_train_phen{0}, l_valid_phen{0}, l_train_traj{0}, l_valid_traj{0};
         
-        if (phen_d.rows() > 500) {
+        if (phen_d.rows() > 500) 
+        {
             l_train_phen = floor(phen_d.rows() * Options::CV_fraction);
             l_valid_phen = phen_d.rows() - l_train_phen;
-        } else {
+            
+            // every phen has multiple trajectories
+            l_train_traj = l_train_phen * (TParams::random::max_num_random + 1);
+            l_valid_traj = traj_d.rows() - l_train_traj;
+        } 
+        else 
+        {
             l_train_phen = phen_d.rows();
             l_valid_phen = phen_d.rows();
+
+            l_train_traj = l_train_phen * (TParams::random::max_num_random + 1);
+            l_valid_traj = l_train_traj;
         }
         assert(l_train_phen != 0 && l_valid_phen != 0);
 
         train_phen = phen_d.topRows(l_train_phen);
         valid_phen = phen_d.bottomRows(l_valid_phen);
-
-        // every phen has multiple trajectories
-        l_train_traj = l_train_phen * (TParams::random::max_num_random + 1);
-        l_valid_traj = traj_d.rows() - l_train_traj;
 
         train_traj = traj_d.topRows(l_train_traj);
         valid_traj = traj_d.bottomRows(l_valid_traj);
@@ -105,28 +111,38 @@ public:
     {
         MatrixXf_rm train_phen, valid_phen, train_traj, valid_traj;
         size_t l_train_traj = this->split_dataset(phen_d, traj_d, train_phen, valid_phen, train_traj, valid_traj);
-
         // split the bool vector according to the same split
         std::vector<int> train_is_trajectories(is_trajectories.begin(), is_trajectories.begin() + l_train_traj);
         std::vector<int> val_is_trajectories(is_trajectories.begin() + l_train_traj, is_trajectories.end());
 
+        if (train_traj.rows() == valid_traj.rows())
+        {
+            val_is_trajectories = train_is_trajectories;
+        }
+
         // is this needed?
-        train_is_trajectories.resize(l_train_traj);
-        val_is_trajectories.resize(is_trajectories.size() - l_train_traj);
+        // train_is_trajectories.resize(l_train_traj);
+        // val_is_trajectories.resize(is_trajectories.size() - l_train_traj);
 
         // change vectors to eigen
         Eigen::VectorXi tr_is_traj, val_is_traj, is_traj;
-        // Eigen::VectorXi tr_is_traj = Eigen::Map<Eigen::VectorXi> (train_is_trajectories.data(), train_is_trajectories.size());
-        // Eigen::VectorXi val_is_traj = Eigen::Map<Eigen::VectorXi> (val_is_trajectories.data(), val_is_trajectories.size());
-        // Eigen::VectorXi is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectories.data(), train_is_trajectories.size());
         vector_to_eigen(train_is_trajectories, tr_is_traj);
         vector_to_eigen(val_is_trajectories, val_is_traj);
         vector_to_eigen(is_trajectories, is_traj);
+        
+        // std::cout << "BEFORE AVG" << std::endl;
+        // std::cout << train_phen.rows() << std::endl;
+        // std::cout << valid_phen.rows() << std::endl;
+        // std::cout << train_traj.rows() << std::endl;
+        // std::cout << valid_traj.rows() << std::endl;
+        // std::cout << tr_is_traj.size() << std::endl;
+        // std::cout << val_is_traj.size() << std::endl;
+
 
         float init_tr_recon_loss = this->get_avg_recon_loss(train_phen, train_traj, tr_is_traj);
         float init_vl_recon_loss = this->get_avg_recon_loss(valid_phen, valid_traj, val_is_traj);
 
-        std::cout << "INIT recon train loss: " << init_tr_recon_loss << "   valid recon loss: " << init_vl_recon_loss;
+        std::cout << "INIT recon train loss: " << init_tr_recon_loss << "   valid recon loss: " << init_vl_recon_loss << std::endl;
 
         bool _continue = true;
         Eigen::VectorXd previous_avg = Eigen::VectorXd::Ones(5) * 100;
@@ -144,8 +160,7 @@ public:
                 this->m_auto_encoder_module.ptr()->zero_grad();
                 // tup[0] is the phenotype
                 torch::Tensor reconstruction_tensor = this->m_auto_encoder_module.forward(std::get<0>(tup));
-                torch::Tensor loss_tensor;
-
+                torch::Tensor loss_tensor = torch::zeros(1);;
                 // start at -1 because first loop will take it to 0
                 int index{-1};
 
@@ -158,9 +173,11 @@ public:
                     {++index;}
                     // second arg is type of norm, here L2, third argument is which dimensions to sum over
                     // tup[1] is the trajectories tensor
-                    loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {1});
+                    // std::cout << "BEFORE NORM" << std::endl;
+                    // std::cout << "recon" << reconstruction_tensor[index] << std::endl;
+                    // std::cout << "traj" << std::get<1>(tup)[i] << std::endl;
+                    loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0});
                 }
-
                 long num_trajectories {std::get<2>(tup).size()};
                 loss_tensor /= num_trajectories;
                 loss_tensor.backward();
@@ -286,7 +303,7 @@ public:
     explicit NetworkLoaderAutoEncoder() :
             TParentLoader(TParams::qd::behav_dim,
                           torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::qd::behav_dim, 
-                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::trajectory_length))),
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::num_trajectory_elements))),
             m_use_colors(TParams::use_colors) {
 
         if (this->m_use_colors) {
@@ -375,13 +392,14 @@ public:
             if (boundaries[i])
             {++index;}
             // second arg is type of norm, here L2, third argument is which dimensions to sum over
-            reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {1});
+            // dim = {0} because the difference between the two is automatically squeezed from 2D to 1D, row by row difference
+            reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {0});
         }
 
         this->get_eigen_matrix_from_torch_tensor(descriptors_tensor.cpu(), descriptors);
         this->get_eigen_matrix_from_torch_tensor(reconstruction_tensor.cpu(), reconstructed_data);
         this->get_eigen_matrix_from_torch_tensor(reconstruction_loss.cpu(), recon_loss);
-        std::cout << "Total num of trajectories " << boundaries.size() << ", Num random trajectories " << boundaries.size() - phen.rows() << " (" << float(1 - phen.rows()/boundaries.size()) <<")" << std::endl;
+        std::cout << "Eval: Total num of trajectories " << boundaries.size() << ", Num random trajectories " << boundaries.size() - phen.rows() << ", (random ratio: " << 1 - float(phen.rows())/boundaries.size() <<")" << std::endl;
     }
 
 protected:

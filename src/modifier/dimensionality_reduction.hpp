@@ -58,7 +58,6 @@ namespace sferes {
 
                 if (!ea.offspring().size())
                 {return;}
-
                 assign_descriptor_to_population(ea, ea.offspring());
             }
 
@@ -117,24 +116,32 @@ namespace sferes {
             }
 
             void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_random_d) const {
-                data = Mat(pop.size() * (Params::random::max_num_random + 1), Params::sim::trajectory_length);
-                for (size_t i = 0; i < pop.size() * (Params::random::max_num_random + 1); i += (Params::random::max_num_random + 1)) {
+                data = Mat(pop.size() * (Params::random::max_num_random + 1), Params::sim::num_trajectory_elements);
+                is_random_d.reserve(pop.size() * (Params::random::max_num_random + 1));
+                
+                size_t matrix_row_index{0};
+                for (size_t i = 0; i < pop.size(); ++i) 
+                {
                     // block of rows, populate the trajectories
-                    auto block = data.block(i, 0, (Params::random::max_num_random + 1), Params::sim::trajectory_length);
+                    auto block = data.block(matrix_row_index, 0, (Params::random::max_num_random + 1), Params::sim::num_trajectory_elements);
                     pop[i]->fit().get_flat_observations(block);
                     // populate the vector
-                    for (size_t j {0}; j < Params::random::max_num_random + 1; ++i)
+                    for (size_t j {0}; j < Params::random::max_num_random + 1; ++j)
                     {
                         is_random_d.push_back(pop[i]->fit().is_random(j));
                     }
+                    matrix_row_index += Params::random::max_num_random + 1;
                 }
             }
 
             void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_random_d) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
+                // std::cout << "TRAINING" << std::endl;
+                // std::cout << "ROWS" << phen_d.rows() << std::endl;
                 _prep.init(phen_d);
                 Mat scaled_data;
                 _prep.apply(phen_d, scaled_data);
+                // std::cout << "SCALED ROWS" << scaled_data.rows() << std::endl;
                 float final_entropy = network->training(scaled_data, traj_d, is_random_d);
             }
 

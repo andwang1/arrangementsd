@@ -21,6 +21,8 @@ struct Params {
     SFERES_CONST double start_x = 3.13;
     SFERES_CONST double start_y = 3.13;
     SFERES_CONST size_t trajectory_length = 50;
+    // 2D
+    SFERES_CONST int num_trajectory_elements = 2 * trajectory_length;
     };
 
     struct random {

@@ -19,6 +19,7 @@ struct AutoEncoderImpl : torch::nn::Module {
     }
 
     torch::Tensor forward(const torch::Tensor &x) {
+        // std::cout << x << "AE" << std::endl;
         return m_decoder(m_encoder(x));
     }
 
