@@ -15,7 +15,7 @@ namespace sferes {
         public:
             template<typename EA>
             void refresh(EA &ea) {
-                if (ea.gen() % Params::stat::save_images_period == 0) {
+                if (ea.gen() % Params::stat::save_model == 0) {
                     std::string name_file = ea.res_dir() + "/"
                                             + "model_autoencoder_gen_"
                                             + boost::lexical_cast<std::string>(ea.gen())
