@@ -27,9 +27,9 @@ struct Params {
     };
 
     struct ae {
-    SFERES_CONST size_t batch_size = 256;
+    SFERES_CONST size_t batch_size = 64;
     SFERES_CONST size_t nb_epochs = 10000;
-    SFERES_CONST float convergence_epsilon = 0.0000001;
+    SFERES_CONST float convergence_epsilon = 0.000001;
     SFERES_CONST float CV_fraction = 0.75;
     SFERES_CONST float learning_rate = 1e-4;
 
@@ -88,11 +88,12 @@ struct Params {
 
     struct qd {
         SFERES_CONST size_t gen_dim = 2;
-        SFERES_CONST size_t behav_dim = 5;
+        SFERES_CONST size_t behav_dim = 2;
     };
 
     struct stat {
-        SFERES_CONST size_t save_images_period = 500;
+        SFERES_CONST size_t save_trajectories = 500;
+        SFERES_CONST size_t save_model = 2000;
         SFERES_CONST size_t period_saving_individual_in_population = 5;
     };
 };

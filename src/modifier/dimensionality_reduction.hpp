@@ -84,7 +84,8 @@ namespace sferes {
                 }
 
                 // shuffle content here before getting the data so that the trajectories are also shuffled effectively
-                std::random_shuffle (content.begin(), content.end());
+                if (training)
+                {std::random_shuffle (content.begin(), content.end());}
                 
                 collect_dataset(phen_d, traj_d, is_random_d, ea, content, training);
             }
@@ -294,11 +295,17 @@ namespace sferes {
                 dist = dist - XY;
             }
 
-            void get_reconstruction(const Mat &phen, const Mat &traj, const Eigen::VectorXi &is_traj, Mat &reconstruction) const {
-                Mat scaled_data, scaled_reconstruction;
+            void get_reconstruction(const Mat &phen, const Mat &traj, std::vector<int> &is_traj, Mat &reconstruction) const {
+                Mat scaled_data;
                 _prep.apply(phen, scaled_data);
-                network->get_reconstruction(scaled_data, traj, is_traj, scaled_reconstruction);
-                _prep.deapply(scaled_reconstruction, reconstruction);
+
+                Eigen::VectorXi is_trajectories;
+                get_network_loader()->vector_to_eigen(is_traj, is_trajectories);
+                
+                network->get_reconstruction(scaled_data, traj, is_trajectories, reconstruction);
+
+                // do not need to apply scaling to reconstruction
+                // _prep.deapply(scaled_reconstruction, reconstruction);
             }
 
             NetworkLoader *get_network_loader() const {

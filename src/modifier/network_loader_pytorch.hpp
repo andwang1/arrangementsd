@@ -223,6 +223,7 @@ public:
                             MatrixXf_rm &reconstruction) {
         MatrixXf_rm descriptors, recon_loss;
         eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss);
+        std::cout << "AFTER GET RECON" << std::endl;
     }
 
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj) {

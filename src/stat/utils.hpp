@@ -16,7 +16,7 @@ namespace sferes {
         }
 
         std::string add_leading_zeros(const int original_number,
-             size_t total_number_zeros = 7) {
+             size_t total_number_zeros = 4) {
 
           std::string original_string = boost::lexical_cast<std::string>(original_number);
           return std::string(total_number_zeros - original_string.length(), '0') + original_string;

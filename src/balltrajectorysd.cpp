@@ -69,11 +69,9 @@
 
 #include "stat/stat_current_gen.hpp"
 #include "stat/utils.hpp"
-#include "stat/stat_projection.hpp"
-#include "stat/stat_images_observations.hpp"
-#include "stat/stat_images_reconstructions_obs.hpp"
 #include "stat/stat_model_autoencoder.hpp"
 #include "stat/stat_modifier.hpp"
+#include "stat/stat_traj.hpp"
 
 #include "params.hpp"
 #include "trajectory.hpp"
@@ -165,9 +163,7 @@ int main(int argc, char **argv) {
                     sferes::stat::CurrentGen<phen_t, params_t>,
                     sferes::stat::QdContainer<phen_t, params_t>,
                     sferes::stat::QdProgress<phen_t, params_t>,
-                    // sferes::stat::Projection<phen_t, params_t>,
-                    // sferes::stat::ImagesObservations<phen_t, params_t>,
-                    // sferes::stat::ImagesReconstructionObs<phen_t, params_t>,
+                    sferes::stat::Trajectories<phen_t, params_t>,
                     sferes::stat::ModelAutoencoder<phen_t, params_t>,
                     sferes::stat::Modifier<phen_t, params_t>
                 > stat_t;
