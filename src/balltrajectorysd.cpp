@@ -163,6 +163,7 @@ int main(int argc, char **argv) {
                     sferes::stat::CurrentGen<phen_t, params_t>,
                     sferes::stat::QdContainer<phen_t, params_t>,
                     sferes::stat::QdProgress<phen_t, params_t>,
+                    // writes the trajectories and the AE loss
                     sferes::stat::Trajectories<phen_t, params_t>,
                     sferes::stat::ModelAutoencoder<phen_t, params_t>,
                     sferes::stat::Modifier<phen_t, params_t>

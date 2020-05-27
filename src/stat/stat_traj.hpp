@@ -21,12 +21,15 @@ namespace sferes {
                 if ((ea.gen() % Params::stat::save_trajectories == 0) || (ea.gen() == 1) ) 
                 {
                    std::string prefix = "traj_" + add_leading_zeros(ea.gen());
-                    _write_container(prefix, ea);
+                    _write_trajectories(prefix, ea);
                 }
+                
+                std::string prefix = "ae_loss";
+                _write_losses(prefix, ea);
             }
 
             template<typename EA>
-            void _write_container(const std::string &prefix, const EA &ea) const {
+            void _write_trajectories(const std::string &prefix, const EA &ea) const {
 
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
                 std::cout << "writing..." << fname << std::endl;
@@ -74,7 +77,56 @@ namespace sferes {
                 }
             }
 
+            template<typename EA>
+            void _write_losses(const std::string &prefix, const EA &ea) {
 
+                std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
+                std::cout << "writing..." << fname << std::endl;
+
+                // retrieve all phenotypes and trajectories                
+                matrix_t phen, traj;
+                std::vector<int> is_traj;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_phen(ea.pop(), phen);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
+                
+                Eigen::VectorXi is_trajectory;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
+
+                float recon_loss = boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_avg_recon_loss(phen, traj, is_trajectory);
+
+                std::ofstream ofs(fname.c_str(), std::ofstream::app);
+                ofs.precision(17);
+                ofs << recon_loss << ", ";
+
+                // print a second line with only losses after training
+
+                // training frequency
+                if (Params::update_frequency == -1) 
+                {
+                    if (Params::update_period > 0 && 
+                       (ea.gen() == 1 || ea.gen() == last_update + Params::update_period * std::pow(2, update_id - 1))) 
+                    {
+                        std::string train_fname = ea.res_dir() + "/" + prefix + "_train" + std::string(".dat");
+                        std::ofstream ofs_train(train_fname.c_str(), std::ofstream::app);
+                        ofs_train.precision(17);
+                        ofs_train << recon_loss << ", ";
+                        update_id++;
+                    }
+                } 
+                else if (ea.gen() > 0) 
+                {
+                    if ((ea.gen() % Params::update_frequency == 0) || ea.gen() == 1) 
+                    {
+                        std::string train_fname = ea.res_dir() + "/" + prefix + "_train" + std::string(".dat");
+                        std::ofstream ofs_train(train_fname.c_str(), std::ofstream::app);
+                        ofs_train.precision(17);
+                        ofs_train << recon_loss << ", ";
+                    }
+                }
+            }
+        private:
+        size_t last_update{0};
+        size_t update_id{0};
         };
 
     }

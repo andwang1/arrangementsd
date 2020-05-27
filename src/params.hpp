@@ -48,7 +48,7 @@ struct Params {
     SFERES_CONST size_t image_width = 50;
     SFERES_CONST size_t image_height = 50;
     SFERES_CONST int resolution = 5000; // influences l; targetted size of pop -> 5000
-    SFERES_CONST size_t update_frequency = 10; // -1 means exponentially decaying update frequency
+    SFERES_CONST size_t update_frequency = 10; // -1 means exponentially decaying update frequency, how often update BD etc
     SFERES_CONST size_t times_downsample = 4; // for taking the image
 
     SFERES_CONST bool use_colors = true;
