@@ -56,7 +56,7 @@ public:
         
         if (phen_d.rows() > 500) 
         {
-            l_train_phen = floor(phen_d.rows() * Options::CV_fraction);
+            l_train_phen = floor(phen_d.rows() * TParams::ae::CV_fraction);
             l_valid_phen = phen_d.rows() - l_train_phen;
             
             // every phen has multiple trajectories
@@ -118,7 +118,6 @@ public:
                             MatrixXf_rm &reconstruction) {
         MatrixXf_rm descriptors, recon_loss;
         eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss);
-        std::cout << "AFTER GET RECON" << std::endl;
     }
 
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj) {
@@ -144,14 +143,8 @@ protected:
     torch::nn::AnyModule m_auto_encoder_module;
     torch::optim::Adam m_adam_optimiser;
     torch::Device m_device;
+    double log_2_pi;
 
-    struct Options {
-        // config setting
-        static const size_t batch_size = TParams::ae::batch_size;
-        static const size_t nb_epochs = TParams::ae::nb_epochs;
-        static constexpr float convergence_epsilon = TParams::ae::convergence_epsilon;
-        SFERES_CONST float CV_fraction = TParams::ae::CV_fraction;
-    };
 
     void get_torch_tensor_from_eigen_matrix(const MatrixXf_rm &M, torch::Tensor &T) const {
 
@@ -196,7 +189,8 @@ public:
     explicit NetworkLoaderAutoEncoder() :
             TParentLoader(TParams::qd::behav_dim,
                           torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::qd::behav_dim, 
-                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::num_trajectory_elements)))
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::num_trajectory_elements))),
+            log_2_pi(log(2 * M_PI))
              {}
 
     typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXf_rm;
@@ -204,10 +198,10 @@ public:
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
                         const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_trajectory) const 
     {
-        if (phen.rows() <= TParentLoader::Options::batch_size) {
+        if (phen.rows() <= TParams::ae::batch_size) {
             batches = std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>>(1);
         } else {
-            batches = std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>>(floor(phen.rows() / (TParentLoader::Options::batch_size)));
+            batches = std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>>(floor(phen.rows() / (TParams::ae::batch_size)));
         }
 
         // in loop do filtering before passing to make tuple
@@ -228,14 +222,14 @@ public:
                 // filtering
                 MatrixXf_rm filtered_traj;
                 std::vector<bool> boundaries;
-                this->filter_trajectories(traj.middleRows(ind * TParentLoader::Options::batch_size * (TParams::random::max_num_random + 1),
-                                                    TParentLoader::Options::batch_size * (TParams::random::max_num_random + 1)),
-                                                    is_trajectory.segment(ind * TParentLoader::Options::batch_size * (TParams::random::max_num_random + 1), TParentLoader::Options::batch_size * (TParams::random::max_num_random + 1)),
+                this->filter_trajectories(traj.middleRows(ind * TParams::ae::batch_size * (TParams::random::max_num_random + 1),
+                                                    TParams::ae::batch_size * (TParams::random::max_num_random + 1)),
+                                                    is_trajectory.segment(ind * TParams::ae::batch_size * (TParams::random::max_num_random + 1), TParams::ae::batch_size * (TParams::random::max_num_random + 1)),
                                                     filtered_traj,
                                                     boundaries);
 
                 torch::Tensor T1, T2;
-                this->get_tuple_from_eigen_matrices(phen.middleRows(ind * TParentLoader::Options::batch_size, TParentLoader::Options::batch_size),
+                this->get_tuple_from_eigen_matrices(phen.middleRows(ind * TParams::ae::batch_size, TParams::ae::batch_size),
                                                     filtered_traj,
                                                     boundaries,
                                                     T1,
@@ -291,13 +285,14 @@ public:
         std::cout << "INIT recon train loss: " << init_tr_recon_loss << "   valid recon loss: " << init_vl_recon_loss << std::endl;
         std::cout << "Training: Total num of trajectories " << is_traj.sum() << ", Num random trajectories " << is_traj.sum() - phen_d.rows() << ", (random ratio: " << 1 - float(phen_d.rows())/is_traj.sum() <<")" << std::endl;
         bool _continue = true;
-        Eigen::VectorXd previous_avg = Eigen::VectorXd::Ones(TParams::ae::running_mean_num_epochs) * 100;
-
-        int nb_epochs = TParams::ae::nb_epochs;
+        Eigen::VectorXd previous_avg = Eigen::VectorXd::Ones(TParams::ae::running_mean_num_epochs) * 50;
 
         int epoch(0);
 
-        while (_continue && (epoch < nb_epochs)) {
+        // initialise training variables
+        torch::Tensor encoder_mu, encoder_logvar, decoder_logvar;
+
+        while (_continue && (epoch < TParams::ae::nb_epochs)) {
             std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> batches;
             prepare_batches(batches, train_phen, train_traj, tr_is_traj);
 
@@ -305,17 +300,16 @@ public:
                 // Get the names below with the inspect_graph.py script applied on the generated graph_text.pb file.
                 this->m_auto_encoder_module.ptr()->zero_grad();
                 
-                torch::Tensor encoder_mu, encoder_logvar;
-                
                 // not necessary as layers enforce grad
                 // std::get<0>(tup).set_requires_grad(true);
 
                 // tup[0] is the phenotype
-                torch::Tensor reconstruction_tensor = auto_encoder->forward_get_encoder_stats(std::get<0>(tup).to(this->m_device), encoder_mu, encoder_logvar);
+                torch::Tensor reconstruction_tensor = auto_encoder->forward_VAE(std::get<0>(tup).to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar);
                 
                 torch::Tensor loss_tensor = torch::zeros(1);
+                
                 loss_tensor.to(this->m_device);
-                // KL loss
+
                 loss_tensor += -0.5 * TParams::ae::beta * torch::sum(1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
                 // start at -1 because first loop will take it to 0
                 int index{-1};
@@ -330,7 +324,21 @@ public:
                     // std::cout << "BEFORE NORM" << std::endl;
                     // std::cout << "recon" << reconstruction_tensor[index] << std::endl;
                     // std::cout << "traj" << std::get<1>(tup)[i] << std::endl;
-                    loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0});
+                    // loss_tensor / (2 * torch::exp(decoder_logvar) + 0.0001) + 0.5 * (decoder_logvar + log_2_pi)
+                    if (TParams::ae::full_loss)
+                    {
+                        loss_tensor += torch::norm(
+                            (std::get<1>(tup)[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
+                                + 0.5 * (decoder_logvar[index] + log_2_pi) ,
+                            2, {0});
+                    }
+                    else
+                    {
+                        loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0});
+                    }
+                    std::cout << "L2\t" << torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0}).item<double>();
+                    std::cout << "\tVAR\t" << torch::mean(torch::exp(decoder_logvar[index])).item<double>();
+                    std::cout << std::flush << '\r';
                 }
                 
                 long num_trajectories {std::get<2>(tup).size()};
@@ -340,6 +348,7 @@ public:
                 // std::cout << encoder_mu.grad() << "MU" << std::endl;
                 // std::cout << encoder_logvar.grad() << "LOGVAR"<< std::endl;
                 // std::cout << std::get<0>(tup).grad() << "INPUT"<< std::endl;
+                // std::cout << "ACTUAL LOSS" << loss_tensor.item<float>() << std::endl;
                 
                 this->m_adam_optimiser.step();
                 ++epoch;
@@ -358,7 +367,10 @@ public:
                 // if the running average on the val set is increasing and train loss is higher than at the beginning
                 if ((previous_avg.array() - previous_avg[0]).mean() > 0 && epoch > TParams::ae::min_num_epochs &&
                     this->get_avg_recon_loss(train_phen, train_traj, tr_is_traj) < init_tr_recon_loss)
+                    {
                     _continue = false;
+                    // std::cout << "CONTINUEFALSE" << std::endl;
+                    }
             }
 
 
@@ -368,9 +380,10 @@ public:
 
             std::cout.precision(5);
             std::cout << "training dataset: " << train_phen.rows() << "  valid dataset: " << valid_phen.rows() << " - ";
-            std::cout << std::setw(5) << epoch << "/" << std::setw(5) << nb_epochs;
+            std::cout << std::setw(5) << epoch << "/" << std::setw(5) << TParams::ae::nb_epochs;
             std::cout << " recon loss (t): " << std::setw(8) << recon_loss_t;
             std::cout << " (v): " << std::setw(8) << recon_loss_v;
+            // std::cout << " (var): " << std::setw(8) << recon_loss_v;
             std::cout << std::flush << '\r';
         }
 
@@ -401,9 +414,10 @@ public:
 
         this->get_torch_tensor_from_eigen_matrix(filtered_traj, traj_tensor);
 
-        
+        torch::Tensor encoder_mu, encoder_logvar, decoder_logvar;
+                
         torch::Tensor descriptors_tensor;
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(phen_tensor.to(this->m_device), descriptors_tensor);
+        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent_VAE(phen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
         torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
 
         // start at -1 because first loop will take it to 0
@@ -412,9 +426,18 @@ public:
         {
             if (boundaries[i])
             {++index;}
-            // second arg is type of norm, here L2, third argument is which dimensions to sum over
-            // dim = {0} because the difference between the two is automatically squeezed from 2D to 1D, row by row difference
-            reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {0});
+
+            if (TParams::ae::full_loss)
+            {
+                reconstruction_loss[index] += torch::norm(
+                    (traj_tensor[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
+                        + 0.5 * (decoder_logvar[index] + log_2_pi) ,
+                    2, {0});
+            }
+            else
+            {
+                reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {0});
+            }
         }
 
         this->get_eigen_matrix_from_torch_tensor(descriptors_tensor.cpu(), descriptors);
@@ -422,6 +445,8 @@ public:
         this->get_eigen_matrix_from_torch_tensor(reconstruction_loss.cpu(), recon_loss);
         // std::cout << "Eval: Total num of trajectories " << boundaries.size() << ", Num random trajectories " << boundaries.size() - phen.rows() << ", (random ratio: " << 1 - float(phen.rows())/boundaries.size() <<")" << std::endl;
     }
+
+    float log_2_pi;
 };
 
 #endif

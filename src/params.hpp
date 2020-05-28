@@ -21,30 +21,32 @@ struct Params {
     };
 
     struct random {
-    SFERES_CONST double pct_random = 0.2;
+    static double pct_random;
     SFERES_CONST size_t max_num_random = 1;
     SFERES_CONST bool is_random_dpf = false;
     };
 
     struct ae {
     SFERES_CONST size_t batch_size = 64;
-    SFERES_CONST size_t nb_epochs = 40000;
-    SFERES_CONST size_t min_num_epochs = 500;
-    SFERES_CONST size_t running_mean_num_epochs = 10;
-    SFERES_CONST float convergence_epsilon = 0.000001;
+    SFERES_CONST size_t nb_epochs = 5000;
+    SFERES_CONST size_t min_num_epochs = 0;
+    SFERES_CONST size_t running_mean_num_epochs = 5;
     SFERES_CONST float CV_fraction = 0.80;
     SFERES_CONST float learning_rate = 1e-3;
+    SFERES_CONST bool full_loss = false;
 
     // network neurons        
     // input = qd::gen_dim
     SFERES_CONST size_t en_hid_dim1 = 10;
     // latent_dim = qd::behav_dim
-    SFERES_CONST size_t de_hid_dim1 = 10;
-    SFERES_CONST size_t de_hid_dim2 = 30;
+    SFERES_CONST size_t de_hid_dim1 = 40;
+    SFERES_CONST size_t de_hid_dim2 = 60;
     // output_dim = sim::trajectory_length
 
     // KL weight
     SFERES_CONST size_t beta = 0;
+
+    // 
     };
 
     struct update {
@@ -100,6 +102,7 @@ struct Params {
 };
 
 double Params::nov::l;
+double Params::random::pct_random;
 
 
 #endif //PARAMS_HPP

@@ -23,8 +23,7 @@ struct DecoderImpl : torch::nn::Module {
 
         void decode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
         {
-                torch::Tensor out;
-                out = torch::relu(m_linear_2(torch::relu(m_linear_1(x))));
+                torch::Tensor out = torch::relu(m_linear_2(torch::relu(m_linear_1(x))));
                 mu = m_linear_m(out);
                 logvar = m_linear_v(out);
         }
@@ -34,12 +33,13 @@ struct DecoderImpl : torch::nn::Module {
                 output = torch::randn_like(logvar, torch::device(m_device).requires_grad(true)) * torch::exp(0.5 * logvar) + mu;
         }
 
-        torch::Tensor forward(const torch::Tensor &z) 
+        torch::Tensor forward(const torch::Tensor &z, torch::Tensor &logvar) 
         {
-                torch::Tensor mu, logvar, output;
+                torch::Tensor mu, output;
                 decode(z, mu, logvar);
-                sample_output(mu, logvar, output);
-                return output;
+                return mu;
+                // sample_output(mu, logvar, output);
+                // return output;
         }
 
         torch::nn::Linear m_linear_1, m_linear_2, m_linear_m, m_linear_v;

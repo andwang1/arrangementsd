@@ -108,6 +108,7 @@ public:
 
 struct Arguments {
     size_t number_threads;
+    double pct_random;
 };
 
 void get_arguments(const boost::program_options::options_description &desc, Arguments &arg, int argc, char **argv) {
@@ -119,6 +120,7 @@ void get_arguments(const boost::program_options::options_description &desc, Argu
     boost::program_options::store(parsed, vm);
     boost::program_options::notify(vm);
     arg.number_threads = vm["number-threads"].as<size_t>();
+    arg.pct_random = vm["pct-random"].as<double>();
 }
 
 int main(int argc, char **argv) {
@@ -128,6 +130,8 @@ int main(int argc, char **argv) {
 
     desc.add_options()
                 ("number-threads", boost::program_options::value<size_t>(), "Set Number of Threads");
+    desc.add_options()
+                ("pct-random", boost::program_options::value<double>(), "Set Pct of random trajectories");
 
     get_arguments(desc, arg, argc, argv);
 
@@ -139,6 +143,7 @@ int main(int argc, char **argv) {
     typedef Params params_t;
     // why have 0?
     Params::nov::l = 0;
+    Params::random::pct_random = arg.pct_random;
     typedef Trajectory<params_t> fit_t;
     typedef sferes::gen::EvoFloat<Params::qd::gen_dim, params_t> gen_t;
     typedef sferes::phen::Custom_Phen<gen_t, fit_t, params_t> phen_t;
@@ -157,6 +162,9 @@ int main(int argc, char **argv) {
     typedef sferes::qd::container::Archive<phen_t, storage_t, params_t> container_t;
 
     typedef sferes::eval::Parallel<params_t> eval_t;
+    // for debugging
+    // typedef sferes::eval::Eval<params_t> eval_t;
+
 
     typedef boost::fusion::vector<
                     sferes::stat::CurrentGen<phen_t, params_t>,
