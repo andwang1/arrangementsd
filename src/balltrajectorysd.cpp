@@ -71,6 +71,7 @@
 #include "stat/stat_model_autoencoder.hpp"
 #include "stat/stat_modifier.hpp"
 #include "stat/stat_traj.hpp"
+#include "stat/stat_ae_losses.hpp"
 #include "stat/stat_diversity.hpp"
 
 #include "params.hpp"
@@ -162,15 +163,13 @@ int main(int argc, char **argv) {
     typedef sferes::qd::container::Archive<phen_t, storage_t, params_t> container_t;
 
     typedef sferes::eval::Parallel<params_t> eval_t;
-    // for debugging
-    // typedef sferes::eval::Eval<params_t> eval_t;
 
 
     typedef boost::fusion::vector<
                     sferes::stat::CurrentGen<phen_t, params_t>,
                     sferes::stat::QdContainer<phen_t, params_t>,
                     sferes::stat::QdProgress<phen_t, params_t>,
-                    // writes the trajectories and the AE loss
+                    sferes::stat::Losses<phen_t, params_t>,
                     sferes::stat::Trajectories<phen_t, params_t>,
                     sferes::stat::Diversity<phen_t, params_t>,
                     sferes::stat::ModelAutoencoder<phen_t, params_t>,
