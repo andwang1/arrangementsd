@@ -15,7 +15,7 @@
 
 
 // remove this
-bool VERBOSE = false;
+bool VERBOSE = true;
 
 namespace rng {
         //     // Will be used to obtain a seed for the random number engine
@@ -37,6 +37,9 @@ FIT_QD(Trajectory)
         // genotype specifies the size, = 2? and then need to specify the phenotype max min stuff
         float angle = ind.data(0);
         float dpf = ind.data(1);
+
+        _angle = angle;
+        _dpf = dpf;
 
         // generate actual true trajectory from phenotype
         Eigen::VectorXf single_traj;
@@ -630,6 +633,7 @@ FIT_QD(Trajectory)
                     std::cout << "\nCURRENT POS\n" << current << std::endl;
                     std::cout << "Bx " << bucket_x << "By " << bucket_y << "Bnum " << bucket_number << std::endl;
                     std::cout << "WALL" << wall_impacts << std::endl;
+                    std::cout << "ANGLE" << _angle << "DPF" << _dpf << std::endl;
                 }
                 crossed_buckets.set(bucket_number);
             }
@@ -757,6 +761,10 @@ FIT_QD(Trajectory)
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
     size_t m_num_trajectories;
     std::vector<float> wall_impacts;
+
+    // for debugging
+    float _angle;
+    float _dpf;
 };
 
 #endif //TRAJECTORY_HPP
