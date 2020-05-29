@@ -57,12 +57,12 @@ From: airl_lab/default/airl_env:pytorch_ci
     DIRNAME=results_$1
     PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
 
-    mkdir -p $CURPATH/$DIRNAME/
+    mkdir -p $CURPATH/$DIRNAME/$PATHNAME
 
     cd /git/sferes2/
 
-    echo Launching command \'build/exp/balltrajectorysd/$1 -d $tmp_dir $2 $3 $4\'
-    build/exp/balltrajectorysd/$1 -d $tmp_dir $2 $3 $4
+    echo Launching command \'build/exp/balltrajectorysd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4\'
+    build/exp/balltrajectorysd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4
 
 
 %apprun vae
