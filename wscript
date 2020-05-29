@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import os.path
 import sys
+import sferes
 
 # Adding Module paths (to take additional waf_tools from subdirs into account)
 MODULES_PATH = os.path.abspath(os.path.join(sys.path[0], os.pardir, os.pardir, 'modules'))
@@ -40,12 +41,20 @@ def build(bld):
 
     bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
-    bld.program(features='cxx',
-            source='src/balltrajectorysd.cpp',
-                includes='./src . ../../',
-                uselib='TBB BOOST EIGEN PTHREAD MPI'
-                       + ' PYTHON PYTORCH KDTREE SDL',
-                use='sferes2',
-                target='balltrajectorysd')
+    # bld.program(features='cxx',
+    #         source='src/balltrajectorysd.cpp',
+    #             includes='./src . ../../',
+    #             uselib='TBB BOOST EIGEN PTHREAD MPI'
+    #                    + ' PYTHON PYTORCH KDTREE SDL',
+    #             use='sferes2',
+    #             target='balltrajectorysd')
 
 
+    sferes.create_variants(bld,
+                           source = 'src/balltrajectorysd.cpp',
+                           includes='./src . ../../',
+                           uselib='TBB BOOST EIGEN PTHREAD MPI'
+                                + ' PYTHON PYTORCH KDTREE SDL',
+                           use = 'sferes2',
+                           target = 'balltrajectorysd',
+                           variants = ['AE', 'VAE', 'AURORA'])
