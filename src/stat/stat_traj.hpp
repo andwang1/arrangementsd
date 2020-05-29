@@ -23,9 +23,6 @@ namespace sferes {
                    std::string prefix = "traj_" + boost::lexical_cast<std::string>(ea.gen());
                     _write_trajectories(prefix, ea);
                 }
-                
-                std::string prefix = "ae_loss";
-                _write_losses(prefix, ea);
             }
 
             template<typename EA>
@@ -47,13 +44,21 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->filter_trajectories(traj, is_trajectory, filtered_traj, boundaries);
                 
-                // get the reconstruction
-                matrix_t reconstruction;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_reconstruction(phen, traj, is_traj, reconstruction);
-
+                // get all data
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_stats(phen, traj, is_trajectory, descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var);
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
+
+                // std::cout << "SIZES" <<
+                // // descriptors.rows() << "\n" <<
+                // recon_loss_unred.rows() << "\n" <<
+                // recon_loss_unred.cols() << std::endl;
+                // reconstruction.rows() << "\n" <<
+                // L2_loss.rows() << "\n" <<
+                // KL_loss.rows() << "\n" <<
+                // decoder_var.rows() << "\n" << std::endl;
 
                 // std::cout << "pop" << ea.pop().size() << std::endl;
                 // std::cout << "traj" << filtered_traj.rows() << ",c " << filtered_traj.cols() << std::endl;
@@ -64,69 +69,22 @@ namespace sferes {
             
                 // there are more trajectories than reconstructions as there is only one recon per phen
                 size_t traj_index = 0;
-                ofs << "FORMAT: INDIV_INDEX, RECON/ACTUAL, DATA\n";
+                ofs << "FORMAT: INDIV_INDEX, TYPE, DATA\n";
                 for (int i{0}; i < reconstruction.rows(); ++i)
                 {
-                    ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << std::endl;
+                    ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", RECON_LOSS," <<  recon_loss_unred.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", KL_LOSS," <<  KL_loss.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", DECODER_VAR," <<  decoder_var.row(i).format(CommaInitFmt) << "\n";
                     do
                     {
-                        ofs << i << ", ACTUAL," <<  filtered_traj.row(traj_index).format(CommaInitFmt) << std::endl;
+                        ofs << i << ", ACTUAL," <<  filtered_traj.row(traj_index).format(CommaInitFmt) << "\n";
+                        ofs << i << ", L2_loss," <<  L2_loss.row(traj_index).format(CommaInitFmt) << "\n";
                         ++traj_index;
                     }
                     while (!boundaries[traj_index]);
                 }
             }
-
-            template<typename EA>
-            void _write_losses(const std::string &prefix, const EA &ea) {
-
-                std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
-                std::cout << "writing..." << fname << std::endl;
-
-                // retrieve all phenotypes and trajectories                
-                matrix_t phen, traj;
-                std::vector<int> is_traj;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_phen(ea.pop(), phen);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
-                
-                Eigen::VectorXi is_trajectory;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
-
-                float recon_loss = boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_avg_recon_loss(phen, traj, is_trajectory);
-
-                std::ofstream ofs(fname.c_str(), std::ofstream::app);
-                ofs.precision(17);
-                ofs << recon_loss << ", ";
-
-                // print a second line with only losses after training
-
-                // training frequency
-                if (Params::update::update_frequency == -1) 
-                {
-                    if (Params::update::update_period > 0 && 
-                       (ea.gen() == 1 || ea.gen() == last_update + Params::update::update_period * std::pow(2, update_id - 1))) 
-                    {
-                        std::string train_fname = ea.res_dir() + "/" + prefix + "_train" + std::string(".dat");
-                        std::ofstream ofs_train(train_fname.c_str(), std::ofstream::app);
-                        ofs_train.precision(17);
-                        ofs_train << recon_loss << ", ";
-                        update_id++;
-                    }
-                } 
-                else if (ea.gen() > 0) 
-                {
-                    if ((ea.gen() % Params::update::update_frequency == 0) || ea.gen() == 1) 
-                    {
-                        std::string train_fname = ea.res_dir() + "/" + prefix + "_train" + std::string(".dat");
-                        std::ofstream ofs_train(train_fname.c_str(), std::ofstream::app);
-                        ofs_train.precision(17);
-                        ofs_train << recon_loss << ", ";
-                    }
-                }
-            }
-        private:
-        size_t last_update{0};
-        size_t update_id{0};
         };
 
     }

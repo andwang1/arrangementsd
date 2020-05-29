@@ -39,8 +39,12 @@ public:
               const Eigen::VectorXi &is_traj,
               MatrixXf_rm &descriptors,
               MatrixXf_rm &reconstructed_data,
-              MatrixXf_rm &recon_loss) {
-        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, recon_loss);
+              MatrixXf_rm &recon_loss,
+              MatrixXf_rm &recon_loss_unred,
+              MatrixXf_rm &L2_loss,
+              MatrixXf_rm &KL_loss,
+              MatrixXf_rm &decoder_var) {
+        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
@@ -116,16 +120,22 @@ public:
 
     void get_reconstruction(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, 
                             MatrixXf_rm &reconstruction) {
-        MatrixXf_rm descriptors, recon_loss;
-        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss);
+        MatrixXf_rm descriptors, recon_loss, L2_loss, KL_loss, decoder_var;
+        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss, L2_loss, KL_loss, decoder_var);
     }
 
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj) {
-        MatrixXf_rm descriptors, reconst, recon_loss;
-        eval(phen, traj, is_traj, descriptors, reconst, recon_loss);
+        MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+        eval(phen, traj, is_traj, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
         return recon_loss.mean();
     }
 
+
+    void get_stats(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, 
+                   MatrixXf_rm &descriptors, MatrixXf_rm &recon_loss, MatrixXf_rm &recon_loss_unred, MatrixXf_rm &reconstruction, 
+                   MatrixXf_rm &L2_loss, MatrixXf_rm &KL_loss, MatrixXf_rm &decoder_var) {
+        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+    }
 
 
     torch::nn::AnyModule get_auto_encoder() {
@@ -190,7 +200,8 @@ public:
             TParentLoader(TParams::qd::behav_dim,
                           torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::qd::behav_dim, 
                                                            TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::sim::num_trajectory_elements))),
-            log_2_pi(log(2 * M_PI))
+            log_2_pi(log(2 * M_PI)),
+            _epochs_trained(0)
              {}
 
     typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXf_rm;
@@ -244,6 +255,9 @@ public:
     {
         is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectories.data(), is_trajectories.size());
     }
+
+    int get_epochs_trained()
+    {return _epochs_trained;}
 
     float training(const MatrixXf_rm &phen_d, const MatrixXf_rm &traj_d, std::vector<int> &is_trajectories, bool full_train = false, int generation = 1000) 
     {
@@ -336,9 +350,9 @@ public:
                     {
                         loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0});
                     }
-                    std::cout << "L2\t" << torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0}).item<double>();
-                    std::cout << "\tVAR\t" << torch::mean(torch::exp(decoder_logvar[index])).item<double>();
-                    std::cout << std::flush << '\r';
+                    // std::cout << "L2\t" << torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0}).item<double>();
+                    // std::cout << "\tVAR\t" << torch::mean(torch::exp(decoder_logvar[index])).item<double>();
+                    // std::cout << std::flush << '\r';
                 }
                 
                 long num_trajectories {std::get<2>(tup).size()};
@@ -390,6 +404,8 @@ public:
         float full_dataset_recon_loss = this->get_avg_recon_loss(phen_d, traj_d, is_traj);
         std::cout << "Final full dataset recon loss: " << full_dataset_recon_loss << '\n';
 
+        _epochs_trained = epoch + 1;
+
         return full_dataset_recon_loss;
     }
 
@@ -398,7 +414,11 @@ public:
               const Eigen::VectorXi &is_trajectory,
               MatrixXf_rm &descriptors,
               MatrixXf_rm &reconstructed_data,
-              MatrixXf_rm &recon_loss) 
+              MatrixXf_rm &recon_loss,
+              MatrixXf_rm &recon_loss_unred,
+              MatrixXf_rm &L2_loss,
+              MatrixXf_rm &KL_loss,
+              MatrixXf_rm &decoder_var) 
     {
         AutoEncoder auto_encoder = std::static_pointer_cast<AutoEncoderImpl>(this->m_auto_encoder_module.ptr());
 
@@ -420,6 +440,11 @@ public:
         torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent_VAE(phen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
         torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
 
+        // stats
+        torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
+        torch::Tensor L2 = torch::empty({boundaries.size(), TParams::sim::num_trajectory_elements});
+        torch::Tensor recon_loss_unreduced = torch::empty_like(L2);
+
         // start at -1 because first loop will take it to 0
         int index{-1};
         for (int i{0}; i < boundaries.size(); ++i)
@@ -429,24 +454,33 @@ public:
 
             if (TParams::ae::full_loss)
             {
-                reconstruction_loss[index] += torch::norm(
+                recon_loss_unreduced[i] = torch::pow(
                     (traj_tensor[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
                         + 0.5 * (decoder_logvar[index] + log_2_pi) ,
-                    2, {0});
+                    2);
+                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             }
             else
             {
-                reconstruction_loss[index] += torch::norm(traj_tensor[i] - reconstruction_tensor[index], 2, {0});
+                recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
+                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
+                
             }
-        }
 
+            L2[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
+        }
         this->get_eigen_matrix_from_torch_tensor(descriptors_tensor.cpu(), descriptors);
         this->get_eigen_matrix_from_torch_tensor(reconstruction_tensor.cpu(), reconstructed_data);
         this->get_eigen_matrix_from_torch_tensor(reconstruction_loss.cpu(), recon_loss);
+        this->get_eigen_matrix_from_torch_tensor(recon_loss_unreduced.cpu(), recon_loss_unred);
+        this->get_eigen_matrix_from_torch_tensor(torch::exp(decoder_logvar).cpu(), decoder_var);
+        this->get_eigen_matrix_from_torch_tensor(KL.cpu(), KL_loss);
+        this->get_eigen_matrix_from_torch_tensor(L2.cpu(), L2_loss);
         // std::cout << "Eval: Total num of trajectories " << boundaries.size() << ", Num random trajectories " << boundaries.size() - phen.rows() << ", (random ratio: " << 1 - float(phen.rows())/boundaries.size() <<")" << std::endl;
     }
 
     float log_2_pi;
+    int _epochs_trained;
 };
 
 #endif
