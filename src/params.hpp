@@ -15,7 +15,6 @@ struct Params {
     // fixed at first or random initialised from main?
     SFERES_CONST double start_x = 3.13;
     SFERES_CONST double start_y = 1.17;
-    SFERES_CONST double dpf = 0.21;
     SFERES_CONST size_t trajectory_length = 50;
     // 2D
     SFERES_CONST int num_trajectory_elements = 2 * trajectory_length;
@@ -30,7 +29,7 @@ struct Params {
     struct ae {
     SFERES_CONST size_t batch_size = 64;
     SFERES_CONST size_t nb_epochs = 10000;
-    SFERES_CONST size_t min_num_epochs = 0;
+    SFERES_CONST size_t min_num_epochs = 100;
     SFERES_CONST size_t running_mean_num_epochs = 5;
     SFERES_CONST float CV_fraction = 0.80;
     SFERES_CONST float learning_rate = 1e-3;
@@ -52,8 +51,8 @@ struct Params {
 
     struct update {
     // used in deciding how often to apply dim reduction (and training)
-    SFERES_CONST size_t update_frequency = 20; // -1 means exponentially decaying update frequency, how often update BD etc
-    SFERES_CONST size_t update_period = 20;
+    SFERES_CONST size_t update_frequency = 10; // -1 means exponentially decaying update frequency, how often update BD etc
+    SFERES_CONST size_t update_period = 10;
     };
 
     // influences l; targetted size of pop
@@ -85,7 +84,7 @@ struct Params {
         // this gets used in parameters.hpp to transform the genotype to phenotype
         // maximum value of parameters
         // 0 not needed since minimum for genotype is 0 by default
-        SFERES_CONST double max_dpf = 0.5f;
+        SFERES_CONST double max_dpf = 0.3f;
         // minimum value
         SFERES_CONST double max_angle = 2 * M_PI;
     };
@@ -96,8 +95,8 @@ struct Params {
     };
 
     struct stat {
-        SFERES_CONST size_t save_trajectories = 1000;
-        SFERES_CONST size_t save_model = 5000;
+        SFERES_CONST size_t save_trajectories = 2000;
+        SFERES_CONST size_t save_model = 10000;
         SFERES_CONST size_t save_diversity = 500;
     };
 };

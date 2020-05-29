@@ -148,8 +148,11 @@ int main(int argc, char **argv) {
     typedef Params params_t;
     // why have 0?
     Params::nov::l = 0;
+    // pct of random trajectories in population
     Params::random::pct_random = arg.pct_random;
+    // VAE loss (full_loss) or L2 loss
     Params::ae::full_loss = arg.full_loss;
+
 
     typedef Trajectory<params_t> fit_t;
     typedef sferes::gen::EvoFloat<Params::qd::gen_dim, params_t> gen_t;
