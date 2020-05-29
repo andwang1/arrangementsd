@@ -64,9 +64,22 @@ namespace sferes {
                 // std::cout << "traj" << filtered_traj.rows() << ",c " << filtered_traj.cols() << std::endl;
                 // std::cout << "reconstruction" << reconstruction.rows() << ",c " << reconstruction.cols() << std::endl;
 
+                std::cout << "GETS TO HERE" << std::endl;
+
+                #ifdef AURORA
+                ofs << "FORMAT: INDIV_INDEX, DATA\n";
+                for (int i{0}; i < reconstruction.rows(); ++i)
+                {
+                    ofs << i << ", "  <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", " <<  traj.row(i).format(CommaInitFmt) << "\n";
+                }
+                std::cout << "GETS TO HERE" << std::endl;
+
+                #else //VAE or AE
+
                 // hack to make the do while loop below work
                 boundaries.push_back(true);
-            
+
                 // there are more trajectories than reconstructions as there is only one recon per phen
                 size_t traj_index = 0;
                 ofs << "FORMAT: INDIV_INDEX, TYPE, DATA\n";
@@ -88,6 +101,8 @@ namespace sferes {
                     }
                     while (!boundaries[traj_index]);
                 }
+
+                #endif
             }
         };
 

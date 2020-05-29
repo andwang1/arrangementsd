@@ -36,6 +36,10 @@
 //| The fact that you are presently reading this means that you have
 //| had knowledge of the CeCILL license and that you accept its terms.
 
+#ifdef AURORA
+#define AE
+#endif
+
 #include <iostream>
 #include <algorithm>
 #include <unistd.h>
@@ -64,7 +68,12 @@
 #include <sferes/qd/selector/value_selector.hpp>
 #include <sferes/qd/selector/score_proportionate.hpp>
 
+#ifdef AURORA
+#include "modifier/network_loader_pytorch_AURORA.hpp"
+#else
 #include "modifier/network_loader_pytorch.hpp"
+#endif
+
 #include "modifier/dimensionality_reduction.hpp"
 
 #include "stat/stat_current_gen.hpp"
@@ -77,6 +86,8 @@
 #include "params.hpp"
 #include "trajectory.hpp"
 #include "phen.hpp"
+
+
 
 // quick hack to have "write" access to the container, this need to be added to the main API later.
 template<typename Phen, typename Eval, typename Stat, typename FitModifier, typename Select, typename Container, typename Params, typename Exact = stc::Itself>

@@ -12,7 +12,11 @@
 
 struct AutoEncoderImpl : torch::nn::Module {
     AutoEncoderImpl(int input_dim, int en_hid_dim1, int latent_dim, int de_hid_dim1, int de_hid_dim2, int output_dim) :
+            #ifdef AURORA
+            m_encoder(Encoder(output_dim, en_hid_dim1, latent_dim)),
+            #else
             m_encoder(Encoder(input_dim, en_hid_dim1, latent_dim)),
+            #endif
             m_decoder(Decoder(latent_dim, de_hid_dim1, de_hid_dim2, output_dim)) {
         register_module("encoder", m_encoder);
         register_module("decoder", m_decoder);
@@ -24,7 +28,7 @@ struct AutoEncoderImpl : torch::nn::Module {
         return m_decoder(m_encoder(x, encoder_mu, encoder_logvar), decoder_logvar);
     }
 
-    torch::Tensor forward_get_latent_VAE(const torch::Tensor &input, torch::Tensor &encoder_mu, torch::Tensor &encoder_logvar, torch::Tensor &decoder_logvar, torch::Tensor &corresponding_latent) {
+    torch::Tensor forward_get_latent(const torch::Tensor &input, torch::Tensor &encoder_mu, torch::Tensor &encoder_logvar, torch::Tensor &decoder_logvar, torch::Tensor &corresponding_latent) {
         corresponding_latent = m_encoder(input, encoder_mu, encoder_logvar);
         return m_decoder(corresponding_latent, decoder_logvar);
     }
