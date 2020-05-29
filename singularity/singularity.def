@@ -51,7 +51,23 @@ From: airl_lab/default/airl_env:pytorch_ci
    ./setup.sh $SETUP_ARGS
 
 %runscript
-    echo "Please call one of the applications."
+    bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
+
+    export HOME=/tmp/home
+    mkdir $HOME
+
+    CURPATH=$(pwd)
+    cd /git/sferes2/
+    DIRNAME=results_$1
+    PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
+
+    mkdir -p $CURPATH/$DIRNAME/
+    tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
+    mkdir -p $tmp_dir
+
+    echo Launching command \'build/exp/balltrajectorysd/$1 -d $tmp_dir $2 $3 $4\'
+    build/exp/balltrajectorysd/$1 -d $tmp_dir $2 $3 $4
+
 
 %apprun vae
     bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
