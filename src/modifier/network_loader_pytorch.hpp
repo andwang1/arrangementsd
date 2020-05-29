@@ -7,9 +7,13 @@
 #include <iomanip>
 #include <tuple>
 
-#include "autoencoder/encoder.hpp"
-#include "autoencoder/decoder.hpp"
-#include "autoencoder/autoencoder.hpp"
+#include "autoencoder/encoder_VAE.hpp"
+#include "autoencoder/decoder_VAE.hpp"
+// #ifdef AE
+// #include "autoencoder/autoencoder_AE.hpp"
+// #else
+#include "autoencoder/autoencoder_VAE.hpp"
+// #endif
 
 template <typename TParams, typename Exact = stc::Itself>
 class AbstractLoader : public stc::Any<Exact> {
@@ -442,7 +446,7 @@ public:
 
         // stats
         torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
-        torch::Tensor L2 = torch::empty({boundaries.size(), TParams::sim::num_trajectory_elements});
+        torch::Tensor L2 = torch::empty({traj.rows(), TParams::sim::num_trajectory_elements});
         torch::Tensor recon_loss_unreduced = torch::empty_like(L2);
 
         // start at -1 because first loop will take it to 0
@@ -458,12 +462,12 @@ public:
                     (traj_tensor[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
                         + 0.5 * (decoder_logvar[index] + log_2_pi) ,
                     2);
-                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
+                reconstruction_loss[index] += torch::sqrt(torch::sum(recon_loss_unreduced[i]));
             }
             else
             {
                 recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
-                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
+                reconstruction_loss[index] += torch::sqrt(torch::sum(recon_loss_unreduced[i]));
                 
             }
 
