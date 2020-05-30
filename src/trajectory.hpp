@@ -258,16 +258,7 @@ FIT_QD(Trajectory)
     void generate_impact_points(std::vector<float> &wall_impacts, float previous_x, float previous_y, float previous_angle, 
                             float x_delta, float y_delta, float dist_per_frame)
     {
-        if (VERBOSE)
-        {
-            std::cout << "GENERATEIMPACT ENTER\n"  <<
-             "PREV_X" << previous_x << "\n" <<
-             "PREV_Y" << previous_y  <<"\n" <<
-             "PREV_ANGLE" << previous_angle << "\n" <<
-             "x_delta" << x_delta <<"\n" <<
-             "y_delta" << y_delta <<"\n" <<
-            std::endl;
-        }
+
         float epsilon = 1e-4;
 
         float ROOM_H = Params::sim::ROOM_H;
@@ -285,18 +276,18 @@ FIT_QD(Trajectory)
             std::cout << "DOUBLE IPMACT"<< std::endl;
         }
 
-        float impact_1_x;
-        float impact_1_y;
-        float impact_2_x;
-        float impact_2_y;
+        float impact_1_x{-50};
+        float impact_1_y{-50};
+        float impact_2_x{-50};
+        float impact_2_y{-50};
         float new_angle;
 
-        if (previous_x + x_delta > ROOM_W + epsilon)
+        if (previous_x + x_delta > ROOM_W - epsilon)
         {
             impact_1_x = ROOM_W;
             impact_1_y = previous_y + tan(previous_angle) * (ROOM_W - previous_x);
             if (double_impact)
-            // one of the two conditions below must hold if there is a float impact
+            // one of the two conditions below must hold if there is a double impact
             {
                 bool reorder{false};
                 if (impact_1_y > ROOM_H + epsilon)
@@ -378,13 +369,13 @@ FIT_QD(Trajectory)
                 }
             }
         }
-        // if there is no float impact and the x limits are not exceeded, then the impact is on y    
-        if ((previous_y + y_delta > ROOM_H + epsilon) && !double_impact)
+        // if there is no double impact and the x limits are not exceeded, then the impact is on y    
+        if ((previous_y + y_delta > ROOM_H - epsilon) && !double_impact)
         {
             impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
             impact_1_y = ROOM_H;
         }
-        if ((previous_y + y_delta < 0 - epsilon) && !double_impact)
+        if ((previous_y + y_delta < 0 + epsilon) && !double_impact)
         {
             impact_1_x = previous_x - previous_y / tan(previous_angle);
             impact_1_y = 0;
@@ -394,8 +385,8 @@ FIT_QD(Trajectory)
         wall_impacts.push_back(impact_1_y);
         if (VERBOSE)
         {
-            std::cout << "IMPACT1 X " << impact_1_x << std::endl;
-            std::cout << "IMPACT1 Y " << impact_1_y << std::endl;
+            // std::cout << "IMPACT1 X " << impact_1_x << std::endl;
+            // std::cout << "IMPACT1 Y " << impact_1_y << std::endl;
         }
         // this will give two impact if the points are the same, e.g. 10,10 can add a norm comparison to make it only be one
         if (double_impact)
@@ -404,8 +395,26 @@ FIT_QD(Trajectory)
             wall_impacts.push_back(impact_2_y);
             if (VERBOSE)
             {
-                std::cout << "IMPACT2 X " << impact_2_x << std::endl;
-                std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
+                // std::cout << "IMPACT2 X " << impact_2_x << std::endl;
+                // std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
+            }
+        }
+
+        if (VERBOSE)
+        {
+            std::cout << "GENERATEIMPACT ENTER\n"  <<
+             "PREV_X" << previous_x << "\n" <<
+             "PREV_Y" << previous_y  <<"\n" <<
+             "PREV_ANGLE" << previous_angle << "\n" <<
+             "x_delta" << x_delta <<"\n" <<
+             "y_delta" << y_delta <<"\n" <<
+             "impact1x" << impact_1_x <<"\n" <<
+             "impact1y" << impact_1_y <<"\n" <<
+            std::endl;
+            if (double_impact)
+            {
+               std::cout <<              "impact2x" << impact_2_x <<"\n" <<
+             "impact2y" << impact_2_y << std::endl;
             }
         }
 
