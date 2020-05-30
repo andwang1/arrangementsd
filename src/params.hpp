@@ -28,8 +28,10 @@ struct Params {
 
     struct ae {
     SFERES_CONST size_t batch_size = 64;
-    SFERES_CONST size_t nb_epochs = 10000;
-    SFERES_CONST size_t min_num_epochs = 100;
+    // debugging
+    SFERES_CONST size_t nb_epochs = 100;
+    SFERES_CONST size_t min_num_epochs = 0;
+    //
     SFERES_CONST size_t running_mean_num_epochs = 5;
     SFERES_CONST float CV_fraction = 0.80;
     SFERES_CONST float learning_rate = 1e-3;
@@ -56,7 +58,8 @@ struct Params {
     };
 
     // influences l; targetted size of pop
-    SFERES_CONST int resolution = 10000; 
+    //debugging
+    SFERES_CONST int resolution = 100000; 
     
     struct nov {
         static double l;
