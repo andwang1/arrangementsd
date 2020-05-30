@@ -53,6 +53,7 @@ FIT_QD(Trajectory)
         // generate random trajectories
         for (int i{1}; i < Params::random::max_num_random + 1; ++i)
         {
+            Eigen::VectorXf new_traj;
             // std::uniform_real_distribution<> rng_prob(0, 1);
             float prob = rng::rng(rng::gen);
             if (prob <= Params::random::pct_random)
@@ -61,7 +62,7 @@ FIT_QD(Trajectory)
                 if (Params::random::is_random_dpf)
                 {dpf = rng::rng(rng::gen) * Params::parameters::max_dpf;}
                 // generate a random trajectory
-                generate_traj(single_traj, angle, dpf);
+                generate_traj(new_traj, angle, dpf);
                 // 1 means it is a trajectory
                 is_random_trajectories[i] = 1;
                 ++m_num_trajectories;
@@ -70,7 +71,7 @@ FIT_QD(Trajectory)
             {
                 is_random_trajectories[i] = 0;
             }
-            trajectories[i] = single_traj;
+            trajectories[i] = new_traj;
         }
 
         // FITNESS: constant because we're interested in exploration
@@ -256,6 +257,16 @@ FIT_QD(Trajectory)
     void generate_impact_points(std::vector<float> &wall_impacts, float previous_x, float previous_y, float previous_angle, 
                             float x_delta, float y_delta, float dist_per_frame)
     {
+        if (VERBOSE)
+        {
+            std::cout << "GENERATEIMPACT ENTER\n"  <<
+             "PREV_X" << previous_x << "\n" <<
+             "PREV_Y" << previous_y  <<"\n" <<
+             "PREV_ANGLE" << previous_angle << "\n" <<
+             "x_delta" << x_delta <<"\n" <<
+             "y_delta" << y_delta <<"\n" <<
+            std::endl;
+        }
         float epsilon = 1e-4;
 
         float ROOM_H = Params::sim::ROOM_H;
@@ -393,6 +404,16 @@ FIT_QD(Trajectory)
                 std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
             }
         }
+
+        //debug
+        assert(impact_1_x < ROOM_W + 1);
+        assert(impact_1_y < ROOM_H + 1);
+        assert(impact_1_x > -1);
+        assert(impact_1_y > -1);
+        assert(impact_2_x < ROOM_W + 1);
+        assert(impact_2_y < ROOM_H + 1);
+        assert(impact_2_x > -1);
+        assert(impact_2_y > -1);
     }
 
     //    // assuming at most 2 impacts per frame, can add to assert in terms of dist per frame
@@ -566,6 +587,10 @@ FIT_QD(Trajectory)
         
         Eigen::VectorXf impact_pts = Eigen::Map<Eigen::VectorXf> (wall_impacts.data(), wall_impacts.size());
         
+        if (VERBOSE)
+        {std::cout << "CALCDIV VECTOR" << wall_impacts << std::endl;}
+        {std::cout << "CALCDIV EIGEN" << impact_pts << std::endl;}
+
         Eigen::VectorXf traj = trajectories[0];
         Eigen::Vector2f start = traj.head<2>();
         Eigen::Vector2f end = traj.tail<2>();
@@ -593,6 +618,10 @@ FIT_QD(Trajectory)
             {impact_pt = end;}
             else
             {impact_pt = impact_pts.segment(i, 2);}
+            
+            if (VERBOSE)
+            {std::cout << "IMPACTPT" << impact_pt << std::endl;}
+
             slope = impact_pt - start;
             slope.normalize();
 
