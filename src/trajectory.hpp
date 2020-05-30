@@ -410,10 +410,14 @@ FIT_QD(Trajectory)
         assert(impact_1_y < ROOM_H + 1);
         assert(impact_1_x > -1);
         assert(impact_1_y > -1);
+        if (double_impact)
+        {
         assert(impact_2_x < ROOM_W + 1);
         assert(impact_2_y < ROOM_H + 1);
         assert(impact_2_x > -1);
         assert(impact_2_y > -1);
+        }
+        std::cout << "GENERATE IMPACT EXIT" << std::endl;
     }
 
     //    // assuming at most 2 impacts per frame, can add to assert in terms of dist per frame
