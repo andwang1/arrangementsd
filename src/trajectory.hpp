@@ -5,7 +5,6 @@
 #ifndef TRAJECTORY_HPP
 #define TRAJECTORY_HPP
 
-
 #include <cmath>
 #include <cassert>
 #include <array>
@@ -13,12 +12,11 @@
 #include <fstream>
 #include <random>
 
-
-// remove this
-bool VERBOSE = true;
+// print statements for debugging
+bool VERBOSE = false;
 
 namespace rng {
-        //     // Will be used to obtain a seed for the random number engine
+    // Will be used to obtain a seed for the random number engine
     std::random_device rd;  
     std::mt19937 gen(rd()); 
     std::uniform_real_distribution<> rng(0, 1);
@@ -27,7 +25,6 @@ namespace rng {
 FIT_QD(Trajectory)
 {
     public:
-    // Trajectory():_entropy(-1){  }
     Trajectory(){}
 
     template <typename Indiv> 
@@ -53,9 +50,6 @@ FIT_QD(Trajectory)
         // generate random trajectories
         for (int i{1}; i < Params::random::max_num_random + 1; ++i)
         {
-            Eigen::VectorXf new_traj;
-            new_traj.resize(Params::sim::num_trajectory_elements);
-            // std::uniform_real_distribution<> rng_prob(0, 1);
             float prob = rng::rng(rng::gen);
             if (prob <= Params::random::pct_random)
             {
@@ -63,7 +57,7 @@ FIT_QD(Trajectory)
                 if (Params::random::is_random_dpf)
                 {dpf = rng::rng(rng::gen) * Params::parameters::max_dpf;}
                 // generate a random trajectory
-                generate_traj(new_traj, angle, dpf);
+                generate_traj(single_traj, angle, dpf);
                 // 1 means it is a trajectory
                 is_random_trajectories[i] = 1;
                 ++m_num_trajectories;
@@ -72,9 +66,8 @@ FIT_QD(Trajectory)
             {
                 is_random_trajectories[i] = 0;
             }
-            trajectories[i] = new_traj;
+            trajectories[i] = single_traj;
         }
-
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
 
@@ -259,7 +252,7 @@ FIT_QD(Trajectory)
                             float x_delta, float y_delta, float dist_per_frame)
     {
 
-        float epsilon = 1e-4;
+        float epsilon = 1e-5;
 
         float ROOM_H = Params::sim::ROOM_H;
         float ROOM_W = Params::sim::ROOM_W;
@@ -269,17 +262,18 @@ FIT_QD(Trajectory)
 
         bool double_impact{false};
         // check if there will be two impacts
-        if (((projected_x > ROOM_W + epsilon) && (projected_y > ROOM_H + epsilon)) || ((projected_x < 0 - epsilon) && (projected_y < 0 - epsilon)) ||
-            ((projected_x > ROOM_W + epsilon) && (projected_y < 0 - epsilon)) || ((projected_x < 0 - epsilon) && (projected_y > ROOM_H + epsilon)))
+        if (((projected_x > ROOM_W - epsilon) && (projected_y > ROOM_H - epsilon)) || ((projected_x < 0 + epsilon) && (projected_y < 0 + epsilon)) ||
+            ((projected_x > ROOM_W - epsilon) && (projected_y < 0 + epsilon)) || ((projected_x < 0 + epsilon) && (projected_y > ROOM_H - epsilon)))
         {
             double_impact = true;
-            std::cout << "DOUBLE IPMACT"<< std::endl;
+            if (VERBOSE)
+            {std::cout << "DOUBLE IPMACT"<< std::endl;}
         }
-
-        float impact_1_x{-50};
-        float impact_1_y{-50};
-        float impact_2_x{-50};
-        float impact_2_y{-50};
+        // set to {-50} if suspect falling through the net and want to debug
+        float impact_1_x;
+        float impact_1_y;
+        float impact_2_x;
+        float impact_2_y;
         float new_angle;
 
         if (previous_x + x_delta > ROOM_W - epsilon)
@@ -290,14 +284,14 @@ FIT_QD(Trajectory)
             // one of the two conditions below must hold if there is a double impact
             {
                 bool reorder{false};
-                if (impact_1_y > ROOM_H + epsilon)
+                if (impact_1_y > ROOM_H - epsilon)
                 // ball hits the upper y axis limit first, so recalculate
                 {
                     reorder = true;
                     impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
                     impact_1_y = ROOM_H;
                 }
-                else if (impact_1_y < 0 - epsilon)
+                else if (impact_1_y < 0 + epsilon)
                 // ball hits the lower y axis limit first
                 {
                     reorder = true;
@@ -335,13 +329,13 @@ FIT_QD(Trajectory)
             if (double_impact)
             {
                 bool reorder{false};
-                if (impact_1_y > ROOM_H + epsilon)
+                if (impact_1_y > ROOM_H - epsilon)
                 {
                     reorder = true;
                     impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
                     impact_1_y = ROOM_H;
                 }
-                else if (impact_1_y < 0 - epsilon)
+                else if (impact_1_y < 0 + epsilon)
                 {
                     reorder = true;
                     impact_1_x = previous_x - previous_y / tan(previous_angle);
@@ -385,8 +379,8 @@ FIT_QD(Trajectory)
         wall_impacts.push_back(impact_1_y);
         if (VERBOSE)
         {
-            // std::cout << "IMPACT1 X " << impact_1_x << std::endl;
-            // std::cout << "IMPACT1 Y " << impact_1_y << std::endl;
+            std::cout << "IMPACT1 X " << impact_1_x << std::endl;
+            std::cout << "IMPACT1 Y " << impact_1_y << std::endl;
         }
         // this will give two impact if the points are the same, e.g. 10,10 can add a norm comparison to make it only be one
         if (double_impact)
@@ -395,8 +389,8 @@ FIT_QD(Trajectory)
             wall_impacts.push_back(impact_2_y);
             if (VERBOSE)
             {
-                // std::cout << "IMPACT2 X " << impact_2_x << std::endl;
-                // std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
+                std::cout << "IMPACT2 X " << impact_2_x << std::endl;
+                std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
             }
         }
 
@@ -413,7 +407,7 @@ FIT_QD(Trajectory)
             std::endl;
             if (double_impact)
             {
-               std::cout <<              "impact2x" << impact_2_x <<"\n" <<
+               std::cout << "impact2x" << impact_2_x <<"\n" <<
              "impact2y" << impact_2_y << std::endl;
             }
         }
@@ -430,152 +424,9 @@ FIT_QD(Trajectory)
         assert(impact_2_x > -1);
         assert(impact_2_y > -1);
         }
-        std::cout << "GENERATE IMPACT EXIT" << std::endl;
+        if (VERBOSE)
+        {std::cout << "GENERATE IMPACT EXIT" << std::endl;}
     }
-
-    //    // assuming at most 2 impacts per frame, can add to assert in terms of dist per frame
-    // // generates impact points and makes sure the order is correct
-    // void generate_impact_points(std::vector<float> &wall_impacts, float previous_x, float previous_y, float previous_angle, 
-    //                             float x_delta, float y_delta, float dist_per_frame)
-    // {
-    //     float ROOM_H = Params::sim::ROOM_H;
-    //     float ROOM_W = Params::sim::ROOM_W;
-
-    //     float epsilon = 1e-8;
-
-    //     float projected_x = previous_x + x_delta;
-    //     float projected_y = previous_y + y_delta;
-
-    //     bool double_impact{false};
-    //     // check if there will be two impacts
-    //     if (((projected_x > ROOM_W + epsilon) && (projected_y > ROOM_H + epsilon)) || ((projected_x < 0 - epsilon) && (projected_y < 0 - epsilon)) ||
-    //         ((projected_x > ROOM_W + epsilon) && (projected_y < 0 - epsilon)) || ((projected_x < 0 - epsilon) && (projected_y > ROOM_H + epsilon)))
-    //     {double_impact = true;}
-
-    //     float impact_1_x;
-    //     float impact_1_y;
-    //     float impact_2_x;
-    //     float impact_2_y;
-    //     float new_angle;
-
-    //     if (previous_x + x_delta > ROOM_W + epsilon)
-    //     {
-    //         impact_1_x = ROOM_W;
-    //         impact_1_y = previous_y + tan(previous_angle) * (ROOM_W - previous_x);
-    //         if (double_impact)
-    //         // one of the two conditions below must hold if there is a double impact
-    //         {
-    //             bool reorder{false};
-    //             if (impact_1_y > ROOM_H + epsilon)
-    //             // ball hits the upper y axis limit first, so recalculate
-    //             {
-    //                 reorder = true;
-    //                 impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
-    //                 impact_1_y = ROOM_H;
-    //             }
-    //             else if (impact_1_y < 0 - epsilon)
-    //             // ball hits the lower y axis limit first
-    //             {
-    //                 reorder = true;
-    //                 impact_1_x = previous_x - previous_y / tan(previous_angle);
-    //                 impact_1_y = 0;
-    //             }
-    //             else
-    //             // no reordering required
-    //             {
-    //                 impact_2_y = ROOM_H;
-    //                 if (previous_angle < M_PI)
-    //                 {
-    //                     new_angle = (M_PI - previous_angle);
-    //                     impact_2_x = ROOM_W + (ROOM_H - impact_1_y) / tan(new_angle);
-    //                 }
-    //                 else 
-    //                 {
-    //                     new_angle = (3 * M_PI - previous_angle);
-    //                     impact_2_x = ROOM_W - impact_1_y / tan(new_angle);
-    //                 }
-    //             }
-    //             if (reorder)
-    //             // calculate second impact point after reordering
-    //             {
-    //                 new_angle = (2 * M_PI - previous_angle);
-    //                 impact_2_x = ROOM_W;
-    //                 impact_2_y = impact_1_y + tan(new_angle) * (ROOM_W - impact_1_x);
-    //             }
-    //         }
-    //     }
-    //     else if (previous_x + x_delta < 0 + epsilon)
-    //     {
-    //         impact_1_x = 0;
-    //         impact_1_y = previous_y - tan(previous_angle) * previous_x;
-    //         if (double_impact)
-    //         {
-    //             bool reorder{false};
-    //             if (impact_1_y > ROOM_H + epsilon)
-    //             {
-    //                 reorder = true;
-    //                 impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
-    //                 impact_1_y = ROOM_H;
-    //             }
-    //             else if (impact_1_y < 0 - epsilon)
-    //             {
-    //                 reorder = true;
-    //                 impact_1_x = previous_x - previous_y / tan(previous_angle);
-    //                 impact_1_y = 0;
-    //             }
-    //             else
-    //             {
-    //                 impact_2_y = 0;
-    //                 if (previous_angle < M_PI) 
-    //                 {
-    //                     new_angle = (M_PI - previous_angle);
-    //                     impact_2_x = (ROOM_H - impact_1_y) / tan(new_angle);
-    //                 }
-    //                 else 
-    //                 {
-    //                     new_angle = (3 * M_PI - previous_angle);
-    //                     impact_2_x = impact_1_y / tan(new_angle);
-    //                 }
-    //             }
-    //             if (reorder)
-    //             {
-    //                 new_angle = (2 * M_PI - previous_angle);
-    //                 impact_2_x = 0;
-    //                 impact_2_y = impact_1_y + tan(new_angle) * -impact_1_x;
-    //             }
-    //         }
-    //     }
-    //     // if there is no double impact and the x limits are not exceeded, then the impact is on y    
-    //     if ((previous_y + y_delta > ROOM_H + epsilon) && !double_impact)
-    //     {
-    //         impact_1_x = previous_x + (ROOM_H - previous_y) / tan(previous_angle);
-    //         impact_1_y = ROOM_H;
-    //     }
-    //     if ((previous_y + y_delta < 0 - epsilon) && !double_impact)
-    //     {
-    //         impact_1_x = previous_x - previous_y / tan(previous_angle);
-    //         impact_1_y = 0;
-    //     }
-
-    //     wall_impacts.push_back(impact_1_x);
-    //     wall_impacts.push_back(impact_1_y);
-    //     if (VERBOSE)
-    //     {
-    //         std::cout << "IMPACT1 X " << impact_1_x << std::endl;
-    //         std::cout << "IMPACT1 Y " << impact_1_y << std::endl;
-    //     }
-    //     // this will give two impact if the points are the same, e.g. 10,10 can add a norm comparison to make it only be one
-    //     if (double_impact)
-    //     {
-    //         wall_impacts.push_back(impact_2_x);
-    //         wall_impacts.push_back(impact_2_y);
-    //         if (VERBOSE)
-    //         {
-    //             std::cout << "IMPACT2 X " << impact_2_x << std::endl;
-    //             std::cout << "IMPACT2 Y " << impact_2_y << std::endl;
-    //         }
-    //     }
-    // }
 
 
     template<typename block_t>
@@ -603,11 +454,6 @@ FIT_QD(Trajectory)
     {
         
         Eigen::VectorXf impact_pts = Eigen::Map<Eigen::VectorXf> (wall_impacts.data(), wall_impacts.size());
-        
-        if (VERBOSE)
-        {std::cout << "CALCDIV VECTOR" << wall_impacts << std::endl;}
-        {std::cout << "CALCDIV EIGEN" << impact_pts << std::endl;}
-
         Eigen::VectorXf traj = trajectories[0];
         Eigen::Vector2f start = traj.head<2>();
         Eigen::Vector2f end = traj.tail<2>();
@@ -657,7 +503,7 @@ FIT_QD(Trajectory)
             }
 
             if (VERBOSE)
-            std::cout << "\nSTART\n" << start << "\nEND\n" << impact_pt << "\nSLOPE\n" << slope << "\nFactor " << factor << "MAXFACTOR" << max_factor << std::endl;
+            {std::cout << "\nSTART\n" << start << "\nEND\n" << impact_pt << "\nSLOPE\n" << slope << "\nFactor " << factor << "MAXFACTOR" << max_factor << std::endl;}
 
             for (int j{0}; j * factor < max_factor; ++j)
             // the end point of one line is included as the start point in the next line
@@ -701,11 +547,6 @@ FIT_QD(Trajectory)
         }
         return bucket_number;
     }
-
-
-
-    protected:
-    float m_entropy;
 
     // // generates images from the trajectories fed into the function
     // void generate_image(std::array<Eigen::Matrix<double, discretisation, discretisation>, trajectory_length> &image_frames,
@@ -797,16 +638,15 @@ FIT_QD(Trajectory)
     // }
 
     private:
-    // Eigen::VectorXd traj; 
-    // Eigen::VectorXd traj_impact_points;
-    
-    // random trajectories + 1 real one
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
+    
+    // random trajectories + 1 real one
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories {1};
     size_t m_num_trajectories;
     std::vector<float> wall_impacts;
+    float m_entropy;
 
     // for debugging
     float _angle;

@@ -28,9 +28,8 @@ struct Params {
 
     struct ae {
     SFERES_CONST size_t batch_size = 64;
-    // debugging
-    SFERES_CONST size_t nb_epochs = 100;
-    SFERES_CONST size_t min_num_epochs = 0;
+    SFERES_CONST size_t nb_epochs = 20000;
+    SFERES_CONST size_t min_num_epochs = 100;
     //
     SFERES_CONST size_t running_mean_num_epochs = 5;
     SFERES_CONST float CV_fraction = 0.80;
@@ -46,9 +45,7 @@ struct Params {
     // output_dim = sim::trajectory_length
 
     // KL weight
-    SFERES_CONST size_t beta = 0;
-
-    // 
+    SFERES_CONST size_t beta = 1;
     };
 
     struct update {
@@ -57,9 +54,8 @@ struct Params {
     SFERES_CONST size_t update_period = 10;
     };
 
-    // influences l; targetted size of pop
-    //debugging
-    SFERES_CONST int resolution = 100000; 
+    // influences l; targeted size of pop
+    SFERES_CONST int resolution = 20000; 
     
     struct nov {
         static double l;
@@ -84,7 +80,7 @@ struct Params {
         SFERES_CONST float eta_c = 15.0f;
     };
     struct parameters {
-        // this gets used in parameters.hpp to transform the genotype to phenotype
+        // this gets used in phen.hpp to transform the genotype to phenotype
         // maximum value of parameters
         // 0 not needed since minimum for genotype is 0 by default
         SFERES_CONST double max_dpf = 0.3f;
@@ -100,8 +96,7 @@ struct Params {
     struct stat {
         SFERES_CONST size_t save_trajectories = 2000;
         SFERES_CONST size_t save_model = 10000;
-        // debug
-        SFERES_CONST size_t save_diversity = 10;
+        SFERES_CONST size_t save_diversity = 500;
     };
 };
 
