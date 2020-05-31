@@ -138,7 +138,7 @@ public:
 
 
     void get_stats(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, 
-                   MatrixXf_rm &descriptors, MatrixXf_rm &recon_loss, MatrixXf_rm &recon_loss_unred, MatrixXf_rm &reconstruction, 
+                   MatrixXf_rm &descriptors, MatrixXf_rm &reconstruction, MatrixXf_rm &recon_loss, MatrixXf_rm &recon_loss_unred,  
                    MatrixXf_rm &L2_loss, MatrixXf_rm &KL_loss, MatrixXf_rm &decoder_var) {
         eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
     }
@@ -235,7 +235,7 @@ public:
                 _prep_traj.apply(filtered_traj, scaled_filtered_traj);
 
                 torch::Tensor T1, T2;
-                this->get_tuple_from_eigen_matrices(phen, filtered_traj, boundaries, T1, T2, batches[0]);
+                this->get_tuple_from_eigen_matrices(phen, scaled_filtered_traj, boundaries, T1, T2, batches[0]);
         } 
         else 
         {
@@ -347,7 +347,6 @@ public:
                 {
                     if (std::get<2>(tup)[i])
                     {++index;}
-                    // second arg is type of norm, here L2, third argument is which dimensions to sum over
                     // tup[1] is the trajectories tensor
                     // std::cout << "BEFORE NORM" << std::endl;
                     // std::cout << "recon" << reconstruction_tensor[index] << std::endl;
@@ -355,14 +354,12 @@ public:
                     // loss_tensor / (2 * torch::exp(decoder_logvar) + 0.0001) + 0.5 * (decoder_logvar + log_2_pi)
                     if (TParams::ae::full_loss)
                     {
-                        loss_tensor += torch::norm(
-                            (std::get<1>(tup)[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
-                                + 0.5 * (decoder_logvar[index] + log_2_pi) ,
-                            2, {0});
+                        loss_tensor += torch::sum(torch::pow(std::get<1>(tup)[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index]))
+                                + 0.5 * (decoder_logvar[index] + log_2_pi));
                     }
                     else
                     {
-                        loss_tensor += torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0});
+                        loss_tensor += torch::sum(torch::pow(std::get<1>(tup)[i] - reconstruction_tensor[index], 2));
                     }
                     // std::cout << "L2\t" << torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0}).item<double>();
                     // std::cout << "\tVAR\t" << torch::mean(torch::exp(decoder_logvar[index])).item<double>();
@@ -462,6 +459,9 @@ public:
         torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(phen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
         torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
 
+        std::cout << traj_tensor << "SCALEDTRAJ" << std::endl;
+        std::cout << reconstruction_tensor << "SCALEDRECON" << std::endl;
+
         // stats
         #ifdef VAE
         torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
@@ -483,22 +483,19 @@ public:
             #ifdef VAE
             if (TParams::ae::full_loss)
             {
-                recon_loss_unreduced[i] = torch::pow(
-                    (traj_tensor[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index]))
-                        + 0.5 * (decoder_logvar[index] + log_2_pi) ,
-                    2);
-                reconstruction_loss[index] += torch::sqrt(torch::sum(recon_loss_unreduced[i]));
+                recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + log_2_pi);
+                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             }
             else
             {
                 recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
-                reconstruction_loss[index] += torch::sqrt(torch::sum(recon_loss_unreduced[i]));
+                reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             }
             L2[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
 
             #else //AE
             recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
-            reconstruction_loss[index] += torch::sqrt(torch::sum(recon_loss_unreduced[i]));
+            reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             #endif
 
             ++internal_avg_counter;
@@ -515,6 +512,7 @@ public:
         this->get_eigen_matrix_from_torch_tensor(recon_loss_unreduced.cpu(), recon_loss_unred);
 
         _prep_traj.deapply(scaled_reconstructed_data, reconstructed_data);
+        std::cout << "UNSCALED RECON" << reconstructed_data << std::endl;
 
         #ifdef VAE
         this->get_eigen_matrix_from_torch_tensor(torch::exp(decoder_logvar).cpu(), decoder_var);
