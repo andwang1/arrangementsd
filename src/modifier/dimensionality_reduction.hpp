@@ -206,7 +206,7 @@ namespace sferes {
                 Mat scaled_data;
                 prep.apply(phen_d, scaled_data);
                 Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                network->eval(phen_d, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                network->eval(scaled_data, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;
             }
