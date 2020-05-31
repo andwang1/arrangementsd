@@ -122,6 +122,7 @@ struct Arguments {
     size_t number_cpus;
     double pct_random;
     bool full_loss;
+    size_t number_gen;
 };
 
 void get_arguments(const boost::program_options::options_description &desc, Arguments &arg, int argc, char **argv) {
@@ -135,6 +136,7 @@ void get_arguments(const boost::program_options::options_description &desc, Argu
     arg.number_cpus = vm["number-cpus"].as<size_t>();
     arg.pct_random = vm["pct-random"].as<double>();
     arg.full_loss = vm["full-loss"].as<bool>();
+    arg.number_gen = vm["number-gen"].as<size_t>();
 }
 
 int main(int argc, char **argv) {
@@ -142,6 +144,8 @@ int main(int argc, char **argv) {
     boost::program_options::options_description desc;
     Arguments arg{};
 
+    desc.add_options()
+                ("number-gen", boost::program_options::value<size_t>(), "Set Number of Generations");
     desc.add_options()
                 ("number-cpus", boost::program_options::value<size_t>(), "Set Number of CPUs");
     desc.add_options()
@@ -157,8 +161,11 @@ int main(int argc, char **argv) {
     tbb::task_scheduler_init init(arg.number_cpus);
 
     typedef Params params_t;
-    // why have 0?
     Params::nov::l = 0;
+
+    // cmd line arguments
+    // number of generations
+    Params::pop::nb_gen = arg.number_gen;
     // pct of random trajectories in population
     Params::random::pct_random = arg.pct_random;
     // VAE loss (full_loss) or L2 loss

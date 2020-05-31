@@ -67,7 +67,7 @@ struct Params {
 
     struct pop {
         SFERES_CONST size_t size = 256;
-        SFERES_CONST size_t nb_gen = 20001;
+        static size_t nb_gen;
         SFERES_CONST size_t dump_period = 1000;
     };
 
@@ -103,6 +103,7 @@ struct Params {
 double Params::nov::l;
 double Params::random::pct_random;
 bool Params::ae::full_loss;
+size_t Params::pop::nb_gen;
 
 
 #endif //PARAMS_HPP
