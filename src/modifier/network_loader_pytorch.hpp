@@ -330,11 +330,12 @@ public:
                 // not necessary as layers enforce grad
                 // std::get<0>(tup).set_requires_grad(true);
 
+		torch::Tensor traj = std::get<1>(tup).to(this->m_device);
+
                 // tup[0] is the phenotype
                 torch::Tensor reconstruction_tensor = auto_encoder->forward_(std::get<0>(tup).to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar);
                 
-                torch::Tensor loss_tensor = torch::zeros(1);
-                loss_tensor.to(this->m_device);
+                torch::Tensor loss_tensor = torch::zeros(1, torch::device(this->m_device));
 
                 #ifdef VAE
                 loss_tensor += -0.5 * TParams::ae::beta * torch::sum(1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
@@ -354,12 +355,12 @@ public:
                     // loss_tensor / (2 * torch::exp(decoder_logvar) + 0.0001) + 0.5 * (decoder_logvar + log_2_pi)
                     if (TParams::ae::full_loss)
                     {
-                        loss_tensor += torch::sum(torch::pow(std::get<1>(tup)[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index]))
+                        loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index]))
                                 + 0.5 * (decoder_logvar[index] + log_2_pi));
                     }
                     else
                     {
-                        loss_tensor += torch::sum(torch::pow(std::get<1>(tup)[i] - reconstruction_tensor[index], 2));
+                        loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2));
                     }
                     // std::cout << "L2\t" << torch::norm(std::get<1>(tup)[i] - reconstruction_tensor[index], 2, {0}).item<double>();
                     // std::cout << "\tVAR\t" << torch::mean(torch::exp(decoder_logvar[index])).item<double>();
@@ -452,13 +453,13 @@ public:
         // _prep_traj.apply(filtered_traj, scaled_filtered_traj);
 
         this->get_torch_tensor_from_eigen_matrix(filtered_traj, traj_tensor);
+	traj_tensor = traj_tensor.to(this->m_device);
 
         torch::Tensor encoder_mu, encoder_logvar, decoder_logvar;
                 
         torch::Tensor descriptors_tensor;
         torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(phen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
-        torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
-
+        torch::Tensor reconstruction_loss = torch::zeros(phen.rows(), torch::device(this->m_device));
         // std::cout << traj_tensor << "SCALEDTRAJ" << std::endl;
         // std::cout << reconstruction_tensor << "SCALEDRECON" << std::endl;
 
@@ -466,8 +467,9 @@ public:
         #ifdef VAE
         torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
         #endif
-        torch::Tensor L2 = torch::empty({traj.rows(), TParams::sim::num_trajectory_elements});
-        torch::Tensor recon_loss_unreduced = torch::empty_like(L2);
+
+        torch::Tensor L2 = torch::empty({traj.rows(), TParams::sim::num_trajectory_elements}, torch::device(this->m_device));
+        torch::Tensor recon_loss_unreduced = torch::empty_like(L2, torch::device(this->m_device));
 
         int index{0};
         int internal_avg_counter{0};
