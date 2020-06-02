@@ -330,7 +330,7 @@ public:
                 // not necessary as layers enforce grad
                 // std::get<0>(tup).set_requires_grad(true);
 
-		torch::Tensor traj = std::get<1>(tup).to(this->m_device);
+		        torch::Tensor traj = std::get<1>(tup).to(this->m_device);
 
                 // tup[0] is the phenotype
                 torch::Tensor reconstruction_tensor = auto_encoder->forward_(std::get<0>(tup).to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar);

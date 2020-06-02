@@ -323,11 +323,14 @@ public:
                 // not necessary as layers enforce grad
                 // std::get<0>(tup).set_requires_grad(true);
 
+                // tup[1] is the trajectories tensor
+                torch::Tensor traj = std::get<1>(tup).to(this->m_device);
+
                 // tup[0] is the phenotype
-                torch::Tensor reconstruction_tensor = auto_encoder->forward_(std::get<1>(tup).to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar);
+                torch::Tensor reconstruction_tensor = auto_encoder->forward_(traj, encoder_mu, encoder_logvar, decoder_logvar);
 
                 // for training can just take the sum as usual, for eval need to do some averaging as there are fewer phenotypes than trajectories
-                torch::Tensor loss_tensor = torch::sum(torch::pow(std::get<1>(tup) - reconstruction_tensor, 2), {1}).mean();
+                torch::Tensor loss_tensor = torch::sum(torch::pow(traj - reconstruction_tensor, 2), {1}).mean();
                 loss_tensor.backward();
 
                 
@@ -406,15 +409,15 @@ public:
         // _prep_traj.apply(filtered_traj, scaled_filtered_traj);
 
         this->get_torch_tensor_from_eigen_matrix(filtered_traj, traj_tensor);
-
+        traj_tensor = traj_tensor.to(this->m_device);
 
         torch::Tensor encoder_mu, encoder_logvar, decoder_logvar;
                 
         torch::Tensor descriptors_tensor;
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(traj_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
+        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(traj_tensor, encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor);
         
-        torch::Tensor averaged_descriptors_tensor = torch::zeros({phen.rows(), TParams::qd::behav_dim});
-        torch::Tensor reconstruction_loss = torch::zeros(phen.rows());
+        torch::Tensor averaged_descriptors_tensor = torch::zeros({phen.rows(), TParams::qd::behav_dim}, torch::device(this->m_device));
+        torch::Tensor reconstruction_loss = torch::zeros(phen.rows(), torch::device(this->m_device));
         torch::Tensor recon_loss_unreduced = torch::pow(traj_tensor - reconstruction_tensor, 2);
 
         // std::cout << "INPUT" << traj_tensor.sizes() << std::endl;
