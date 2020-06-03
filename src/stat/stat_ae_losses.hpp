@@ -39,7 +39,7 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
 
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
 
                 
 

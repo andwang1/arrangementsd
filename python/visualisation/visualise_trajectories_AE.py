@@ -41,8 +41,6 @@ for i in range(num_individuals + 1):
             break
     plotting_data.append(indiv_data)
 
-
-
 # Plotting
 len_trajectory = len(indiv_data[0])
 

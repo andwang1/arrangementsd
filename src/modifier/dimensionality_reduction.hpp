@@ -134,6 +134,15 @@ namespace sferes {
                 }
             }
 
+            void get_stats(const Mat &phen, const Mat &traj, const Eigen::VectorXi &is_traj, 
+                Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
+                Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
+            {
+                Mat scaled_data;
+                _prep.apply(phen, scaled_data);
+                network->eval(scaled_data, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+            }
+
             void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_random_d) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
                 _prep.init(phen_d);

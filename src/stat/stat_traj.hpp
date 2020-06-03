@@ -46,7 +46,7 @@ namespace sferes {
                 
                 // get all data
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
