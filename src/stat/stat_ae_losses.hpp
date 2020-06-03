@@ -39,7 +39,7 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
 
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_stats(phen, traj, is_trajectory, descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
 
                 
 
@@ -48,9 +48,10 @@ namespace sferes {
                 double recon = recon_loss.mean();
 
                 #ifdef VAE
-                double L2 = L2_loss.mean();
-                double KL = KL_loss.mean();
-                double var = decoder_var.mean();
+                // these three are unreduced, need row wise sum and then mean
+                double L2 = L2_loss.rowwise().sum().mean();
+                double KL = KL_loss.rowwise().sum().mean();
+                double var = decoder_var.rowwise().sum().mean();
                 ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var;
                 #else
                 ofs << ea.gen() << ", " << recon;
