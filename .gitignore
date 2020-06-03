@@ -2,7 +2,7 @@
 .vscode/
 *.pyc
 
-results/
+results*/
 resources/ae*
 resources/checkpoint
 resuls/
