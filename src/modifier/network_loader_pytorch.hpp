@@ -468,7 +468,7 @@ public:
         torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
         #endif
 
-        torch::Tensor L2 = torch::empty({traj.rows(), TParams::sim::num_trajectory_elements}, torch::device(this->m_device));
+        torch::Tensor L2 = torch::zeros({traj.rows(), TParams::sim::num_trajectory_elements}, torch::device(this->m_device));
         torch::Tensor recon_loss_unreduced = torch::empty_like(L2, torch::device(this->m_device));
 
         int index{0};
