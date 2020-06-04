@@ -46,16 +46,24 @@ namespace sferes {
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
                 double recon = recon_loss.mean();
-                double L2_real_traj = L2_loss_real_trajectories.mean();
+                
 
                 #ifdef VAE
                 // these three are unreduced, need row wise sum and then mean
                 double L2 = L2_loss.rowwise().sum().mean();
                 double KL = KL_loss.rowwise().sum().mean();
                 double var = decoder_var.rowwise().sum().mean();
+                double L2_real_traj = L2_loss_real_trajectories.mean();
                 ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var << ", " << L2_real_traj;
                 #else
+
+                #ifdef AURORA
+                ofs << ea.gen() << ", " << recon;
+                #else // AE
+                double L2_real_traj = L2_loss_real_trajectories.mean();
                 ofs << ea.gen() << ", " << recon << ", " << L2_real_traj;
+                #endif 
+
                 #endif
 
                 // training frequency
