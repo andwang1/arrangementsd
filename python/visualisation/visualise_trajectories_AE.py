@@ -1,20 +1,24 @@
 import matplotlib.pyplot as plt
 import time
+import os
 from exp_config import *
 
+variant = "ae"
+random = "0.0"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/results_balltrajectorysd_ae/'
-DIR_PATH = 'gen8000_pctrandom0.0/2020-06-01_18_15_45_81830/'
+BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/second_run/'
+EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}/'
+os.chdir(BASE_PATH+EXP_PATH)
+PID = os.listdir()[0] + "/"
+os.chdir(BASE_PATH)
 FILE_NAME = f'traj_{GEN_NUMBER}.dat'
 
-FILE = BASE_PATH + DIR_PATH + FILE_NAME
+FILE = BASE_PATH + EXP_PATH + PID + FILE_NAME
 
 
 # PLOTTING PARAMETERS
-max_error = 10
 PAUSE = 2
-
 
 with open(FILE, 'r') as f:
     lines = f.readlines()[1:]
@@ -53,11 +57,10 @@ for indiv in plotting_data:
     ax1.set_xlim([0, ROOM_W])
 
     ax2 = f.add_subplot(spec[2, :])
-    ax2.set_ylim([0, max_error])
+
     ax2.set_xlim([0, len_trajectory / 2])
     ax2.set_xlabel("Trajectory Step")
     ax2.yaxis.grid(True)
-
     ax1.set_title("Trajectories")
     ax2.set_title("L2 Error", loc="left")
 
@@ -70,8 +73,7 @@ for indiv in plotting_data:
     x_label = label[::2]
     y_label = label[1::2]
 
-    print(prediction)
-    print(label)
+    ax2.set_ylim([0, max(pred_error)])
 
     for i, j in zip(x_label, y_label):
         ax1.scatter(i, j, c="black")
