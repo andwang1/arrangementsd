@@ -136,11 +136,11 @@ namespace sferes {
 
             void get_stats(const Mat &phen, const Mat &traj, const Eigen::VectorXi &is_traj, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
-                Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
+                Mat &L2_loss, Mat &L2_loss_real_trajectories, Mat &KL_loss, Mat &decoder_var) const
             {
                 Mat scaled_data;
                 _prep.apply(phen, scaled_data);
-                network->eval(scaled_data, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                network->eval(scaled_data, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
             }
 
             void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_random_d) {
@@ -214,8 +214,8 @@ namespace sferes {
                 // _prep not initiialised again, uses the last one again?
                 Mat scaled_data;
                 prep.apply(phen_d, scaled_data);
-                Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                network->eval(scaled_data, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
+                network->eval(scaled_data, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;
             }

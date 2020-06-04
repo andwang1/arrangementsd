@@ -40,10 +40,11 @@ public:
               MatrixXf_rm &recon_loss,
               MatrixXf_rm &recon_loss_unred,
               MatrixXf_rm &L2_loss,
+              MatrixXf_rm &L2_loss_real_trajectories,
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &decoder_var,
               bool is_train_set = false) {
-        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, is_train_set);
+        stc::exact(this)->eval(phen, traj, is_traj, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var, is_train_set);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor, std::vector<bool>>> &batches, 
@@ -119,13 +120,13 @@ public:
 
     void get_reconstruction(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, 
                             MatrixXf_rm &reconstruction) {
-        MatrixXf_rm descriptors, recon_loss, L2_loss, KL_loss, decoder_var;
-        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss, L2_loss, KL_loss, decoder_var);
+        MatrixXf_rm descriptors, recon_loss, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
+        eval(phen, traj, is_traj, descriptors, reconstruction, recon_loss, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
     }
 
     float get_avg_recon_loss(const MatrixXf_rm &phen, const MatrixXf_rm &traj, const Eigen::VectorXi &is_traj, bool is_train_set = false) {
-        MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-        eval(phen, traj, is_traj, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, is_train_set);
+        MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
+        eval(phen, traj, is_traj, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var, is_train_set);
         return recon_loss.mean();
     }
 
@@ -373,6 +374,7 @@ public:
               MatrixXf_rm &recon_loss,
               MatrixXf_rm &recon_loss_unred,
               MatrixXf_rm &L2_loss,
+              MatrixXf_rm &L2_loss_real_trajectories,
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &decoder_var,
               bool is_train_set = false) 

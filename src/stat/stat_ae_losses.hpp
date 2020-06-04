@@ -38,23 +38,24 @@ namespace sferes {
                 Eigen::VectorXi is_trajectory;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
 
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
 
                 
 
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
                 double recon = recon_loss.mean();
+                double L2_real_traj = L2_loss_real_trajectories.mean();
 
                 #ifdef VAE
                 // these three are unreduced, need row wise sum and then mean
                 double L2 = L2_loss.rowwise().sum().mean();
                 double KL = KL_loss.rowwise().sum().mean();
                 double var = decoder_var.rowwise().sum().mean();
-                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var;
+                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var << ", " << L2_real_traj;
                 #else
-                ofs << ea.gen() << ", " << recon;
+                ofs << ea.gen() << ", " << recon << ", " << L2_real_traj;
                 #endif
 
                 // training frequency
