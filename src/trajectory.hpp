@@ -30,7 +30,7 @@ FIT_QD(Trajectory)
     template <typename Indiv> 
     void eval(Indiv & ind){
 
-        // get the data from ind which is the pheno type
+        // get the data from ind which is the geno type
         // genotype specifies the size, = 2? and then need to specify the phenotype max min stuff
         float angle = ind.data(0);
         float dpf = ind.data(1);

@@ -64,16 +64,24 @@ namespace sferes {
             template<typename EA>
             void update_descriptors(EA &ea) {
                 Mat phen_d, traj_d;
-                std::vector<int> is_random_d;
-                collect_dataset(phen_d, traj_d, is_random_d, ea, true); // gather the data from the indiv in the archive into a dataset
+                std::vector<int> is_trajectory;
+                collect_dataset(phen_d, traj_d, is_trajectory, ea, true); // gather the data from the indiv in the archive into a dataset
                 // change train_netework
-                train_network(phen_d, traj_d, is_random_d);
+
+                // IF OPTION ENABLED -> get top % of reconstruction errors (aggregate, since dont know which ones are good) - call get stats
+                // implement a debug option to print out how many are random, which are the target ones (get from fitness: num_random)
+                // copy the phenotypes fully (need to create the content vector here, and pass it to collect_dataset)
+                // call a new function (eval) that returns indices of highest reconstruction error
+                // get a new vector of phenotypes, evaluate it
+                // either append to existing vector and adapt collect_dataset a bit, or pass into collect_dataset and concat matrices
+
+
+                train_network(phen_d, traj_d, is_trajectory);
                 update_container(ea);  // clear the archive and re-fill it using the new network
-                // ea.pop_advers.clear(); // clearing adversarial examples
             }
 
             template<typename EA>
-            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_random_d, EA &ea, bool training = false) const {
+            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_trajectory, EA &ea, bool training = false) const {
                 std::vector<typename EA::indiv_t> content;
                 
                 // content will contain all phenotypes
@@ -87,17 +95,17 @@ namespace sferes {
                 if (training)
                 {std::random_shuffle (content.begin(), content.end());}
                 
-                collect_dataset(phen_d, traj_d, is_random_d, ea, content, training);
+                collect_dataset(phen_d, traj_d, is_trajectory, ea, content, training);
             }
 
             template<typename EA>
-            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_random_d,
+            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_trajectory,
                     EA &ea, const std::vector<typename EA::indiv_t>& content, bool training = false) const {
                 
                 // number of phenotypes
                 size_t pop_size = content.size();
                 get_phen(content, phen_d);
-                get_trajectories(content, traj_d, is_random_d);
+                get_trajectories(content, traj_d, is_trajectory);
                 
                 if (training) {
                     std::cout << "Gen " << ea.gen() << " train set composed of " << phen_d.rows() << " phenotypes - Archive size : " << pop_size << std::endl;
@@ -115,9 +123,9 @@ namespace sferes {
                 }
             }
 
-            void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_random_d) const {
+            void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_trajectory) const {
                 data = Mat(pop.size() * (Params::random::max_num_random + 1), Params::sim::num_trajectory_elements);
-                is_random_d.reserve(pop.size() * (Params::random::max_num_random + 1));
+                is_trajectory.reserve(pop.size() * (Params::random::max_num_random + 1));
                 
                 size_t matrix_row_index{0};
                 for (size_t i = 0; i < pop.size(); ++i) 
@@ -128,7 +136,7 @@ namespace sferes {
                     // populate the vector
                     for (size_t j {0}; j < Params::random::max_num_random + 1; ++j)
                     {
-                        is_random_d.push_back(pop[i]->fit().is_random(j));
+                        is_trajectory.push_back(pop[i]->fit().is_random(j));
                     }
                     matrix_row_index += Params::random::max_num_random + 1;
                 }
@@ -143,13 +151,13 @@ namespace sferes {
                 network->eval(scaled_data, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
             }
 
-            void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_random_d) {
+            void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_trajectory) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
                 _prep.init(phen_d);
                 Mat scaled_data;
                 _prep.apply(phen_d, scaled_data);
                 // std::cout << "SCALED ROWS" << scaled_data.rows() << std::endl;
-                float final_entropy = network->training(scaled_data, traj_d, is_random_d);
+                float final_entropy = network->training(scaled_data, traj_d, is_trajectory);
             }
 
             template<typename EA>
