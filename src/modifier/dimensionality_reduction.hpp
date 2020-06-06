@@ -65,34 +65,34 @@ namespace sferes {
 
             template<typename EA>
             void update_descriptors(EA &ea) {
-                Mat phen_d, traj_d;
+                Mat geno_d, traj_d;
                 std::vector<int> is_trajectory;
                 std::vector<typename EA::indiv_t> content;
 
-                collect_dataset(phen_d, traj_d, is_trajectory, ea, content, true);
+                collect_dataset(geno_d, traj_d, is_trajectory, ea, content, true);
 
                 #ifndef AURORA
                 // add additionally the phenotypes that had the largest loss in the evaluation but with regenerated trajectories
                 if (Params::ae::pct_extension > 0.001)
                 {
-                    Mat extended_phen, extended_traj;
+                    Mat extended_geno, extended_traj;
                     std::vector<int> extended_is_traj;
-                    extend_dataset(phen_d, traj_d, is_trajectory, ea, content, extended_phen, extended_traj, extended_is_traj, Params::ae::pct_extension);
+                    extend_dataset(geno_d, traj_d, is_trajectory, ea, content, extended_geno, extended_traj, extended_is_traj, Params::ae::pct_extension);
                     // add to stat pct of random of extension                
-                    train_network(extended_phen, extended_traj, extended_is_traj);
+                    train_network(extended_geno, extended_traj, extended_is_traj);
                 }
                 else
-                {train_network(phen_d, traj_d, is_trajectory);}
+                {train_network(geno_d, traj_d, is_trajectory);}
 
                 #else // AURORA
-                train_network(phen_d, traj_d, is_trajectory);
+                train_network(geno_d, traj_d, is_trajectory);
                 #endif
 
                 update_container(ea);  // clear the archive and re-fill it using the new network
             }
 
             template<typename EA>
-            void collect_dataset(Mat &phen_d, Mat &traj_d, std::vector<int> &is_trajectory, 
+            void collect_dataset(Mat &geno_d, Mat &traj_d, std::vector<int> &is_trajectory, 
                                 EA &ea, std::vector<typename EA::indiv_t> &content, bool training = false) const {
                 // content will contain all phenotypes
                 if (ea.gen() > 0) {
@@ -107,35 +107,37 @@ namespace sferes {
                 
                 // number of phenotypes
                 size_t pop_size = content.size();
-                get_phen(content, phen_d);
+                get_geno(content, geno_d);
                 get_trajectories(content, traj_d, is_trajectory);
                 
                 if (training) {
-                    std::cout << "Gen " << ea.gen() << " train set composed of " << phen_d.rows() << " phenotypes - Archive size : " << pop_size << std::endl;
+                    std::cout << "Gen " << ea.gen() << " train set composed of " << geno_d.rows() << " phenotypes - Archive size : " << pop_size << std::endl;
                 }
             }
 
             template<typename EA>
-            void extend_dataset(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_trajectory, EA &ea, std::vector<typename EA::indiv_t> &content, 
-                                Mat &extended_phen, Mat &extended_traj, std::vector<int> &extended_is_traj, float pct_extension)
+            void extend_dataset(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory, EA &ea, std::vector<typename EA::indiv_t> &content, 
+                                Mat &extended_geno, Mat &extended_traj, std::vector<int> &extended_is_traj, float pct_extension)
             {
                 // extend dataset with the phenotypes with the pct_extension largest recon losses
                 // phenotypes will be copied but trajectories will be regenerated, i.e. can have new random trajectories
-                std::vector<typename EA::indiv_t> copied_phen;
-                get_additional_phenos(phen_d, traj_d, is_trajectory, content, ea, copied_phen, pct_extension);
+                std::vector<typename EA::indiv_t> copied_pheno;
+                get_additional_phenos(geno_d, traj_d, is_trajectory, content, ea, copied_pheno, pct_extension);
 
                 // shuffle ahead of training
-                std::random_shuffle (copied_phen.begin(), copied_phen.end());
+                std::random_shuffle (copied_pheno.begin(), copied_pheno.end());
                 // retrieve the matrix data
-                Mat additional_phen, additional_traj;
+                Mat additional_geno, additional_traj;
                 std::vector<int> additional_is_traj;
-                get_phen(copied_phen, additional_phen);
-                get_trajectories(copied_phen, additional_traj, additional_is_traj);
+                get_geno(copied_pheno, additional_geno);
+                get_trajectories(copied_pheno, additional_traj, additional_is_traj);
 
                 // put together for training
-                extended_phen = Mat(phen_d.rows() + additional_phen.rows(), phen_d.cols());
+                extended_geno = Mat(geno_d.rows() + additional_geno.rows(), geno_d.cols());
                 extended_traj = Mat(traj_d.rows() + additional_traj.rows(), traj_d.cols());
-                extended_phen << additional_phen, phen_d;
+
+                // additional first so that they are included in train set
+                extended_geno << additional_geno, geno_d;
                 extended_traj << additional_traj, traj_d;
 
                 extended_is_traj = additional_is_traj;
@@ -144,22 +146,17 @@ namespace sferes {
             }
 
             template<typename EA>
-            void get_additional_phenos(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_trajectory, std::vector<typename EA::indiv_t> &content, EA &ea,
-                                        std::vector<typename EA::indiv_t> &copied_phen, float pct_extension)
+            void get_additional_phenos(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory, std::vector<typename EA::indiv_t> &content, EA &ea,
+                                        std::vector<typename EA::indiv_t> &copied_pheno, float pct_extension)
             {
-                // do we want to init here?
-                _prep.init(phen_d);
-                Mat scaled_data;
-                _prep.apply(phen_d, scaled_data);
-                
                 Eigen::VectorXi is_trajectories;
                 get_network_loader()->vector_to_eigen(is_trajectory, is_trajectories);
 
                 Mat descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                network->eval(scaled_data, traj_d, is_trajectories, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                network->eval(geno_d, traj_d, is_trajectories, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
 
-                int num_copies = pct_extension * phen_d.rows();
-                copy_pheno(content, recon_loss, copied_phen, num_copies, ea);
+                int num_copies = pct_extension * geno_d.rows();
+                copy_pheno(content, recon_loss, copied_pheno, num_copies, ea);
             }
 
             std::vector<size_t> sort_indexes(const Mat &vector) 
@@ -202,6 +199,16 @@ namespace sferes {
                 _random_extension_ratio = double(count_has_random) / num_copies;
             }
 
+            void get_geno(const pop_t &pop, Mat &data) const {
+                data = Mat(pop.size(), pop[0]->gen().size());
+                for (size_t i = 0; i < pop.size(); ++i) {
+                    for (size_t j{0}; j < pop[0]->gen().size(); ++j)
+                    {
+                        data(i, j) = pop[i]->gen().data(j);
+                    }
+                }
+            }
+
             void get_phen(const pop_t &pop, Mat &data) const {
                 data = Mat(pop.size(), pop[0]->size());
                 for (size_t i = 0; i < pop.size(); i++) {
@@ -231,22 +238,17 @@ namespace sferes {
                 }
             }
 
-            void get_stats(const Mat &phen, const Mat &traj, const Eigen::VectorXi &is_traj, 
+            void get_stats(const Mat &geno, const Mat &traj, const Eigen::VectorXi &is_traj, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
                 Mat &L2_loss, Mat &L2_loss_real_trajectories, Mat &KL_loss, Mat &decoder_var) const
             {
-                Mat scaled_data;
-                _prep.apply(phen, scaled_data);
-                network->eval(scaled_data, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                network->eval(geno, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
             }
 
-            void train_network(const Mat &phen_d, const Mat &traj_d, std::vector<int> &is_trajectory) {
+            void train_network(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory) {
                 // we change the data normalisation each time we train/refine network, could cause small changes in loss between two trainings.
-                _prep.init(phen_d);
-                Mat scaled_data;
-                _prep.apply(phen_d, scaled_data);
                 // std::cout << "SCALED ROWS" << scaled_data.rows() << std::endl;
-                float final_entropy = network->training(scaled_data, traj_d, is_trajectory);
+                float final_entropy = network->training(geno_d, traj_d, is_trajectory);
             }
 
             template<typename EA>
@@ -270,16 +272,16 @@ namespace sferes {
                     }
                 }
 
-                Mat filtered_phen, filtered_traj;
+                Mat filtered_geno, filtered_traj;
                 std::vector<int> is_trajectory;
-                get_phen(filtered_pop, filtered_phen);
+                get_geno(filtered_pop, filtered_geno);
                 get_trajectories(filtered_pop, filtered_traj, is_trajectory);
 
                 // convert to eigen
                 Eigen::VectorXi is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectory.data(), is_trajectory.size());
 
                 Mat latent_and_entropy;
-                get_descriptor_autoencoder(filtered_phen, filtered_traj, is_traj, latent_and_entropy, prep);
+                get_descriptor_autoencoder(filtered_geno, filtered_traj, is_traj, latent_and_entropy, prep);
 
                 for (size_t i = 0; i < filtered_pop.size(); i++) {
                     std::vector<double> dd;
@@ -306,13 +308,11 @@ namespace sferes {
 
             }
 
-            void get_descriptor_autoencoder(const Mat &phen_d, const Mat &traj_d, const Eigen::VectorXi &is_trajectory, 
+            void get_descriptor_autoencoder(const Mat &geno_d, const Mat &traj_d, const Eigen::VectorXi &is_trajectory, 
                                             Mat &latent_and_entropy, const RescaleFeature &prep) const {
                 // _prep not initiialised again, uses the last one again?
-                Mat scaled_data;
-                prep.apply(phen_d, scaled_data);
                 Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                network->eval(scaled_data, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                network->eval(geno_d, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;
             }
@@ -397,14 +397,11 @@ namespace sferes {
                 dist = dist - XY;
             }
 
-            void get_reconstruction(const Mat &phen, const Mat &traj, std::vector<int> &is_traj, Mat &reconstruction) const {
-                Mat scaled_phen;
-                _prep.apply(phen, scaled_phen);
-
+            void get_reconstruction(const Mat &geno, const Mat &traj, std::vector<int> &is_traj, Mat &reconstruction) const {
                 Eigen::VectorXi is_trajectories;
                 get_network_loader()->vector_to_eigen(is_traj, is_trajectories);
                 
-                network->get_reconstruction(scaled_phen, traj, is_trajectories, reconstruction);
+                network->get_reconstruction(geno, traj, is_trajectories, reconstruction);
 
                 // do not need to apply scaling to reconstruction
                 // _prep.deapply(scaled_reconstruction, reconstruction);

@@ -71,7 +71,7 @@ struct Params {
     struct pop {
         SFERES_CONST size_t size = 256;
         static size_t nb_gen;
-        SFERES_CONST size_t dump_period = 20;
+        SFERES_CONST size_t dump_period = 1000;
     };
 
     struct evo_float {
@@ -93,13 +93,13 @@ struct Params {
     };
 
     struct qd {
-        SFERES_CONST size_t gen_dim = 15;
+        SFERES_CONST size_t gen_dim = 5;
         SFERES_CONST size_t phen_dim = 2;
         SFERES_CONST size_t behav_dim = 2;
     };
 
     struct stat {
-        SFERES_CONST size_t save_trajectories = 10;
+        SFERES_CONST size_t save_trajectories = 3000;
         SFERES_CONST size_t save_model = 10000;
         SFERES_CONST size_t save_diversity = 500;
     };

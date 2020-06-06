@@ -32,9 +32,9 @@ namespace sferes {
                 std::cout << "writing..." << fname << std::endl;
 
                 // retrieve all phenotypes and trajectories                
-                matrix_t phen, traj;
+                matrix_t gen, traj;
                 std::vector<int> is_traj;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_phen(ea.pop(), phen);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
                 
                 // filter out the realised trajectories
@@ -46,7 +46,7 @@ namespace sferes {
                 
                 // get all data
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(phen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
