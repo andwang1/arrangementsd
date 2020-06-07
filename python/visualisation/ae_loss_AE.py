@@ -7,14 +7,16 @@ def plot_loss_in_dir_AE(path, show_train_lines=False, save_path=None):
     FILE = f'ae_loss.dat'
 
     total_recon = []
-    actual_recon = []
+    actual_trajectories_L2 = []
     train_epochs = []
+
+    data_dict = {}
 
     with open(FILE, "r") as f:
         for line in f.readlines():
             data = line.strip().split(",")
             total_recon.append(float(data[1]))
-            actual_recon.append(float(data[2]))
+            actual_trajectories_L2.append(float(data[2]))
             if "IS_TRAIN" in data[-1]:
                 # gen number, epochstrained / total
                 train_epochs.append((int(data[0]), data[-2].strip()))
@@ -30,8 +32,8 @@ def plot_loss_in_dir_AE(path, show_train_lines=False, save_path=None):
     ln1 = ax1.plot(range(len(total_recon)), total_recon, c="red", label="L2 - Overall")
     ax1.annotate(f"{round(total_recon[-1], 2)}", (len(total_recon) - 1, total_recon[-1]))
 
-    ln2 = ax1.plot(range(len(actual_recon)), actual_recon, c="blue", label="L2 - Actual Trajectories")
-    ax1.annotate(f"{round(actual_recon[-1], 2)}", (len(actual_recon) - 1, actual_recon[-1]))
+    ln2 = ax1.plot(range(len(actual_trajectories_L2)), actual_trajectories_L2, c="blue", label="L2 - Actual Trajectories")
+    ax1.annotate(f"{round(actual_trajectories_L2[-1], 2)}", (len(actual_trajectories_L2) - 1, actual_trajectories_L2[-1]))
 
     # train marker
     if (show_train_lines):
@@ -47,6 +49,11 @@ def plot_loss_in_dir_AE(path, show_train_lines=False, save_path=None):
 
     plt.savefig(f"ae_loss.png")
     plt.close()
+
+    data_dict["L2"] = total_recon
+    data_dict["AL"] = actual_trajectories_L2
+    data_dict["TR_EPOCHS"] = train_epochs
+    return data_dict
 
 if __name__ == "__main__":
     plot_loss_in_dir_AE(

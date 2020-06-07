@@ -8,11 +8,13 @@ def plot_loss_in_dir_VAE(path, full_loss=True, show_train_lines=False, save_path
     FILE = f'ae_loss.dat'
 
     total_recon = []
-    actual_recon = []
     L2 = []
+    actual_trajectories_L2 = []
     KL = []
     variance = []
     train_epochs = []
+
+    data_dict = {}
 
     with open(FILE, "r") as f:
         for line in f.readlines():
@@ -21,7 +23,7 @@ def plot_loss_in_dir_VAE(path, full_loss=True, show_train_lines=False, save_path
             L2.append(float(data[2]))
             KL.append(float(data[3]))
             variance.append(float(data[4]))
-            actual_recon.append(float(data[5]))
+            actual_trajectories_L2.append(float(data[5]))
             if "IS_TRAIN" in data[-1]:
                 # gen number, epochstrained / total
                 train_epochs.append((int(data[0]), data[-2].strip()))
@@ -40,8 +42,8 @@ def plot_loss_in_dir_VAE(path, full_loss=True, show_train_lines=False, save_path
     ln1 = ax1.plot(range(len(total_recon)), L2, c="red", label="L2 - Overall")
     ax1.annotate(f"{round(L2[-1],2)}", (len(total_recon) - 1, L2[-1]))
 
-    ln2 = ax1.plot(range(len(actual_recon)), actual_recon, c="blue", label="L2 - Actual Trajectories")
-    ax1.annotate(f"{round(actual_recon[-1], 2)}", (len(actual_recon) - 1, actual_recon[-1]))
+    ln2 = ax1.plot(range(len(actual_trajectories_L2)), actual_trajectories_L2, c="blue", label="L2 - Actual Trajectories")
+    ax1.annotate(f"{round(actual_trajectories_L2[-1], 2)}", (len(actual_trajectories_L2) - 1, actual_trajectories_L2[-1]))
 
     if full_loss:
         var_ax = ax1.twinx()
@@ -80,6 +82,15 @@ def plot_loss_in_dir_VAE(path, full_loss=True, show_train_lines=False, save_path
     plt.savefig(f"vae_loss.png")
     plt.close()
     # plt.show()
+
+    data_dict["TL"] = total_recon
+    data_dict["L2"] = L2
+    data_dict["AL"] = actual_trajectories_L2
+    data_dict["VAR"] = variance
+    data_dict["TR_EPOCHS"] = train_epochs
+    return data_dict
+
+
 
 if __name__ == "__main__":
     plot_loss_in_dir_VAE(

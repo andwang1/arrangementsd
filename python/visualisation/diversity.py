@@ -84,6 +84,9 @@ def plot_diversity_in_dir(path, save_path=None):
     plt.savefig("diversity.png")
     plt.close()
 
+    return {gen: score for gen, score in zip(div_generations, div_scores)}, max_diversity
+
+
 if __name__ == "__main__":
     plot_diversity_in_dir(
         "/home/andwang1/airl/balltrajectorysd/results_exp1/repeated_run1/results_balltrajectorysd_ae/--number-gen=6001_--pct-random=0.2_--full-loss=false/2020-06-05_02_56_35_224997")
