@@ -1,9 +1,10 @@
 .idea/
 .vscode/
 *.pyc
-
+*pdf
 *txt
 *pk
+*dat
 
 results*/
 resources/ae*
