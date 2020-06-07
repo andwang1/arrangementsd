@@ -1,5 +1,5 @@
 import os
-variant = "aurora"
+variant = "ae"
 
 os.chdir(f"/home/andwang1/airl/balltrajectorysd/results_exp1/repeated_run1/results_balltrajectorysd_{variant}")
 dir_names = os.listdir()
