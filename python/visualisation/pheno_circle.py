@@ -4,6 +4,7 @@ import os
 from matplotlib.collections import LineCollection
 from exp_config import *
 
+
 def plot_pheno_in_dir(path, save_path=None):
     os.chdir(path)
     files = os.listdir()
@@ -64,6 +65,7 @@ def plot_pheno_in_dir(path, save_path=None):
 
         plt.savefig(f"pheno_{GEN_NUMBER}.png")
         plt.close()
+
 
 if __name__ == "__main__":
     plot_pheno_in_dir(

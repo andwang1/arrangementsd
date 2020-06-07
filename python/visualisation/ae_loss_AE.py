@@ -1,58 +1,49 @@
 import matplotlib.pyplot as plt
 import os
 
-SHOW_TRAIN_LINES = False
 
-variant = "ae"
-random = "0.2"
-GEN_NUMBER = 6000
+def plot_loss_in_dir_AE(path, show_train_lines=False, save_path=None):
+    os.chdir(path)
+    FILE = f'ae_loss.dat'
 
-BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/second_run/'
-EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}/'
-os.chdir(BASE_PATH+EXP_PATH)
-PID = os.listdir()[0] + "/"
-os.chdir(BASE_PATH)
-FILE_NAME = f'ae_loss.dat'
+    total_recon = []
+    train_epochs = []
 
-FILE = BASE_PATH + EXP_PATH + PID + FILE_NAME
+    with open(FILE, "r") as f:
+        for line in f.readlines():
+            data = line.strip().split(",")
+            total_recon.append(float(data[1]))
+            if "IS_TRAIN" in data[-1]:
+                # gen number, epochstrained / total
+                train_epochs.append((int(data[0]), data[-2].strip()))
 
-# ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var;
+    f = plt.figure(figsize=(10, 5))
 
-total_recon = []
-train_epochs = []
+    spec = f.add_gridspec(1, 1)
+    # both kwargs together make the box squared
+    ax1 = f.add_subplot(spec[0, 0])
 
-with open(FILE, "r") as f:
-    for line in f.readlines():
-        data = line.strip().split(",")
-        total_recon.append(float(data[1]))
-        if "IS_TRAIN" in data[-1]:
-            # gen number, epochstrained / total
-            train_epochs.append((int(data[0]), data[-2].strip()))
+    # L2 and variance on one plot
+    ax1.set_ylabel("L2")
+    ax1.set_ylim([0, max(total_recon)])
+    ln1 = ax1.plot(range(len(total_recon)), total_recon, c="red", label="L2")
+    ax1.annotate(f"{round(total_recon[-1], 2)}", (len(total_recon) - 1, total_recon[-1]))
 
+    # train marker
+    if (show_train_lines):
+        for (train_gen, train_ep) in train_epochs:
+            ax1.axvline(train_gen, ls="--", lw=0.1, c="grey")
 
-f = plt.figure(figsize=(10, 5))
+    # add in legends
 
-spec = f.add_gridspec(1, 1)
-# both kwargs together make the box squared
-ax1 = f.add_subplot(spec[0, 0])
+    labs = [l.get_label() for l in ln1]
+    ax1.legend(ln1, labs, loc='best')
 
-# L2 and variance on one plot
-ax1.set_ylabel("L2")
-ax1.set_ylim([0, max(total_recon)])
-ln1 = ax1.plot(range(len(total_recon)), total_recon, c="red", label="L2")
-ax1.annotate(f"{round(total_recon[-1],2)}", (len(total_recon) - 1, total_recon[-1]))
+    ax1.set_title(f"AE Loss")
 
-# train marker
-if (SHOW_TRAIN_LINES):
-    for (train_gen, train_ep) in train_epochs:
-        ax1.axvline(train_gen, ls="--", lw=0.1, c="grey")
+    plt.savefig(f"ae_loss.png")
+    plt.close()
 
-# add in legends
-
-labs = [l.get_label() for l in ln1]
-ax1.legend(ln1, labs, loc='best')
-
-ax1.set_title(f"AE Loss")
-
-plt.savefig(f"ae_loss_{random}.pdf")
-plt.show()
+if __name__ == "__main__":
+    plot_loss_in_dir_AE(
+        "/home/andwang1/airl/balltrajectorysd/results_exp1/repeated_run1/results_balltrajectorysd_ae/--number-gen=6001_--pct-random=0.2_--full-loss=false/2020-06-05_02_56_35_224997")
