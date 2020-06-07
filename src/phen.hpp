@@ -57,13 +57,16 @@ namespace sferes {
 #ifdef EIGEN_CORE_H
       EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-      Custom_Phen() : _params(Params::qd::phen_dim), split(static_cast<int>((*this)._gen.size() / 2)) { }
+      Custom_Phen() : _params(Params::qd::phen_dim), split(static_cast<int>((*this)._gen.size() / 2))  
+      {}
       typedef float type_t;
       void develop() {
-        // simple summation
-
         // need to do this in here bcs of the reevaluation possiblity
         std::fill(_params.begin(), _params.end(), 0);
+        uniform();
+      }
+
+      void simple_summation() {
         for (int i{0}; i < split; ++i)
         {_params[0] += this->_gen.data(i);}
 
@@ -72,31 +75,102 @@ namespace sferes {
 
         // normalise to 0 - 1 and then scale to max min range
         _params[0] /= split * Params::parameters::max_angle;
-        _params[1] /= ((*this)._gen.size() - split) * (Params::parameters::max_dpf - Params::parameters::min_dpf) + Params::parameters::min_dpf;
-        // non linearity (relu)
-        // gen is scaled to -2, 2
-      //   else
-      //   {
-      //       double x{1};
+        _params[1] = _params[1] / ((*this)._gen.size() - split) * (Params::parameters::max_dpf - Params::parameters::min_dpf) + Params::parameters::min_dpf;
+      }
 
-      //       for (int i{0}; i < split; ++i)
-      //       {
-                
-                
-      //           _params[0] += (this->_gen.data(i) * 2 - 4);
-      //           if ((i % 2) == 0)
-      //           {_params[0] = std::max(_params[0], 0);}
-                
-      //       }
-      //       for (int i{split}; i < this->size(); ++i)
-      //       {_params[1] += this->_gen.data(i);}
-      //   }
+      void non_linear() {
+        float tmp[2] = {0, 0};
+        float res[2] = {1, 1};
+        int input_counter, output_counter, temp_index;
+
+        for (int i{0}; i < (*this)._gen.size(); ++i)
+        {
+            if (((i % 4) == 0) && i > 0)
+            {
+                res[0] = tmp[0];
+                res[1] = tmp[1];
+                tmp[0] = 0;
+            }
+            else if ((i % 4) == 2)
+            {tmp[1] = 0;}
+
+            input_counter = i % 2;
+            output_counter = i % 4;
+            temp_index = output_counter / 2;
+
+            // gen is scaled to -0.5, 2
+            tmp[temp_index] += res[input_counter] * (this->_gen.data(i) * 2.5 - 0.5);
+        }
+
+        // std::cout << "PARAMS1" << _params[0] << std::endl;
+        // std::cout << "PARAMS2" << _params[1] << std::endl;
+        // flip distribution by making the negative be + 2 -> tried, very sparse so not good
+        
+        _params[0] = std::max(tmp[0], 0.f);
+        _params[1] = std::max(tmp[1], 0.f);
+
+        // std::cout << "PARAMS1" << _params[0] << std::endl;
+        // std::cout << "PARAMS2" << _params[1] << std::endl;
+
+        // floor division, 4.001 so that multiples of 4 are still in the same exponent group
+        int exponent = static_cast<int>((*this)._gen.size() / 4.001) * 2 + 2;
+
+        if ((*this)._gen.size() % 4 == 1)
+        {
+            _params[0] /= std::pow(2, exponent - 1);
+            _params[1] /= std::pow(2, exponent - 2);
+        }
+        else if ((*this)._gen.size() % 4 == 2)
+        {
+            _params[0] /= std::pow(2, exponent);
+            _params[1] /= std::pow(2, exponent - 2);
+        }
+        else if ((*this)._gen.size() % 4 == 3)
+        {
+            _params[0] /= std::pow(2, exponent);
+            _params[1] /= std::pow(2, exponent - 1);
+        }
+        else
+        {
+            _params[0] /= std::pow(2, exponent);
+            _params[1] /= std::pow(2, exponent);
+        }
+
+        assert(_params[0] < 1.1);
+        assert(_params[1] < 1.1);
+
+        // std::cout << "PARAMS1POSTDIV" << _params[0] << std::endl;
+        // std::cout << "PARAMS2POSTDIV" << _params[1] << std::endl;
+
+        _params[0] *= Params::parameters::max_angle;
+        _params[1] *= (Params::parameters::max_dpf - Params::parameters::min_dpf) + Params::parameters::min_dpf;        
 
       }
+
+      void uniform() {
+          // uniform distribution in output
+          for (int i{0}; i < split; ++i)
+          {_params[0] += this->_gen.data(i) / std::pow(10.f, i);}
+
+          for (int i{split}; i < (*this)._gen.size(); ++i)
+          {_params[1] += this->_gen.data(i) / std::pow(10.f, i - split);}
+
+          // making sure angle is bounded, gives better distribution
+          if (_params[0] > 1)
+          {_params[0] -= 1;}
+
+          assert(_params[0] < 1.1);
+          assert(_params[1] < 1.12);
+
+          _params[0] *= Params::parameters::max_angle;
+          _params[1] = _params[1] * (Params::parameters::max_dpf - Params::parameters::min_dpf) + Params::parameters::min_dpf;
+      }
+
       float data(size_t i) const {
         assert(i < size());
         return _params[i];
       }
+
       size_t size() const {
         return _params.size();
       }
