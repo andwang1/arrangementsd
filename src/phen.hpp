@@ -63,7 +63,7 @@ namespace sferes {
       void develop() {
         // need to do this in here bcs of the reevaluation possiblity
         std::fill(_params.begin(), _params.end(), 0);
-        non_linear();
+        simple_summation();
       }
 
       void simple_summation() {
