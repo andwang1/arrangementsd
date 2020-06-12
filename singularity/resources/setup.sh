@@ -1,5 +1,5 @@
 #!/bin/bash
-./waf configure --exp balltrajectorysd --cpp14=yes --kdtree /workspace/include
+./waf configure --exp balltrajectorysd --cpp14=yes --kdtree /workspace/include --robox2d /workspace --magnum_install_dir /workspace --magnum_integration_install_dir /workspace --magnum_plugins_install_dir /workspace --corrade_install_dir /workspace
 
 ./waf --exp balltrajectorysd -j 1
 echo 'FINISHED BUILDING. Now fixing name of files'
