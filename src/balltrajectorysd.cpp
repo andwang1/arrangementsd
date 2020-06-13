@@ -87,7 +87,11 @@
 #include "trajectory.hpp"
 #include "phen.hpp"
 
-
+// #include <box2d/box2d.h>
+// #include <robox2d/simu.hpp>
+// #include <robox2d/robot.hpp>
+// #include <robox2d/common.hpp>
+// #include <robox2d/gui/magnum/graphics.hpp>
 
 // quick hack to have "write" access to the container, this need to be added to the main API later.
 template<typename Phen, typename Eval, typename Stat, typename FitModifier, typename Select, typename Container, typename Params, typename Exact = stc::Itself>
@@ -201,7 +205,9 @@ int main(int argc, char **argv) {
 
     typedef sferes::qd::container::Archive<phen_t, storage_t, params_t> container_t;
 
-    typedef sferes::eval::Parallel<params_t> eval_t;
+    // if GRAPHICS
+    typedef sferes::eval::Eval<Params> eval_t;
+    // typedef sferes::eval::Parallel<params_t> eval_t;
 
     typedef boost::fusion::vector<
                     sferes::stat::QdContainer<phen_t, params_t>,
