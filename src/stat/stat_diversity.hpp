@@ -27,7 +27,8 @@ namespace sferes {
             template<typename EA>
             void refresh(EA &ea) 
             {
-                if ((ea.gen() % Params::stat::save_diversity == 0) || (ea.gen() == 1) ) 
+                // remove gen 1
+                if ((ea.gen() % Params::stat::save_diversity == 0)) 
                 {
                    std::string prefix = "diversity" + boost::lexical_cast<std::string>(ea.gen());
                     _write_diversity(prefix, ea);
