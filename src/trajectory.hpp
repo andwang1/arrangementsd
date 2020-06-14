@@ -99,6 +99,9 @@ FIT_QD(Trajectory)
 
         for (Eigen::VectorXf &traj : trajectories)
             {traj.resize(Params::sim::num_trajectory_elements);}
+    
+        for (Eigen::VectorXf &traj : undisturbed_trajectories)
+            {traj.resize(Params::sim::num_trajectory_elements);}
 
         std::fill(is_random_trajectories.begin(), is_random_trajectories.end(), 0);
 
@@ -129,12 +132,16 @@ FIT_QD(Trajectory)
                 ++m_num_trajectories;
             }
             else 
-            {
-                is_random_trajectories[i] = 0;
-            }
+                {is_random_trajectories[i] = 0;}
         }
         // populates member vars
         simulate(_params, is_random_trajectories);
+
+        // generate only the real trajectory without any randomness for diversity and loss tracking
+        if (m_num_trajectories > 0)
+            {simulate(_params);}
+        else // if no other balls present in simulation already
+            {undisturbed_trajectories[0] = trajectories[0];}
 
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
@@ -155,7 +162,7 @@ FIT_QD(Trajectory)
             auto graphics = std::make_shared<robox2d::gui::Graphics<>>(simu.world());
             simu.set_graphics(graphics);
         }
-        simu.run(Params::sim::sim_duration, trajectories, Params::sim::trajectory_length);
+        simu.run(Params::sim::sim_duration, trajectories, full_trajectory, Params::sim::trajectory_length);
     }
 
     // generate full trajectory for diversity calc
@@ -178,9 +185,8 @@ FIT_QD(Trajectory)
             auto graphics = std::make_shared<robox2d::gui::Graphics<>>(simu.world());
             simu.set_graphics(graphics);
         }
-    
-        // get full trajectory
-        simu.run(Params::sim::sim_duration, full_trajectory);
+
+        simu.run(Params::sim::sim_duration, undisturbed_trajectories, full_trajectory, Params::sim::trajectory_length);
     }
     
     template<typename block_t>
@@ -193,21 +199,19 @@ FIT_QD(Trajectory)
         }
     }
 
+    Eigen::VectorXf get_undisturbed_trajectory() const
+    {return undisturbed_trajectories[0];}
+
     float &entropy() { return m_entropy; }
 
-    size_t &num_trajectories() { return m_num_trajectories; }    
+    size_t num_trajectories() { return m_num_trajectories; }    
 
     bool is_random(int index)
-    {
-        return is_random_trajectories.at(index);
-    }
+    {return is_random_trajectories.at(index);}
     
     int calculate_diversity_bins(std::bitset<Params::nov::discretisation * Params::nov::discretisation> &crossed_buckets)
     {
         // generate trajectory again but without additional random balls
-        simulate(_params);
-
-
         double ROOM_H = Params::sim::ROOM_H;
         double ROOM_W = Params::sim::ROOM_W;
         double discretisation = Params::nov::discretisation;
@@ -236,6 +240,11 @@ FIT_QD(Trajectory)
             std::cout << crossed_buckets;
         }
         return bucket_number;
+    }
+
+    Eigen::VectorXd &params()
+    {
+        return _params;
     }
 
     // // generates images from the trajectories fed into the function
@@ -272,6 +281,7 @@ FIT_QD(Trajectory)
     
     // random trajectories + 1 real one
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
+    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> undisturbed_trajectories;
     Eigen::VectorXf full_trajectory;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories;
     size_t m_num_trajectories;

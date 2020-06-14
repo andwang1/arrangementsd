@@ -51,15 +51,29 @@ namespace sferes {
                 double L2 = L2_loss.rowwise().sum().mean();
                 double KL = KL_loss.rowwise().sum().mean();
                 double var = decoder_var.rowwise().sum().mean();
+
                 double L2_real_traj = L2_loss_real_trajectories.mean();
-                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var << ", " << L2_real_traj;
+
+                // retrieve trajectories without any interference from random observations
+                matrix_t undisturbed_traj(ea.pop().size(), Params::sim::num_trajectory_elements);
+                for (size_t i{0}; i < ea.pop().size(); ++i)
+                {undisturbed_traj.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();}
+                double L2_undisturbed_real_traj = (undisturbed_traj - reconstruction).array().square().rowwise().sum().mean();
+
+                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var << ", " << L2_real_traj << ", " << L2_undisturbed_real_traj;
                 #else
 
                 #ifdef AURORA
                 ofs << ea.gen() << ", " << recon;
                 #else // AE
                 double L2_real_traj = L2_loss_real_trajectories.mean();
-                ofs << ea.gen() << ", " << recon << ", " << L2_real_traj;
+
+                matrix_t undisturbed_traj(ea.pop().size(), Params::sim::num_trajectory_elements);
+                for (size_t i{0}; i < ea.pop().size(); ++i)
+                {undisturbed_traj.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();}
+                double L2_undisturbed_real_traj = (undisturbed_traj - reconstruction).array().square().rowwise().sum().mean();
+
+                ofs << ea.gen() << ", " << recon << ", " << L2_real_traj << ", " << L2_undisturbed_real_traj;
                 #endif 
 
                 #endif
