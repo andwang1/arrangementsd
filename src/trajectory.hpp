@@ -180,11 +180,11 @@ FIT_QD(Trajectory)
         rob->add_controller(ctrl);
         simu.add_robot(rob);
 
-        if (Params::sim::enable_graphics)
-        {
-            auto graphics = std::make_shared<robox2d::gui::Graphics<>>(simu.world());
-            simu.set_graphics(graphics);
-        }
+        // if (Params::sim::enable_graphics)
+        // {
+        //     auto graphics = std::make_shared<robox2d::gui::Graphics<>>(simu.world());
+        //     simu.set_graphics(graphics);
+        // }
 
         simu.run(Params::sim::sim_duration, undisturbed_trajectories, full_trajectory, Params::sim::trajectory_length);
     }
