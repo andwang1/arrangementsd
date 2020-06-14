@@ -44,8 +44,8 @@ struct Params {
 
     // network neurons        
     // input = qd::gen_dim
-    SFERES_CONST size_t en_hid_dim1 = 10;
-    SFERES_CONST size_t en_hid_dim2 = 30;
+    SFERES_CONST size_t en_hid_dim1 = 20;
+    SFERES_CONST size_t en_hid_dim2 = 50;
     // latent_dim = qd::behav_dim
     SFERES_CONST size_t de_hid_dim1 = 40;
     SFERES_CONST size_t de_hid_dim2 = 60;
