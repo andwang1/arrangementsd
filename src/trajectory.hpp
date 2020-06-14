@@ -32,63 +32,62 @@ namespace rng {
 class Arm : public robox2d::Robot {
 public:
   
-  Arm(std::shared_ptr<b2World> world, std::array<int, Params::random::max_num_random + 1> &is_random_traj){
-
-    size_t nb_joints=Params::qd::gen_dim;
-    float arm_length=1.5f;
-    float seg_length = arm_length / (float) nb_joints;
-
-    // create walls one by one as GUI needs seperate bodies, so cannot use one body for multiple fixtures (TODO create diff variant for non GUI run?)
-    // specify width and height to each side from a central location
-    if (Params::sim::enable_graphics)
+    Arm(std::shared_ptr<b2World> world, std::array<int, Params::random::max_num_random + 1> &is_random_traj)
     {
-    b2Body* ceiling = robox2d::common::createBox(world, {Params::sim::ROOM_W / 2, 0.01}, b2_staticBody, {Params::sim::ROOM_W / 2, Params::sim::ROOM_H, 0.f});
-    b2Body* floor = robox2d::common::createBox(world, {Params::sim::ROOM_W / 2, 0.01}, b2_staticBody, {Params::sim::ROOM_W / 2, 0.f, 0.f});
-    b2Body* right = robox2d::common::createBox(world, {0.01, Params::sim::ROOM_H / 2}, b2_staticBody, {Params::sim::ROOM_W, Params::sim::ROOM_H / 2, 0.f});
-    b2Body* left = robox2d::common::createBox(world, {0.01, Params::sim::ROOM_H / 2}, b2_staticBody, {0, Params::sim::ROOM_H / 2, 0.f});
-    }
-    else
-    {b2Body* room = robox2d::common::createRoom(world, {Params::sim::ROOM_W, Params::sim::ROOM_H});}
+        size_t nb_joints=Params::qd::gen_dim;
+        float arm_length=1.5f;
+        float seg_length = arm_length / (float) nb_joints;
 
-    // base in the center of the room
-    b2Body* body = robox2d::common::createBox( world,{arm_length*0.025f, arm_length*0.025f}, b2_staticBody,  {Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.f} );
-    b2Vec2 anchor = body->GetWorldCenter();
-    // body will always represent the body created in the previous iteration
-    
-    for(size_t i =0; i < nb_joints; i++)
-    {
-      float density = 1.0f/std::pow(1.5,i);
-	    _end_effector = robox2d::common::createBox( world,{seg_length*0.5f , arm_length*0.01f }, b2_dynamicBody, {(0.5f+i)*seg_length + Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.0f}, density );
-      this->_servos.push_back(std::make_shared<robox2d::common::Servo>(world,body, _end_effector, anchor));
-
-      body=_end_effector;
-      anchor = _end_effector->GetWorldCenter() + b2Vec2(seg_length*0.5 , 0.0f);
-    }
-
-    // in this order so that first observation retrieved in simu.run is the actual trajectory
-    // start at 1 because first one is the actual ball
-    for (int i{1}; i < is_random_traj.size(); ++i)
-    {
-        if (is_random_traj[i])
+        // create walls one by one as GUI needs seperate bodies, so cannot use one body for multiple fixtures
+        // specify width and height to each side from a central location
+        if (Params::sim::enable_graphics)
         {
-            // use rng to generate position and force
-            float pos_x = rng::rng(rng::gen) * (Params::sim::start_x - 2 * Params::sim::radius) + Params::sim::radius;
-            float pos_y = rng::rng(rng::gen) * (Params::sim::start_y - 2 * Params::sim::radius) + Params::sim::radius;
-            float force_x = rng::rng(rng::gen) * Params::sim::max_force;
-            float force_y = rng::rng(rng::gen) * Params::sim::max_force;
-            
-            b2Body* random_ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {pos_x, pos_y, 0.f}, 0.2f);
-            b2Vec2 force{force_x, force_y};
-            random_ball->ApplyForce(force, random_ball->GetWorldCenter(), true);
+            b2Body* ceiling = robox2d::common::createBox(world, {Params::sim::ROOM_W / 2, 0.01}, b2_staticBody, {Params::sim::ROOM_W / 2, Params::sim::ROOM_H, 0.f});
+            b2Body* floor = robox2d::common::createBox(world, {Params::sim::ROOM_W / 2, 0.01}, b2_staticBody, {Params::sim::ROOM_W / 2, 0.f, 0.f});
+            b2Body* right = robox2d::common::createBox(world, {0.01, Params::sim::ROOM_H / 2}, b2_staticBody, {Params::sim::ROOM_W, Params::sim::ROOM_H / 2, 0.f});
+            b2Body* left = robox2d::common::createBox(world, {0.01, Params::sim::ROOM_H / 2}, b2_staticBody, {0, Params::sim::ROOM_H / 2, 0.f});
         }
+        else // if not using the GUI, create one body with 4 walls for faster sim
+            {b2Body* room = robox2d::common::createRoom(world, {Params::sim::ROOM_W, Params::sim::ROOM_H});}
+
+        // base in the center of the room
+        b2Body* body = robox2d::common::createBox( world,{arm_length*0.025f, arm_length*0.025f}, b2_staticBody,  {Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.f} );
+        b2Vec2 anchor = body->GetWorldCenter();
+        
+        for(size_t i{0}; i < nb_joints; ++i)
+        {
+            float density = 1.0f/std::pow(1.5,i);
+                _end_effector = robox2d::common::createBox( world,{seg_length*0.5f , arm_length*0.01f }, b2_dynamicBody, {(0.5f+i)*seg_length + Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.0f}, density );
+            this->_servos.push_back(std::make_shared<robox2d::common::Servo>(world,body, _end_effector, anchor));
+
+            body=_end_effector;
+            anchor = _end_effector->GetWorldCenter() + b2Vec2(seg_length*0.5 , 0.0f);
+        }
+
+        // in this order so that first observation retrieved in simu.run is the actual trajectory
+        // start at 1 because first one is the actual ball
+        for (int i{1}; i < is_random_traj.size(); ++i)
+        {
+            if (is_random_traj[i])
+            {
+                // use rng to generate position and force
+                float pos_x = rng::rng(rng::gen) * (Params::sim::start_x - 2 * Params::sim::radius) + Params::sim::radius;
+                float pos_y = rng::rng(rng::gen) * (Params::sim::start_y - 2 * Params::sim::radius) + Params::sim::radius;
+                float force_x = rng::rng(rng::gen) * Params::sim::max_force;
+                float force_y = rng::rng(rng::gen) * Params::sim::max_force;
+                
+                b2Body* random_ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {pos_x, pos_y, 0.f}, 0.2f);
+                b2Vec2 force{force_x, force_y};
+                random_ball->ApplyForce(force, random_ball->GetWorldCenter(), true);
+            }
+        }
+        b2Body* ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {Params::sim::start_x, Params::sim::start_y, 0.f}, 0.2f );
     }
-    b2Body* ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {Params::sim::start_x, Params::sim::start_y, 0.f}, 0.2f );
-  }
   
-  b2Vec2 get_end_effector_pos(){return _end_effector->GetWorldCenter(); }
+b2Vec2 get_end_effector_pos(){return _end_effector->GetWorldCenter(); }
   
 private:
-  b2Body* _end_effector;
+b2Body* _end_effector;
 };
 
 FIT_QD(Trajectory)
@@ -113,7 +112,7 @@ FIT_QD(Trajectory)
     void eval(Indiv & ind){
 
         for (size_t i = 0; i < ind.size(); ++i)
-        _params[i] = ind.data(i);
+            _params[i] = ind.data(i);
         // track number of random trajectories
         m_num_trajectories = 0;
 
@@ -228,9 +227,7 @@ FIT_QD(Trajectory)
             bucket_number = bucket_y * discretisation + bucket_x;
             
             if (VERBOSE)
-            {
-                std::cout << "Bx " << bucket_x << "By " << bucket_y << "Bnum " << bucket_number << std::endl;
-            }
+                {std::cout << "Bx " << bucket_x << "By " << bucket_y << "Bnum " << bucket_number << std::endl;}
             crossed_buckets.set(bucket_number);
         }
 
@@ -243,50 +240,74 @@ FIT_QD(Trajectory)
     }
 
     Eigen::VectorXd &params()
+    {return _params;}
+
+    // generates images from the trajectories fed into the function
+    void generate_image()
     {
-        return _params;
+        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
+        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
+
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            // initialise image
+            image.fill(0);
+            for (auto &traj : trajectories)
+            {
+                double x = traj(i);
+                double y = traj(i + 1);
+
+                // flip rows and columns so x = horizontal axis
+                int index_y = x / discrete_length_x;
+                int index_x = y / discrete_length_y;
+
+                image(index_x, index_y) = 1;
+            }
+        }
     }
 
-    // // generates images from the trajectories fed into the function
-    // void generate_image(std::array<Eigen::Matrix<double, discretisation, discretisation>, trajectory_length> &image_frames,
-    //                     const std::vector<Eigen::VectorXd> &trajectories)
-    // {
-    //     double discrete_length_x {double(ROOM_W) / discretisation};
-    //     double discrete_length_y {double(ROOM_H) / discretisation};
+    // generates images from the trajectories fed into the function
+    void generate_image_sequence()
+    {
+        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
+        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
 
-    //     for (int i {0}; i < 2 * trajectory_length; i += 2)
-    //     {
-    //         // initialise image
-    //         int image_num {i / 2};
-    //         image_frames[image_num] = Eigen::Matrix<double, discretisation, discretisation>::Zero();
-    //         for (auto &traj : trajectories)
-    //         {
-    //             double x = traj(i);
-    //             double y = traj(i + 1);
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            // initialise image
+            int image_num {i / 2};
+            image_frames[image_num] = Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>::Zero();
+            for (auto &traj : trajectories)
+            {
+                double x = traj(i);
+                double y = traj(i + 1);
 
-    //             // flip rows and columns so x = horizontal axis
-    //             int index_y = x / discrete_length_x;
-    //             int index_x = y / discrete_length_y;
+                // flip rows and columns so x = horizontal axis
+                int index_y = x / discrete_length_x;
+                int index_x = y / discrete_length_y;
 
-    //             image_frames[image_num](index_x, index_y) = 1;
-    //         }
-    //         if (VERBOSE)
-    //         std::cout << image_frames[image_num] << std::endl;
-    //     }
-    // }
+                image_frames[image_num](index_x, index_y) = 1;
+            }
+            if (VERBOSE)
+            std::cout << image_frames[image_num] << std::endl;
+        }
+    }
 
     private:
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
     
+    Eigen::VectorXd _params;
     // random trajectories + 1 real one
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> undisturbed_trajectories;
     Eigen::VectorXf full_trajectory;
     std::array<int, Params::random::max_num_random + 1> is_random_trajectories;
+    Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation> image;
+    std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> image_frames;
     size_t m_num_trajectories;
-    Eigen::VectorXd _params;
     float m_entropy;
+    
 };
 
 #endif //TRAJECTORY_HPP
