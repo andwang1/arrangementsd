@@ -215,7 +215,7 @@ FIT_QD(Trajectory)
         double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
         double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
 
-        int bucket_number;
+        int bucket_number{0};
 
         for (int j{0}; j < _full_trajectory.size(); j += 2)
         {
