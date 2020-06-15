@@ -21,6 +21,7 @@
 // print statements for debugging
 bool VERBOSE = false;
 
+// pseudo random number generator
 namespace rng {
     // Will be used to obtain a seed for the random number engine
     std::random_device rd;  
@@ -28,14 +29,13 @@ namespace rng {
     std::uniform_real_distribution<> rng(0, 1);
 }
 
-
 class Arm : public robox2d::Robot {
 public:
   
-    Arm(std::shared_ptr<b2World> world, std::array<int, Params::random::max_num_random + 1> &is_random_traj)
+    Arm(std::shared_ptr<b2World> world, std::array<int, Params::random::max_num_random + 1> &is_traj)
     {
-        size_t nb_joints=Params::qd::gen_dim;
-        float arm_length=1.5f;
+        size_t nb_joints = Params::qd::gen_dim;
+        float arm_length = 1.5f;
         float seg_length = arm_length / (float) nb_joints;
 
         // create walls one by one as GUI needs seperate bodies, so cannot use one body for multiple fixtures
@@ -51,24 +51,24 @@ public:
             {b2Body* room = robox2d::common::createRoom(world, {Params::sim::ROOM_W, Params::sim::ROOM_H});}
 
         // base in the center of the room
-        b2Body* body = robox2d::common::createBox( world,{arm_length*0.025f, arm_length*0.025f}, b2_staticBody,  {Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.f} );
+        b2Body* body = robox2d::common::createBox(world, {arm_length*0.025f, arm_length*0.025f}, b2_staticBody, {Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.f});
         b2Vec2 anchor = body->GetWorldCenter();
         
         for(size_t i{0}; i < nb_joints; ++i)
         {
             float density = 1.0f/std::pow(1.5,i);
-                _end_effector = robox2d::common::createBox( world,{seg_length*0.5f , arm_length*0.01f }, b2_dynamicBody, {(0.5f+i)*seg_length + Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.0f}, density );
+            _end_effector = robox2d::common::createBox(world, {seg_length*0.5f, arm_length*0.01f}, b2_dynamicBody, {(0.5f+i)*seg_length + Params::sim::ROOM_W / 2, Params::sim::ROOM_H / 2,0.0f}, density);
             this->_servos.push_back(std::make_shared<robox2d::common::Servo>(world,body, _end_effector, anchor));
 
-            body=_end_effector;
-            anchor = _end_effector->GetWorldCenter() + b2Vec2(seg_length*0.5 , 0.0f);
+            body = _end_effector;
+            anchor = _end_effector->GetWorldCenter() + b2Vec2(seg_length*0.5, 0.0f);
         }
 
-        // in this order so that first observation retrieved in simu.run is the actual trajectory
-        // start at 1 because first one is the actual ball
-        for (int i{1}; i < is_random_traj.size(); ++i)
+        // add random balls first so that first observation retrieved in simu.run is the actual trajectory
+        // start at 1 because index 0 is the actual ball
+        for (int i{1}; i < is_traj.size(); ++i)
         {
-            if (is_random_traj[i])
+            if (is_traj[i])
             {
                 // use rng to generate position and force
                 float pos_x = rng::rng(rng::gen) * (Params::sim::start_x - 2 * Params::sim::radius) + Params::sim::radius;
@@ -76,15 +76,15 @@ public:
                 float force_x = rng::rng(rng::gen) * Params::sim::max_force;
                 float force_y = rng::rng(rng::gen) * Params::sim::max_force;
                 
-                b2Body* random_ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {pos_x, pos_y, 0.f}, 0.2f);
+                b2Body* random_ball = robox2d::common::createCircle(world, Params::sim::radius, b2_dynamicBody, {pos_x, pos_y, 0.f}, 0.2f);
                 b2Vec2 force{force_x, force_y};
                 random_ball->ApplyForce(force, random_ball->GetWorldCenter(), true);
             }
         }
-        b2Body* ball = robox2d::common::createCircle( world, Params::sim::radius, b2_dynamicBody,  {Params::sim::start_x, Params::sim::start_y, 0.f}, 0.2f );
+        b2Body* ball = robox2d::common::createCircle(world, Params::sim::radius, b2_dynamicBody, {Params::sim::start_x, Params::sim::start_y, 0.f}, 0.2f);
     }
   
-b2Vec2 get_end_effector_pos(){return _end_effector->GetWorldCenter(); }
+b2Vec2 get_end_effector_pos(){return _end_effector->GetWorldCenter();}
   
 private:
 b2Body* _end_effector;
@@ -96,16 +96,16 @@ FIT_QD(Trajectory)
     Trajectory(){
         _params.resize(Params::qd::gen_dim);
 
-        for (Eigen::VectorXf &traj : trajectories)
+        for (Eigen::VectorXf &traj : _trajectories)
             {traj.resize(Params::sim::num_trajectory_elements);}
     
-        for (Eigen::VectorXf &traj : undisturbed_trajectories)
+        for (Eigen::VectorXf &traj : _undisturbed_trajectories)
             {traj.resize(Params::sim::num_trajectory_elements);}
 
-        std::fill(is_random_trajectories.begin(), is_random_trajectories.end(), 0);
+        std::fill(_is_trajectory.begin(), _is_trajectory.end(), 0);
 
         // *100 timesteps in simulation, *2 two coordinates for each timestep
-        full_trajectory.resize(static_cast<int>(Params::sim::sim_duration * 100 * 2));
+        _full_trajectory.resize(static_cast<int>(Params::sim::sim_duration * 100 * 2));
     }
 
     template <typename Indiv> 
@@ -113,45 +113,45 @@ FIT_QD(Trajectory)
 
         for (size_t i = 0; i < ind.size(); ++i)
             _params[i] = ind.data(i);
-        // track number of random trajectories
-        m_num_trajectories = 0;
 
-        // first trajectory is actual trajectory
-        is_random_trajectories[0] = 1;
+        // track number of random trajectories
+        _m_num_trajectories = 0;
+
+        // first trajectory is actual trajectory, 1 = is trajectory
+        _is_trajectory[0] = 1;
 
         // generate random trajectories
-        // pass in boolean vector to the simulate function
         for (int i{1}; i < Params::random::max_num_random + 1; ++i)
         {
             float prob = rng::rng(rng::gen);
             if (prob <= Params::random::pct_random)
             {
                 // 1 means it is a trajectory
-                is_random_trajectories[i] = 1;
-                ++m_num_trajectories;
+                _is_trajectory[i] = 1;
+                ++_m_num_trajectories;
             }
             else 
-                {is_random_trajectories[i] = 0;}
+                {_is_trajectory[i] = 0;}
         }
-        // populates member vars
-        simulate(_params, is_random_trajectories);
+        // create trajectories
+        simulate(_params, _is_trajectory);
 
-        // generate only the real trajectory without any randomness for diversity and loss tracking
-        if (m_num_trajectories > 0)
+        // for diversity and loss tracking generate only the real trajectory without any randomness 
+        if (_m_num_trajectories > 0)
             {simulate(_params);}
         else // if no other balls present in simulation already
-            {undisturbed_trajectories[0] = trajectories[0];}
+            {_undisturbed_trajectories[0] = _trajectories[0];}
 
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
     }
     
     // generate trajectories during the algorithm
-    void simulate(Eigen::VectorXd &ctrl_pos, std::array<int, Params::random::max_num_random + 1> &is_random_traj){
+    void simulate(Eigen::VectorXd &ctrl_pos, std::array<int, Params::random::max_num_random + 1> &is_traj){
         robox2d::Simu simu;
         simu.add_floor();
         
-        auto rob = std::make_shared<Arm>(simu.world(), is_random_traj);
+        auto rob = std::make_shared<Arm>(simu.world(), is_traj);
         auto ctrl = std::make_shared<robox2d::control::ConstantPos>(ctrl_pos);
         rob->add_controller(ctrl);
         simu.add_robot(rob);
@@ -161,20 +161,20 @@ FIT_QD(Trajectory)
             auto graphics = std::make_shared<robox2d::gui::Graphics<>>(simu.world());
             simu.set_graphics(graphics);
         }
-        simu.run(Params::sim::sim_duration, trajectories, full_trajectory, Params::sim::trajectory_length);
+        simu.run(Params::sim::sim_duration, _trajectories, _full_trajectory, Params::sim::trajectory_length);
     }
 
-    // generate full trajectory for diversity calc
+    // generate full trajectory for diversity calc and loss tracking
     void simulate(Eigen::VectorXd &ctrl_pos){
     // simulating
         robox2d::Simu simu;
         simu.add_floor();
 
         // no random trajectories
-        std::array<int, Params::random::max_num_random + 1> is_random_traj;
-        std::fill(is_random_traj.begin(), is_random_traj.end(), 0);
+        std::array<int, Params::random::max_num_random + 1> is_traj;
+        std::fill(is_traj.begin(), is_traj.end(), 0);
         
-        auto rob = std::make_shared<Arm>(simu.world(), is_random_traj);
+        auto rob = std::make_shared<Arm>(simu.world(), is_traj);
         auto ctrl = std::make_shared<robox2d::control::ConstantPos>(ctrl_pos);
         rob->add_controller(ctrl);
         simu.add_robot(rob);
@@ -185,7 +185,7 @@ FIT_QD(Trajectory)
         //     simu.set_graphics(graphics);
         // }
 
-        simu.run(Params::sim::sim_duration, undisturbed_trajectories, full_trajectory, Params::sim::trajectory_length);
+        simu.run(Params::sim::sim_duration, _undisturbed_trajectories, _full_trajectory, Params::sim::trajectory_length);
     }
     
     template<typename block_t>
@@ -194,37 +194,34 @@ FIT_QD(Trajectory)
         for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
         {   
             for (size_t i{0}; i < Params::sim::num_trajectory_elements; ++i)
-                {data(row, i) = trajectories[row](i);}
+                {data(row, i) = _trajectories[row](i);}
         }
     }
 
     Eigen::VectorXf get_undisturbed_trajectory() const
-    {return undisturbed_trajectories[0];}
+    {return _undisturbed_trajectories[0];}
 
-    float &entropy() { return m_entropy; }
+    float &entropy() 
+    {return _m_entropy;}
 
-    size_t num_trajectories() { return m_num_trajectories; }    
+    size_t num_trajectories() const
+    {return _m_num_trajectories;}
 
-    bool is_random(int index)
-    {return is_random_trajectories.at(index);}
+    bool is_random(int index) const
+    {return _is_trajectory.at(index);}
     
-    int calculate_diversity_bins(std::bitset<Params::nov::discretisation * Params::nov::discretisation> &crossed_buckets)
+    int calculate_diversity_bins(std::bitset<Params::nov::discretisation * Params::nov::discretisation> &crossed_buckets) const
     {
-        // generate trajectory again but without additional random balls
-        double ROOM_H = Params::sim::ROOM_H;
-        double ROOM_W = Params::sim::ROOM_W;
-        double discretisation = Params::nov::discretisation;
+        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
+        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
 
-        double discrete_length_x {ROOM_W / discretisation};
-        double discrete_length_y {ROOM_H / discretisation};
+        int bucket_number;
 
-        int bucket_number{-1};
-
-        for (int j{0}; j < full_trajectory.size(); j+=2)
+        for (int j{0}; j < _full_trajectory.size(); j += 2)
         {
-            int bucket_x = full_trajectory[j] / discrete_length_x;
-            int bucket_y = full_trajectory[j+1] / discrete_length_y;
-            bucket_number = bucket_y * discretisation + bucket_x;
+            int bucket_x = _full_trajectory[j] / discrete_length_x;
+            int bucket_y = _full_trajectory[j+1] / discrete_length_y;
+            bucket_number = bucket_y * Params::nov::discretisation + bucket_x;
             
             if (VERBOSE)
                 {std::cout << "Bx " << bucket_x << "By " << bucket_y << "Bnum " << bucket_number << std::endl;}
@@ -251,8 +248,8 @@ FIT_QD(Trajectory)
         for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
         {
             // initialise image
-            image.fill(0);
-            for (auto &traj : trajectories)
+            _image.fill(0);
+            for (auto &traj : _trajectories)
             {
                 double x = traj(i);
                 double y = traj(i + 1);
@@ -261,7 +258,7 @@ FIT_QD(Trajectory)
                 int index_y = x / discrete_length_x;
                 int index_x = y / discrete_length_y;
 
-                image(index_x, index_y) = 1;
+                _image(index_x, index_y) = 1;
             }
         }
     }
@@ -276,8 +273,8 @@ FIT_QD(Trajectory)
         {
             // initialise image
             int image_num {i / 2};
-            image_frames[image_num] = Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>::Zero();
-            for (auto &traj : trajectories)
+            _image_frames[image_num] = Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>::Zero();
+            for (auto &traj : _trajectories)
             {
                 double x = traj(i);
                 double y = traj(i + 1);
@@ -286,10 +283,10 @@ FIT_QD(Trajectory)
                 int index_y = x / discrete_length_x;
                 int index_x = y / discrete_length_y;
 
-                image_frames[image_num](index_x, index_y) = 1;
+                _image_frames[image_num](index_x, index_y) = 1;
             }
             if (VERBOSE)
-            std::cout << image_frames[image_num] << std::endl;
+            std::cout << _image_frames[image_num] << std::endl;
         }
     }
 
@@ -299,15 +296,14 @@ FIT_QD(Trajectory)
     
     Eigen::VectorXd _params;
     // random trajectories + 1 real one
-    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> trajectories;
-    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> undisturbed_trajectories;
-    Eigen::VectorXf full_trajectory;
-    std::array<int, Params::random::max_num_random + 1> is_random_trajectories;
-    Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation> image;
-    std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> image_frames;
-    size_t m_num_trajectories;
-    float m_entropy;
-    
+    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> _trajectories;
+    std::array<Eigen::VectorXf, Params::random::max_num_random + 1> _undisturbed_trajectories;
+    Eigen::VectorXf _full_trajectory;
+    std::array<int, Params::random::max_num_random + 1> _is_trajectory;
+    Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation> _image;
+    std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> _image_frames;
+    size_t _m_num_trajectories;
+    float _m_entropy;
 };
 
 #endif //TRAJECTORY_HPP
