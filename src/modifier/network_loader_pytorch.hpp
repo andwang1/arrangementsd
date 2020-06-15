@@ -324,9 +324,19 @@ public:
                     {++index;}
 
                     if (TParams::ae::full_loss)
-                    {loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi));}
+                    {
+                        if (TParams::ae::L2_loss)
+                        {loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi));}
+                        else
+                        {loss_tensor += torch::sum(torch::abs(traj[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi));}
+                    }
                     else
-                    {loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2));}
+                    {
+                        if (TParams::ae::L2_loss)
+                        {loss_tensor += torch::sum(torch::pow(traj[i] - reconstruction_tensor[index], 2));}
+                        else
+                        {loss_tensor += torch::sum(torch::abs(traj[i] - reconstruction_tensor[index]));}
+                    }
                 }
                 
                 long num_trajectories {static_cast<long>(std::get<2>(tup).size())};
@@ -426,12 +436,18 @@ public:
             #ifdef VAE
             if (TParams::ae::full_loss)
             {
-                recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi);
+                if (TParams::ae::L2_loss)
+                {recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi);}
+                else
+                {recon_loss_unreduced[i] = torch::abs(traj_tensor[i] - reconstruction_tensor[index]) / (2 * torch::exp(decoder_logvar[index])) + 0.5 * (decoder_logvar[index] + _log_2_pi);}
                 reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             }
             else
             {
-                recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
+                if (TParams::ae::L2_loss)
+                {recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);}
+                else
+                {recon_loss_unreduced[i] = torch::abs(traj_tensor[i] - reconstruction_tensor[index]);}
                 reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             }
             L2[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
@@ -440,7 +456,10 @@ public:
             L2_actual_traj[index] = torch::sum(L2[i]);
 
             #else //AE
-            recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);
+            if (TParams::ae::L2_loss)
+            {recon_loss_unreduced[i] = torch::pow(traj_tensor[i] - reconstruction_tensor[index], 2);}
+            else
+            {recon_loss_unreduced[i] = torch::abs(traj_tensor[i] - reconstruction_tensor[index]);}
             reconstruction_loss[index] += torch::sum(recon_loss_unreduced[i]);
             if (boundaries[i])
             L2_actual_traj[index] = torch::sum(recon_loss_unreduced[i]);

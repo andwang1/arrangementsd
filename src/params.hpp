@@ -41,6 +41,7 @@ struct Params {
 
     static double pct_extension;
     static bool full_loss;
+    static bool L2_loss;
     static size_t beta;
 
     // network neurons        
@@ -110,6 +111,7 @@ struct Params {
 double Params::nov::l;
 double Params::random::pct_random;
 bool Params::ae::full_loss;
+bool Params::ae::L2_loss;
 size_t Params::pop::nb_gen;
 size_t Params::ae::beta;
 double Params::ae::pct_extension;
