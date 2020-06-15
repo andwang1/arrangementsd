@@ -104,8 +104,7 @@ FIT_QD(Trajectory)
 
         std::fill(_is_trajectory.begin(), _is_trajectory.end(), 0);
 
-        // *100 timesteps in simulation, *2 two coordinates for each timestep
-        _full_trajectory.resize(static_cast<int>(Params::sim::sim_duration * 100 * 2));
+        _full_trajectory.resize(Params::sim::full_trajectory_length);
     }
 
     template <typename Indiv> 
@@ -238,6 +237,25 @@ FIT_QD(Trajectory)
 
     Eigen::VectorXd &params()
     {return _params;}
+
+    int calculate_distance(float &distance, bool &moved)
+    {
+        Eigen::VectorXf manhattan_dist = _full_trajectory.segment<Params::sim::full_trajectory_length - 2>(0) - 
+                                         _full_trajectory.segment<Params::sim::full_trajectory_length - 2>(2);
+
+        distance = 0;
+        for (int i{0}; i < manhattan_dist.size(); i+=2)
+            {distance += manhattan_dist.segment<2>(i).norm();}
+
+        moved = distance > 1e-6;
+
+        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
+        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
+
+        int bucket_x = _full_trajectory[Params::sim::full_trajectory_length - 2] / discrete_length_x;
+        int bucket_y = _full_trajectory[Params::sim::full_trajectory_length - 1] / discrete_length_y;
+        return bucket_y * Params::nov::discretisation + bucket_x;
+    }
 
     // generates images from the trajectories fed into the function
     void generate_image()

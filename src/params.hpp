@@ -21,6 +21,8 @@ struct Params {
     SFERES_CONST bool enable_graphics = false;
     SFERES_CONST float max_force = 1.5f;
     SFERES_CONST float sim_duration = 10.f;
+    // *100 timesteps in simulation, *2 two coordinates for each timestep
+    SFERES_CONST size_t full_trajectory_length = sim_duration * 100 * 2;
     };
 
     struct random {
@@ -100,6 +102,7 @@ struct Params {
         SFERES_CONST size_t save_trajectories = 3000;
         SFERES_CONST size_t save_model = 10000;
         SFERES_CONST size_t save_diversity = 500;
+        SFERES_CONST size_t save_distances = 500;
     };
 };
 
