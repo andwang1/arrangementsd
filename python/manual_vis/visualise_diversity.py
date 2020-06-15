@@ -31,6 +31,10 @@ plt.grid(which="both")
 plt.xticks(range(discretisation), np.arange(0, ROOM_W, ROOM_W / discretisation))
 plt.yticks(range(discretisation), np.arange(0, ROOM_H, ROOM_H / discretisation))
 
+plt.title("Diversity Calculation - Single Trajectory")
+plt.xlabel("Room X")
+plt.ylabel("Room Y")
+
 if OVERLAY:
     trajectory_pts = """
             1
@@ -102,7 +106,7 @@ if OVERLAY:
     y_impact = np.array(y_impact) * discretisation / ROOM_H
 
     for i, j in zip(x_impact, y_impact):
-        plt.scatter(i, j, c="black")
+        plt.scatter(i, j, c="red")
         plt.pause(1)
 
     for i, j in zip(x, y):
@@ -118,7 +122,8 @@ if OVERLAY:
     line_x.append(x[-1])
     line_y.append(y[-1])
 
-    plt.plot(line_x, line_y, c="red")
+    plt.plot(line_x, line_y, c="green")
     plt.pause(0.5)
 
+plt.savefig("diversity.pdf")
 plt.show()

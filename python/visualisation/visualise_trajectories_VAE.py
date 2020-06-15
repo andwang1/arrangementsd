@@ -6,13 +6,19 @@ from exp_config import *
 variant = "vae"
 random = "0.2"
 GEN_NUMBER = 6000
-
+beta = "1"
+extension = "0"
 vae_loss = "fulllosstrue"
 
-BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/second_run/'
-EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}_{vae_loss}/'
-os.chdir(BASE_PATH+EXP_PATH)
-PID = os.listdir()[0] + "/"
+BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/box2dtest/first_run/'
+# EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}_{vae_loss}/'
+EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}_{vae_loss}_beta{beta}_extension{extension}/'
+FULL_PATH = BASE_PATH + EXP_PATH
+os.chdir(FULL_PATH)
+
+pids = [dir for dir in os.listdir() if os.path.isdir(os.path.join(FULL_PATH, dir))]
+print(pids)
+PID = pids[0] + "/"
 os.chdir(BASE_PATH)
 FILE_NAME = f'traj_{GEN_NUMBER}.dat'
 

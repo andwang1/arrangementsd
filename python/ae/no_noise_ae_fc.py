@@ -8,7 +8,7 @@ from ae import VAE_FC
 from dataset import ActionTrajectory
 
 # Read the data from pickle
-with open("data.pk", "rb") as f:
+with open("data5.pk", "rb") as f:
     data = pk.load(f)
     inputs = data["inputs"]
     trajectories = data["trajectories"]
@@ -17,25 +17,26 @@ with open("data.pk", "rb") as f:
 # Hyper Parameters
 VERBOSE = False
 FILE_LOG = True
-NUM_BATCH_TO_FILE = 2
+NUM_BATCH_TO_FILE = 1
+FULL_LOSS = True
 
 batch_size = 64
 learning_rate = 1e-3
-num_epochs = 1
+num_epochs = 3000
 
-beta = 2
+beta = 1
 
 input_dim = len(inputs[0])
 output_dim = len(trajectories[0])
 en_hid_dim1 = 10
 latent_dim = 2
-de_hid_dim1 = 5
-de_hid_dim2 = 10
+de_hid_dim1 = 30
+de_hid_dim2 = 50
 
 # Create train and test sets
-train_pct = 0.6
-val_pct = 0.2
-test_pct = 0.2
+train_pct = 0.75
+val_pct = 0.15
+test_pct = 0.1
 
 # Device selection
 GPU = True
@@ -51,7 +52,12 @@ train_len = int(train_pct * len(inputs))
 val_len = int(val_pct * len(inputs))
 test_len = int(test_pct * len(inputs))
 
-trajectory_dataset = ActionTrajectory(inputs, trajectories)
+train_len = int(train_pct * 2000)
+val_len = int(val_pct * 2000)
+test_len = int(test_pct * 2000)
+trajectory_dataset = ActionTrajectory(inputs[:2000], trajectories[:2000])
+
+# trajectory_dataset = ActionTrajectory(inputs, trajectories)
 traj_train, traj_val, traj_test = torch.utils.data.random_split(trajectory_dataset, [train_len, val_len, test_len])
 loader_train = torch.utils.data.DataLoader(traj_train, batch_size=batch_size, shuffle=True)
 loader_val = torch.utils.data.DataLoader(traj_val, batch_size=batch_size, shuffle=False)
@@ -94,7 +100,7 @@ for epoch in range(num_epochs):
         pred_trajectories, out_var, en_mu, en_logvar = model(actions)
 
         # Losses summed over the batch
-        total_loss, KL_loss, L2_loss = model.loss_function(en_mu, en_logvar, out_var, pred_trajectories, label_trajectories.to(device))
+        total_loss, KL_loss, L2_loss = model.loss_function(en_mu, en_logvar, out_var, pred_trajectories, label_trajectories.to(device), FULL_LOSS)
 
         # Recording losses summed over batch
         train_loss += total_loss.item()
@@ -130,7 +136,7 @@ for epoch in range(num_epochs):
 
             # Losses summed over the batch
             total_loss, KL_loss, L2_loss = model.loss_function(en_mu, en_logvar, out_var, pred_trajectories,
-                                                               label_trajectories.to(device))
+                                                               label_trajectories.to(device), FULL_LOSS)
 
             # Recording aggregate losses for plotting
             val_loss += total_loss.item()
@@ -165,7 +171,7 @@ with torch.no_grad():
 
         # Losses summed over the batch
         total_loss, KL_loss, L2_loss = model.loss_function(en_mu, en_logvar, out_var, pred_trajectories,
-                                                           label_trajectories.to(device))
+                                                           label_trajectories.to(device), FULL_LOSS)
 
         # Recording aggregate losses for plotting
         test_loss += total_loss.item()

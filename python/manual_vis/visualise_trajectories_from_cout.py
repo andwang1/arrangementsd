@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
-ROOM_H = 10
-ROOM_W = 10
+ROOM_H = 5
+ROOM_W = 5
 
 pts = [(3, 3),
 (4.83848, 4.83848),
@@ -56,7 +56,7 @@ y = [i[1] for i in pts]
 for i, j in zip(x, y):
     plt.ylim([ROOM_H , 0])
     plt.xlim([0, ROOM_W])
-    plt.scatter(i, j)
+    plt.scatter(i, j, c="black")
     plt.pause(0.2)
 
 # plt.scatter(x, y)
