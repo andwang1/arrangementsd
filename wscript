@@ -81,7 +81,7 @@ def build(bld):
                            source = 'src/balltrajectorysd.cpp',
                            includes='./src . ../../',
                            uselib='TBB BOOST EIGEN PTHREAD MPI'
-                                + ' PYTHON PYTORCH KDTREE SDL ROBOX2D MAGNUM BOX2D' + bld.env['magnum_libs'],
+                                + ' PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
                            target = 'balltrajectorysd',
                            variants = ['AE', 'VAE', 'AURORA'])
