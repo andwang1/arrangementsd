@@ -1,7 +1,9 @@
 import os
 variant = "vae"
 
-os.chdir(f"/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/first_run_extend/results_balltrajectorysd_{variant}")
+BASE_NAME = "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/params_change_start"
+
+os.chdir(f"{BASE_NAME}/results_balltrajectorysd_{variant}")
 dir_names = os.listdir()
 
 for name in dir_names:

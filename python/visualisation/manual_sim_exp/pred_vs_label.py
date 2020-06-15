@@ -17,13 +17,13 @@ ROOM_W = 5
 ROOM_H = 5
 
 # Read data
-with open("../ae/pred.txt", "r") as f_predictions:
+with open("../../ae/pred.txt", "r") as f_predictions:
     # If the file is from python AE, need to strip the brackets
     for line in f_predictions.readlines():
         line = line.strip("[").replace("]", "")
         predictions.append([float(i.strip()) for i in line.split(",")])
 
-with open("../ae/labels.txt", "r") as f_labels:
+with open("../../ae/labels.txt", "r") as f_labels:
     # If the file is from python AE, need to strip the brackets
     for line in f_labels.readlines():
         line = line.strip("[").replace("]", "")
