@@ -112,6 +112,51 @@ From: airl_lab/default/airl_env:pytorch_ci
     echo Launching command \'build/exp/balltrajectorysd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8\'
     build/exp/balltrajectorysd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8
 
+%apprun vae
+    bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
+
+    CURPATH=$(pwd)
+    cd /git/sferes2/
+    DIRNAME=results_vae
+    PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
+
+    mkdir -p $CURPATH/$DIRNAME/
+    tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
+    mkdir -p $tmp_dir
+
+    echo Launching command \'build/exp/balltrajectorysd/balltrajectory_vae -d $tmp_dir $1 $2 $3\'
+    build/exp/balltrajectorysd/balltrajectory_vae -d $tmp_dir $1 $2 $3
+
+%apprun ae
+    bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
+
+    CURPATH=$(pwd)
+    cd /git/sferes2/
+    DIRNAME=results_ae
+    PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
+
+    mkdir -p $CURPATH/$DIRNAME/
+    tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
+    mkdir -p $tmp_dir
+
+    echo Launching command \'build/exp/balltrajectorysd/balltrajectory_ae -d $tmp_dir $1 $2 $3\'
+    build/exp/balltrajectorysd/balltrajectory_ae -d $tmp_dir $1 $2 $3
+
+%apprun aurora
+    bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
+
+    CURPATH=$(pwd)
+    cd /git/sferes2/
+    DIRNAME=results_aurora
+    PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
+
+    mkdir -p $CURPATH/$DIRNAME/
+    tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
+    mkdir -p $tmp_dir
+
+    echo Launching command \'build/exp/balltrajectorysd/balltrajectory_aurora -d $tmp_dir $1 $2 $3\'
+    build/exp/balltrajectorysd/balltrajectory_aurora -d $tmp_dir $1 $2 $3
+
 
 %help
     To Complete
