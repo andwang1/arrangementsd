@@ -4,11 +4,12 @@ import os
 from exp_config import *
 
 variant = "ae"
-random = "0.0"
+random = "0.4"
+loss = "false"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/balltrajectorysd/results_exp1/second_run/'
-EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}/'
+BASE_PATH = '/media/andwang1/SAMSUNG/MSC_INDIV/results_exp1/repeated_run1/L1/'
+EXP_PATH = f'results_balltrajectorysd_{variant}/gen6001_random{random}_fullloss{loss}/'
 os.chdir(BASE_PATH+EXP_PATH)
 PID = os.listdir()[0] + "/"
 os.chdir(BASE_PATH)
