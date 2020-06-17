@@ -5,6 +5,7 @@ import pickle as pk
 import seaborn as sns
 from collections import defaultdict
 from diversity import plot_diversity_in_dir
+from dist_grid import plot_dist_grid_in_dir
 from ae_loss_AE import plot_loss_in_dir_AE
 from ae_loss_VAE import plot_loss_in_dir_VAE
 
@@ -12,7 +13,7 @@ GENERATE_EACH_IMAGE = True
 PLOT_TOTAL_L2 = False
 START_GEN_LOSS_PLOT = 500
 
-EXP_FOLDER = "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/params_change_start"
+EXP_FOLDER = "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/smaller_network"
 BASE_NAME = "results_balltrajectorysd_"
 variants = [exp_name.split("_")[-1] for exp_name in os.listdir(EXP_FOLDER) if
             os.path.isdir(os.path.join(EXP_FOLDER, exp_name))]
@@ -20,6 +21,7 @@ variants = [exp_name.split("_")[-1] for exp_name in os.listdir(EXP_FOLDER) if
 # store all data
 diversity_dict = defaultdict(list)
 loss_dict = defaultdict(list)
+distance_dict = defaultdict(list)
 
 for variant in variants:
     os.chdir(f"{EXP_FOLDER}/{BASE_NAME}{variant}")
@@ -35,6 +37,7 @@ for variant in variants:
 
     variant_diversity_dict = defaultdict(list)
     variant_loss_dict = defaultdict(list)
+    variant_dist_dict = defaultdict(list)
 
     for i, exp in enumerate(exp_names):
         exp_path = f"{EXP_FOLDER}/{BASE_NAME}{variant}/{exp}"
@@ -44,6 +47,7 @@ for variant in variants:
             print(f"PROCESSING - {full_path}")
             div_dict, max_diversity = plot_diversity_in_dir(full_path, GENERATE_EACH_IMAGE)
             variant_diversity_dict[exp].append(div_dict)
+            variant_dist_dict[exp].append(plot_dist_grid_in_dir(full_path, GENERATE_EACH_IMAGE))
             # PID level plotting
             if variant == "vae":
                 variant_loss_dict[exp].append(plot_loss_in_dir_VAE(full_path, is_full_loss[i], GENERATE_EACH_IMAGE, PLOT_TOTAL_L2))
@@ -135,6 +139,50 @@ for variant in variants:
         plt.savefig("losses.png")
         plt.close()
 
+        # at experiment level plot distance metrices
+        MD_values = np.array([repetition["MD"] for repetition in variant_dist_dict[exp]])
+        MDE_values = np.array([repetition["MDE"] for repetition in variant_dist_dict[exp]]).flatten()
+        VD_values = np.array([repetition["VD"] for repetition in variant_dist_dict[exp]]).flatten()
+        VDE_values = np.array([repetition["VDE"] for repetition in variant_dist_dict[exp]]).flatten()
+        PCT_values = np.array([repetition["PCT"] for repetition in variant_dist_dict[exp]]).flatten()
+        generations = variant_dist_dict[exp][0]["gen"] * len(MD_values)
+
+        f = plt.figure(figsize=(10, 5))
+        spec = f.add_gridspec(3, 1)
+        ax1 = f.add_subplot(spec[:2, 0])
+        ln1 = sns.lineplot(generations, MD_values.flatten(), estimator="mean", ci="sd", label="Mean Distance", ax=ax1, color="red", linestyle="--")
+        ln2 = sns.lineplot(generations, MDE_values, estimator="mean", ci="sd", label="Mean Distance excl. 0s", ax=ax1, color="red")
+        ax1.set_ylabel("Mean Distance")
+
+        ax2 = ax1.twinx()
+        ln3 = sns.lineplot(generations, VD_values, estimator="mean", ci="sd", label="Variance", ax=ax2, color="blue", linestyle="--")
+        ln4 = sns.lineplot(generations, VDE_values, estimator="mean", ci="sd", label="Variance excl. 0s", ax=ax2, color="blue")
+        ax2.set_ylabel("Variance")
+        ax2.set_title("Distance Stats over Generations")
+
+        # first remove default legends automatically added then add combined set
+        ax1.get_legend().remove()
+        ax2.get_legend().remove()
+        lns = ln2.get_lines() + ln4.get_lines()
+        labs = [l.get_label() for l in lns]
+        ax2.legend(lns, labs, loc='best')
+
+        ax3 = f.add_subplot(spec[2, 0])
+        ax3.set_title("% Solutions Moving The Ball")
+        ax3.set_ylim([0, 100])
+        ax3.set_yticks([0, 25, 50, 75, 100])
+        ax3.yaxis.grid(True)
+        sns.lineplot(generations, PCT_values, estimator="mean", ci="sd", ax=ax3)
+        ax3.set_ylabel("%")
+        ax3.set_xlabel("Generations")
+
+        # make space between subplots
+        plt.subplots_adjust(hspace=0.6)
+
+        plt.savefig("distance.png")
+        plt.close()
+
+
     # variant plotting
     # retrieve stochasticity levels from file names
     os.chdir(f"{EXP_FOLDER}/{BASE_NAME}{variant}")
@@ -220,7 +268,6 @@ for variant in variants:
 
         # TR_EPOCHS = repetition["TR_EPOCHS"]
 
-        # at experiment level, plot losses
         stochasticity_values = np.array(stochasticity_values).flatten()
         L2_values = np.array(L2_values).flatten()
         AL_values = np.array(AL_values).flatten()
@@ -289,6 +336,76 @@ for variant in variants:
 
         plt.close()
 
+    # plot distances across stochasticity for each generation
+    generations = list(variant_dist_dict[exp][0]["gen"])
+    for loss_type in ["fulllosstrue", "fulllossfalse"]:
+        if variant != "vae" and loss_type == "fulllosstrue":
+            continue
+        for i, generation in enumerate(generations):
+            MD_values = []
+            MDE_values = []
+            VD_values = []
+            VDE_values = []
+            PCT_values = []
+            stochasticity_values = []
+
+            for stochasticity in stochasticities:
+                # take correct dictionary according to stochasticity
+                components[1] = f"random{stochasticity}"
+                components[2] = loss_type
+                for repetition in variant_dist_dict["_".join(components)]:
+                    MD_values.append(repetition["MD"][i])
+                    MDE_values.append(repetition["MDE"][i])
+                    VD_values.append(repetition["VD"][i])
+                    VDE_values.append(repetition["VDE"][i])
+                    PCT_values.append(repetition["PCT"][i])
+                    stochasticity_values.append(stochasticity)
+
+            f = plt.figure(figsize=(15, 5))
+            spec = f.add_gridspec(5, 1)
+            ax1 = f.add_subplot(spec[:2, 0])
+            ln1 = sns.lineplot(stochasticity_values, MD_values, estimator="mean", ci="sd", label="Mean Distance",
+                               ax=ax1, color="red", linestyle="--")
+            ln2 = sns.lineplot(stochasticity_values, MDE_values, estimator="mean", ci="sd", label="Mean Distance excl. 0s",
+                               ax=ax1, color="red")
+            ax1.set_title("Distance Stats over Stochasticity")
+            ax1.set_ylabel("Mean Distance")
+            # first remove default legends automatically added then add combined set
+            ax1.get_legend().remove()
+            lns = ln2.get_lines()
+            labs = [l.get_label() for l in lns]
+            ax1.legend(lns, labs, loc='best')
+
+            ax2 = f.add_subplot(spec[2:4, 0])
+            ln3 = sns.lineplot(stochasticity_values, VD_values, estimator="mean", ci="sd", label="Variance", ax=ax2,
+                               color="blue", linestyle="--")
+            ln4 = sns.lineplot(stochasticity_values, VDE_values, estimator="mean", ci="sd", label="Variance excl. 0s", ax=ax2,
+                               color="blue")
+            ax2.set_ylabel("Variance")
+            ax2.get_legend().remove()
+            lns = ln4.get_lines()
+            labs = [l.get_label() for l in lns]
+            ax2.legend(lns, labs, loc='best')
+
+            ax3 = f.add_subplot(spec[4, 0])
+            ax3.set_title("% Solutions Moving The Ball")
+            ax3.set_ylim([0, 100])
+            ax3.set_yticks([0, 25, 50, 75, 100])
+            ax3.yaxis.grid(True)
+            sns.lineplot(stochasticity_values, PCT_values, estimator="mean", ci="sd", ax=ax3)
+            ax3.set_ylabel("%")
+            ax3.set_xlabel("Stochasticity")
+
+            # make space between subplots
+            plt.subplots_adjust(hspace=0.6)
+
+            if loss_type == "fulllosstrue":
+                plt.savefig(f"distance_gen{generation}_fullloss.png")
+            else:
+                plt.savefig(f"distance_gen{generation}.png")
+            plt.close()
+
+    distance_dict[variant].append(variant_dist_dict)
     diversity_dict[variant].append(variant_diversity_dict)
     loss_dict[variant].append(variant_loss_dict)
 
@@ -298,3 +415,5 @@ with open("diversity_data.pk", "wb") as f:
     pk.dump(diversity_dict, f)
 with open("loss_data.pk", "wb") as f:
     pk.dump(loss_dict, f)
+with open("dist_data.pk", "wb") as f:
+    pk.dump(distance_dict, f)
