@@ -34,18 +34,18 @@ def plot_diversity_in_dir(path, generate_images=True, save_path=None):
 
         div_scores.append(achieved_diversity)
 
-        rows = []
-        column = []
-        counter_x = 0
-        for i in diversity_grid:
-            column.append(float(i))
-            counter_x += 1
-            if counter_x >= DISCRETISATION:
-                counter_x = 0
-                rows.append(column)
-                column = []
-
         if generate_images:
+            rows = []
+            column = []
+            counter_x = 0
+            for i in diversity_grid:
+                column.append(float(i))
+                counter_x += 1
+                if counter_x >= DISCRETISATION:
+                    counter_x = 0
+                    rows.append(column)
+                    column = []
+
             # plot colours
             fig = plt.figure(figsize=(15, 15))
             plt.ylim([DISCRETISATION, 0])
