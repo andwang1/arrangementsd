@@ -187,28 +187,6 @@ FIT_QD(Trajectory)
         simu.run(Params::sim::sim_duration, _undisturbed_trajectories, _full_trajectory, Params::sim::trajectory_length);
     }
     
-    template<typename block_t>
-    void get_flat_observations(block_t &data) const 
-    {
-        for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
-        {   
-            for (size_t i{0}; i < Params::sim::num_trajectory_elements; ++i)
-                {data(row, i) = _trajectories[row](i);}
-        }
-    }
-
-    Eigen::VectorXf get_undisturbed_trajectory() const
-    {return _undisturbed_trajectories[0];}
-
-    float &entropy() 
-    {return _m_entropy;}
-
-    size_t num_trajectories() const
-    {return _m_num_trajectories;}
-
-    bool is_random(int index) const
-    {return _is_trajectory.at(index);}
-    
     int calculate_diversity_bins(std::bitset<Params::nov::discretisation * Params::nov::discretisation> &crossed_buckets) const
     {
         double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
@@ -235,9 +213,6 @@ FIT_QD(Trajectory)
         return bucket_number;
     }
 
-    Eigen::VectorXd &params()
-    {return _params;}
-
     int calculate_distance(float &distance, bool &moved)
     {
         Eigen::VectorXf manhattan_dist = _full_trajectory.segment<Params::sim::full_trajectory_length - 2>(0) - 
@@ -257,56 +232,30 @@ FIT_QD(Trajectory)
         return bucket_y * Params::nov::discretisation + bucket_x;
     }
 
-    // generates images from the trajectories fed into the function
-    void generate_image()
+    template<typename block_t>
+    void get_flat_observations(block_t &data) const 
     {
-        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
-        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
-
-        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
-        {
-            // initialise image
-            _image.fill(0);
-            for (auto &traj : _trajectories)
-            {
-                double x = traj(i);
-                double y = traj(i + 1);
-
-                // flip rows and columns so x = horizontal axis
-                int index_y = x / discrete_length_x;
-                int index_x = y / discrete_length_y;
-
-                _image(index_x, index_y) = 1;
-            }
+        for (size_t row {0}; row < (Params::random::max_num_random + 1); ++row)
+        {   
+            for (size_t i{0}; i < Params::sim::num_trajectory_elements; ++i)
+                {data(row, i) = _trajectories[row](i);}
         }
     }
 
-    // generates images from the trajectories fed into the function
-    void generate_image_sequence()
-    {
-        double discrete_length_x {double(Params::sim::ROOM_W) / Params::nov::discretisation};
-        double discrete_length_y {double(Params::sim::ROOM_H) / Params::nov::discretisation};
+    Eigen::VectorXf get_undisturbed_trajectory() const
+    {return _undisturbed_trajectories[0];}
 
-        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
-        {
-            // initialise image
-            int image_num {i / 2};
-            _image_frames[image_num] = Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>::Zero();
-            for (auto &traj : _trajectories)
-            {
-                double x = traj(i);
-                double y = traj(i + 1);
+    float &entropy() 
+    {return _m_entropy;}
 
-                // flip rows and columns so x = horizontal axis
-                int index_y = x / discrete_length_x;
-                int index_x = y / discrete_length_y;
+    size_t num_trajectories() const
+    {return _m_num_trajectories;}
 
-                _image_frames[image_num](index_x, index_y) = 1;
-            }
-            if (VERBOSE)
-            std::cout << _image_frames[image_num] << std::endl;
-        }
-    }
+    bool is_random(int index) const
+    {return _is_trajectory.at(index);}
+
+    Eigen::VectorXd &params()
+    {return _params;}
 
     private:
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
@@ -318,8 +267,6 @@ FIT_QD(Trajectory)
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> _undisturbed_trajectories;
     Eigen::VectorXf _full_trajectory;
     std::array<int, Params::random::max_num_random + 1> _is_trajectory;
-    Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation> _image;
-    std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> _image_frames;
     size_t _m_num_trajectories;
     float _m_entropy;
 };
