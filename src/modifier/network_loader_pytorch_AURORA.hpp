@@ -25,7 +25,22 @@ public:
             m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
     {
         if (torch::cuda::is_available()) 
-        {std::cout << "Torch -> Using CUDA" << std::endl;} 
+        {
+            const char* cuda_visible_devices = std::getenv("CUDA_VISIBLE_DEVICES");
+            std::string str_cuda_visible_devices = (cuda_visible_devices == NULL) ? std::string("") : std::string(cuda_visible_devices);
+            if (not str_cuda_visible_devices.empty()) 
+            {
+                int index_device_to_use = std::stoi(str_cuda_visible_devices);
+                m_device = torch::Device(m_device.type(), index_device_to_use);
+                std::cout << "Torch -> Using CUDA ; index device: " << index_device_to_use << std::endl;
+            } 
+            else 
+            {
+                std::cout << "Torch -> Using CUDA ; no specified index device " << std::endl;
+            }
+
+            // std::cout << "Torch -> Using CUDA" << std::endl;
+        }
         else {std::cout << "Torch -> Using CPU" << std::endl;}
 
         this->m_auto_encoder_module.ptr()->to(this->m_device);
