@@ -14,7 +14,7 @@ struct Params {
     SFERES_CONST float start_x = 3.55f;
     SFERES_CONST float start_y = 3.f;
 
-    SFERES_CONST size_t trajectory_length = 50;
+    SFERES_CONST int trajectory_length = 50;
     SFERES_CONST int num_trajectory_elements = 2 * trajectory_length;
 
     SFERES_CONST float radius = 0.15f;

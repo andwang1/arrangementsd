@@ -83,7 +83,8 @@
 #include "stat/stat_ae_losses.hpp"
 #include "stat/stat_diversity.hpp"
 #include "stat/stat_distances.hpp"
-#include "stat/stat_traj_similarity.hpp"
+#include "stat/stat_similarity.hpp"
+#include "stat/stat_entropy.hpp"
 
 #include "params.hpp"
 #include "trajectory.hpp"
@@ -220,6 +221,7 @@ int main(int argc, char **argv) {
                     sferes::stat::Distances<phen_t, params_t>,
                     // similarity needs to run after distances as it gets info on whether the ball moved from distances
                     sferes::stat::Similarity<phen_t, params_t>,
+                    sferes::stat::Entropy<phen_t, params_t>,
                     sferes::stat::Modifier<phen_t, params_t>
                 > stat_t;
 
