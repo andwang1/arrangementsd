@@ -50,7 +50,7 @@ namespace sferes {
                 } 
                 else if (ea.gen() > 0) 
                 {
-                    if ((ea.gen() % Params::update::update_frequency == 0) || ea.gen() == 1) 
+                    if ((ea.gen() % Params::update::update_frequency == 0)) 
                     {
                         _is_train_gen = true;
                         update_descriptors(ea);
