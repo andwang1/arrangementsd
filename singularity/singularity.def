@@ -21,7 +21,8 @@ From: airl_lab/default/airl_env:pytorch_ci
     export DEBIAN_FRONTEND=noninteractive
     apt-get install -y  python3-matplotlib python3-numpy python3.6-dev python3-opencv python3-pip python3.6-tk graphviz xdg-utils
     apt-get install -y  gdb
-    alias pip="/usr/local/anaconda/bin/pip"
+
+   pip3 install seaborn
 
    cd /git
    git clone https://github.com/erincatto/box2d.git ./box2d
