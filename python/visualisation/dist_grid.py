@@ -52,10 +52,7 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
             column = []
             counter_x = 0
             for i in distance_grid:
-                if float(i) == -1:
-                    column.append(float(-90))
-                else:
-                    column.append(float(i))
+                column.append(float(i))
                 counter_x += 1
                 if counter_x >= DISCRETISATION:
                     counter_x = 0
@@ -166,7 +163,7 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
         plt.close()
 
     data_dict = {"gen": dist_generations, "MD": mean_distance, "MDE": mean_distance_exclzero, "VD": var_values,
-                 "VDE": var_values_exclzero}
+                 "VDE": var_values_exclzero, "PCT": percentage_moved}
     return data_dict
 
 
