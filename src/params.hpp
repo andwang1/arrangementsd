@@ -32,7 +32,7 @@ struct Params {
 
     struct ae {
     SFERES_CONST size_t batch_size = 256;
-    SFERES_CONST size_t nb_epochs = 20000;
+    SFERES_CONST size_t nb_epochs = 5000;
     SFERES_CONST float learning_rate = 1e-2;
     SFERES_CONST float CV_fraction = 0.80;
 
