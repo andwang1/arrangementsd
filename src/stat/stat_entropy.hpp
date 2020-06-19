@@ -31,7 +31,7 @@ namespace sferes {
             void _write_entropy(const std::string &prefix, const EA &ea) 
             {
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
-                std::cout << "writing..." << fname << std::endl;
+                std::cout << "writing... " << fname << std::endl;
 
                 size_t pop_size = ea.pop().size();
 

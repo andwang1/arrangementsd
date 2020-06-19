@@ -29,7 +29,7 @@ namespace sferes {
             void _write_trajectories(const std::string &prefix, const EA &ea) const {
 
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
-                std::cout << "writing..." << fname << std::endl;
+                std::cout << "writing... " << fname << std::endl;
 
                 // retrieve all phenotypes and trajectories                
                 matrix_t gen, traj;

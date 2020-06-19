@@ -15,7 +15,7 @@ namespace sferes {
         public:
             template<typename EA>
             void _write_container(const std::string &prefix, const EA &ea) const {
-                std::cout << "writing..." << prefix << ea.gen() << std::endl;
+                std::cout << "writing... " << prefix << ea.gen() << std::endl;
                 std::string fname = ea.res_dir() + "/"
                                     + prefix
                                     + boost::lexical_cast<std::string>(ea.gen())
