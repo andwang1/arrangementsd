@@ -221,7 +221,7 @@ FIT_QD(Trajectory)
 
         _moved = distance > 1e-6;
         moved = _moved;
-        return get_bucket_index();
+        return get_bucket_index(Params::nov::discrete_length_x, Params::nov::discrete_length_y, Params::nov::discretisation);
     }
 
     template<typename block_t>
@@ -252,11 +252,11 @@ FIT_QD(Trajectory)
     bool moved() const
     {return _moved;}
 
-    int get_bucket_index() const
+    int get_bucket_index(double discrete_length_x, double discrete_length_y, int discretisation) const
     {
-        int bucket_x = _full_trajectory[Params::sim::full_trajectory_length - 2] / Params::nov::discrete_length_x;
-        int bucket_y = _full_trajectory[Params::sim::full_trajectory_length - 1] / Params::nov::discrete_length_y;
-        return bucket_y * Params::nov::discretisation + bucket_x;
+        int bucket_x = _full_trajectory[Params::sim::full_trajectory_length - 2] / discrete_length_x;
+        int bucket_y = _full_trajectory[Params::sim::full_trajectory_length - 1] / discrete_length_y;
+        return bucket_y * discretisation + bucket_x;
     }
 
     private:

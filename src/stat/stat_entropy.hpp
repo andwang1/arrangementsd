@@ -38,7 +38,7 @@ namespace sferes {
                 matrix_t observations(pop_size, Params::sim::num_trajectory_elements);
                 matrix_t observations_excl_zero(pop_size, Params::sim::num_trajectory_elements);
                 std::vector<int> indices_moved;
-                std::array<std::vector<int>, Params::nov::discretisation * Params::nov::discretisation> indices_per_bucket;
+                std::array<std::vector<int>, Params::stat::entropy_discretisation * Params::stat::entropy_discretisation> indices_per_bucket;
 
                 size_t moved_counter{0};
                 for (int i{0}; i < pop_size; ++i)
@@ -46,7 +46,7 @@ namespace sferes {
                     observations.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();
                     if (ea.pop()[i]->fit().moved())
                     {
-                        indices_per_bucket[ea.pop()[i]->fit().get_bucket_index()].push_back(i);
+                        indices_per_bucket[ea.pop()[i]->fit().get_bucket_index(Params::stat::ent_discrete_length_x, Params::stat::ent_discrete_length_y, Params::stat::entropy_discretisation)].push_back(i);
                         indices_moved.push_back(i);
                         
                         observations_excl_zero.row(moved_counter) = observations.row(i);
@@ -54,9 +54,9 @@ namespace sferes {
                     }
                 }
 
-                assert((Params::nov::discrete_length_x - Params::nov::discrete_length_y < 1e-5) && "Entropy Calc depends on same discretisation");
-                observations /= Params::nov::discrete_length_x;
-                matrix_t observations_excl_zero_discretised_f = observations_excl_zero.block(0, 0, moved_counter, Params::sim::num_trajectory_elements) / Params::nov::discrete_length_x;
+                assert((Params::stat::ent_discrete_length_x - Params::stat::ent_discrete_length_y < 1e-5) && "Entropy Calc depends on same discretisation");
+                observations /= Params::stat::ent_discrete_length_x;
+                matrix_t observations_excl_zero_discretised_f = observations_excl_zero.block(0, 0, moved_counter, Params::sim::num_trajectory_elements) / Params::stat::ent_discrete_length_x;
 
                 Eigen::Matrix<int, Eigen::Dynamic, Params::sim::num_trajectory_elements> observations_discretised = observations.cast<int>();
                 Eigen::Matrix<int, Eigen::Dynamic, Params::sim::num_trajectory_elements> observations_excl_zero_discretised = observations_excl_zero_discretised_f.cast<int>();
@@ -69,41 +69,32 @@ namespace sferes {
                 // get the bucket for each point in the trajectories
                 for (int i{0}; i < Params::sim::num_trajectory_elements; i += 2)
                 {
-                    Eigen::VectorXi observations_buckets = observations_discretised.col(i) + observations_discretised.col(i + 1) * Params::nov::discretisation;
-                    Eigen::VectorXi observations_buckets_excl_zero = observations_excl_zero_discretised.col(i) + observations_excl_zero_discretised.col(i + 1) * Params::nov::discretisation;
+                    Eigen::VectorXi observations_buckets = observations_discretised.col(i) + observations_discretised.col(i + 1) * Params::stat::entropy_discretisation;
+                    Eigen::VectorXi observations_buckets_excl_zero = observations_excl_zero_discretised.col(i) + observations_excl_zero_discretised.col(i + 1) * Params::stat::entropy_discretisation;
 
                     // unique values
                     std::unordered_set<int> unique_buckets(observations_buckets.data(), observations_buckets.data() + observations_buckets.size());
                     std::unordered_set<int> unique_buckets_excl_zero(observations_buckets_excl_zero.data(), observations_buckets_excl_zero.data() + observations_buckets_excl_zero.size());
-                    // counts
-                    std::unordered_map<int, int> buckets_count;
-                    std::unordered_map<int, int> buckets_excl_zero_count;
-                    for (int j : unique_buckets)
-                    {buckets_count.insert({j, std::count(observations_buckets.data(), observations_buckets.data() + observations_buckets.size(), j)});}
-                    for (int j : unique_buckets_excl_zero)
-                    {buckets_excl_zero_count.insert({j, std::count(observations_buckets_excl_zero.data(), observations_buckets_excl_zero.data() + observations_buckets_excl_zero.size(), j)});}
                     
                     // entropy calc
-                    double p;
-                    for (int j{0}; j < moved_counter; ++j)
-                    {   
-                        p = buckets_count[observations_buckets[j]] / double(pop_size);
-                        entropy_values[i / 2] -= p * log(p);
-                        p = buckets_excl_zero_count[observations_buckets_excl_zero[j]] / double(moved_counter);
-                        entropy_excl_zero[i / 2] -= p * log(p);
-                    }
-                    for (int j{moved_counter}; j < pop_size; ++j)
+                    for (int j : unique_buckets)
                     {
-                        p = buckets_count[observations_buckets[j]] / double(pop_size);
-                        entropy_values[i / 2] -= p * log(p);
+                        double p = std::count(observations_buckets.data(), observations_buckets.data() + observations_buckets.size(), j) / double (pop_size);
+                        entropy_values[i / 2] -= p * log2(p);
+                    }
+
+                    for (int j : unique_buckets_excl_zero)
+                    {
+                        double p = std::count(observations_buckets_excl_zero.data(), observations_buckets_excl_zero.data() + observations_buckets_excl_zero.size(), j) / double (moved_counter);
+                        entropy_excl_zero[i / 2] -= p * log2(p);
                     }
                 }
 
                 // loop through the buckets individually and populate the grid
-                Eigen::VectorXf avg_entropy_grid(Params::nov::discretisation * Params::nov::discretisation);
+                Eigen::VectorXf avg_entropy_grid(Params::stat::entropy_discretisation * Params::stat::entropy_discretisation);
                 avg_entropy_grid.fill(-20);
 
-                for (int i{0}; i < Params::nov::discretisation * Params::nov::discretisation; ++i)
+                for (int i{0}; i < Params::stat::entropy_discretisation * Params::stat::entropy_discretisation; ++i)
                 {
                     if (indices_per_bucket[i].size() == 0)
                         {continue;}
@@ -121,7 +112,7 @@ namespace sferes {
                         ++row_counter;
                     }
 
-                    matrix_t bucket_observations_discretised_f = bucket_observations / Params::nov::discrete_length_x;
+                    matrix_t bucket_observations_discretised_f = bucket_observations / Params::stat::ent_discrete_length_x;
                     Eigen::Matrix<int, Eigen::Dynamic, Params::sim::num_trajectory_elements> bucket_observations_discretised = bucket_observations_discretised_f.cast<int>();
                     Eigen::VectorXf bucket_entropy_values(Params::sim::trajectory_length);
                     bucket_entropy_values.fill(0);
@@ -129,22 +120,16 @@ namespace sferes {
                     // get the bucket for each point in the trajectories
                     for (int i{0}; i < Params::sim::trajectory_length; i += 2)
                     {
-                        Eigen::VectorXi observations_buckets = bucket_observations_discretised.col(i) + bucket_observations_discretised.col(i + 1) * Params::nov::discretisation;
+                        Eigen::VectorXi observations_buckets = bucket_observations_discretised.col(i) + bucket_observations_discretised.col(i + 1) * Params::stat::entropy_discretisation;
 
                         // unique values
                         std::unordered_set<int> unique_buckets(observations_buckets.data(), observations_buckets.data() + observations_buckets.size());
                         
-                        // counts
-                        std::unordered_map<int, int> buckets_count;
-                        for (int j : unique_buckets)
-                        {buckets_count.insert({j, std::count(observations_buckets.data(), observations_buckets.data() + observations_buckets.size(), j)});}
                         
-                        double p;
-                        // entropy calc
-                        for (int j{0}; j < observations_buckets.size(); ++j)
-                        {   
-                            p = buckets_count[observations_buckets[j]] / double(observations_buckets.size());
-                            bucket_entropy_values[i / 2] -= p * log(p);
+                        for (int j : unique_buckets)
+                        {
+                            double p = std::count(observations_buckets.data(), observations_buckets.data() + observations_buckets.size(), j) / double(observations_buckets.size());
+                            bucket_entropy_values[i / 2] -= p * log2(p);
                         }
                     }
                     avg_entropy_grid[i] = bucket_entropy_values.mean();

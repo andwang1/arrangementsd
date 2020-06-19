@@ -44,7 +44,7 @@ namespace sferes {
                     observations.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();
                     if (ea.pop()[i]->fit().moved())
                     {
-                        indices_per_bucket[ea.pop()[i]->fit().get_bucket_index()].push_back(i);
+                        indices_per_bucket[ea.pop()[i]->fit().get_bucket_index(Params::nov::discrete_length_x, Params::nov::discrete_length_y, Params::nov::discretisation)].push_back(i);
                         indices_moved.push_back(i);
                         
                         observations_excl_zero.row(moved_counter) = observations.row(i);
