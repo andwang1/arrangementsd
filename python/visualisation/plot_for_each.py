@@ -4,12 +4,13 @@ import numpy as np
 import pickle as pk
 import seaborn as sns
 from collections import defaultdict
-from diversity import plot_diversity_in_dir
-from dist_grid import plot_dist_grid_in_dir
-from pos_var_grid import plot_pos_var_grid_in_dir
-from entropy_grid import plot_entropy_grid_in_dir
-from ae_loss_AE import plot_loss_in_dir_AE
-from ae_loss_VAE import plot_loss_in_dir_VAE
+from visualisation.diversity import plot_diversity_in_dir
+from visualisation.dist_grid import plot_dist_grid_in_dir
+from visualisation.pos_var_grid import plot_pos_var_grid_in_dir
+from visualisation.entropy_grid import plot_entropy_grid_in_dir
+from visualisation.ae_loss_AE import plot_loss_in_dir_AE
+from visualisation.ae_loss_VAE import plot_loss_in_dir_VAE
+from visualisation.latent_space import plot_latent_space_in_dir
 
 GENERATE_EACH_IMAGE = True
 PLOT_TOTAL_L2 = False
@@ -51,6 +52,8 @@ for variant in variants:
         for pid in pids:
             full_path = f"{EXP_FOLDER}/{BASE_NAME}{variant}/{exp}/{pid}"
             print(f"PROCESSING - {full_path}")
+            if GENERATE_EACH_IMAGE:
+                plot_latent_space_in_dir(full_path)
             div_dict, max_diversity = plot_diversity_in_dir(full_path, GENERATE_EACH_IMAGE)
             variant_diversity_dict[exp].append(div_dict)
             variant_dist_dict[exp].append(plot_dist_grid_in_dir(full_path, GENERATE_EACH_IMAGE))

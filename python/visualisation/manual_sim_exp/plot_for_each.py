@@ -4,19 +4,21 @@ import numpy as np
 import pickle as pk
 import seaborn as sns
 from collections import defaultdict
-from diversity import plot_diversity_in_dir
-from pheno_circle import plot_pheno_in_dir
-from ae_loss_AE import plot_loss_in_dir_AE
-from ae_loss_VAE import plot_loss_in_dir_VAE
+from visualisation.manual_sim_exp.diversity import plot_diversity_in_dir
+from visualisation.manual_sim_exp.pheno_circle import plot_pheno_in_dir
+from visualisation.manual_sim_exp.ae_loss_AE import plot_loss_in_dir_AE
+from visualisation.manual_sim_exp.ae_loss_VAE import plot_loss_in_dir_VAE
+from visualisation.manual_sim_exp.latent_space import plot_latent_space_in_dir
 
-GENERATE_EACH_IMAGE = False
+GENERATE_EACH_IMAGE = True
 PLOT_TOTAL_L2 = False
 START_GEN_LOSS_PLOT = 500
 
-EXP_FOLDER = "/home/andwang1/airl/balltrajectorysd/results_exp1/test"
+EXP_FOLDER = "/media/andwang1/SAMSUNG/MSC_INDIV/results_exp1/repeated_run1/extend"
 BASE_NAME = "results_balltrajectorysd_"
 variants = [exp_name.split("_")[-1] for exp_name in os.listdir(EXP_FOLDER) if
             os.path.isdir(os.path.join(EXP_FOLDER, exp_name))]
+# variants = ["vae"]
 
 # store all data
 diversity_dict = defaultdict(list)
@@ -48,6 +50,7 @@ for variant in variants:
             # PID level plotting
             if GENERATE_EACH_IMAGE:
                 plot_pheno_in_dir(full_path)
+                plot_latent_space_in_dir(full_path)
             if variant == "vae":
                 variant_loss_dict[exp].append(plot_loss_in_dir_VAE(full_path, is_full_loss[i], GENERATE_EACH_IMAGE, PLOT_TOTAL_L2))
             elif variant == "aurora":
