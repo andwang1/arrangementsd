@@ -95,10 +95,7 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
             column = []
             counter_x = 0
             for i in min_max_grid:
-                if float(i) == -1:
-                    column.append(float(-90))
-                else:
-                    column.append(float(i))
+                column.append(float(i))
                 counter_x += 1
                 if counter_x >= DISCRETISATION:
                     counter_x = 0
@@ -111,7 +108,7 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
             plt.xlim([0, DISCRETISATION])
 
             # vmin/vmax sets limits
-            color = plt.pcolormesh(rows, vmin=-20, vmax=100)
+            color = plt.pcolormesh(rows, vmin=-ROOM_W, vmax=ROOM_W * 4)
 
             # plot grid
             plt.grid(which="both")
@@ -169,4 +166,4 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
 
 if __name__ == "__main__":
     plot_dist_grid_in_dir(
-        "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/added_distance/results_balltrajectorysd_vae/gen6001_random0.2_fulllosstrue_beta1_extension0/2020-06-15_20_50_58_29682")
+        "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/vistest/2020-06-19_19_12_49_126106")
