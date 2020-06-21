@@ -93,9 +93,7 @@ b2Body* _end_effector;
 FIT_QD(Trajectory)
 {
     public:
-    Trajectory(){
-        _params.resize(Params::qd::gen_dim);
-
+    Trajectory(): _params(Params::qd::gen_dim), _full_trajectory(Params::sim::full_trajectory_length), _image(Params::nov::discretisation * Params::nov::discretisation) {
         for (Eigen::VectorXf &traj : _trajectories)
             {traj.resize(Params::sim::num_trajectory_elements);}
     
@@ -103,8 +101,6 @@ FIT_QD(Trajectory)
             {traj.resize(Params::sim::num_trajectory_elements);}
 
         std::fill(_is_trajectory.begin(), _is_trajectory.end(), 0);
-
-        _full_trajectory.resize(Params::sim::full_trajectory_length);
     }
 
     template <typename Indiv> 
@@ -161,6 +157,10 @@ FIT_QD(Trajectory)
             simu.set_graphics(graphics);
         }
         simu.run(Params::sim::sim_duration, _trajectories, _full_trajectory, Params::sim::trajectory_length);
+
+        // generate_image();
+        // Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
+        // std::cout << _image.format(CommaInitFmt)  << "\n" << std::endl;
     }
 
     // generate full trajectory for diversity calc and loss tracking
@@ -208,6 +208,26 @@ FIT_QD(Trajectory)
             std::cout << crossed_buckets;
         }
         return bucket_number;
+    }
+
+    // generates images from the trajectories simulated
+    void generate_image()
+    {
+        // initialise image
+        _image.fill(0);
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            for (int j{0}; j < _m_num_trajectories + 1; ++j)
+            {
+                double x = _trajectories[j](i);
+                double y = _trajectories[j](i + 1);
+
+                int index_x = x / Params::nov::discrete_length_x;
+                int index_y = y / Params::nov::discrete_length_y;
+
+                _image[index_x + index_y * Params::nov::discretisation] = 1;
+            }
+        }
     }
 
     int calculate_distance(float &distance, bool &moved)
@@ -259,6 +279,30 @@ FIT_QD(Trajectory)
         return bucket_y * discretisation + bucket_x;
     }
 
+    // generates images from the trajectories fed into the function
+    // void generate_image_sequence()
+    // {
+    //     for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+    //     {
+    //         // initialise image
+    //         int image_num {i / 2};
+    //         _image_frames[image_num] = Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>::Zero();
+    //         for (auto &traj : _trajectories)
+    //         {
+    //             double x = traj(i);
+    //             double y = traj(i + 1);
+
+    //             // flip rows and columns so x = horizontal axis
+    //             int index_y = x / Params::nov::discrete_length_x;
+    //             int index_x = y / Params::nov::discrete_length_y;
+
+    //             _image_frames[image_num](index_x, index_y) = 1;
+    //         }
+    //         if (VERBOSE)
+    //         std::cout << _image_frames[image_num] << std::endl;
+    //     }
+    // }
+
     private:
     // using matrix directly does not work, see above comment at generate_traj, will not stay in mem after assigining
     // Eigen::Matrix<double, Params::random::max_num_random + 1, Params::sim::trajectory_length> trajectories;
@@ -269,6 +313,9 @@ FIT_QD(Trajectory)
     std::array<Eigen::VectorXf, Params::random::max_num_random + 1> _undisturbed_trajectories;
     Eigen::VectorXf _full_trajectory;
     std::array<int, Params::random::max_num_random + 1> _is_trajectory;
+    Eigen::VectorXf _image;
+    
+    // std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> _image_frames;
     size_t _m_num_trajectories;
     bool _moved;
     float _m_entropy;
