@@ -25,7 +25,9 @@ struct EncoderImpl : torch::nn::Module {
 
         torch::Tensor forward(const torch::Tensor &x, torch::Tensor &tmp1, torch::Tensor &tmp2)
         {
-            return m_conv_4(torch::relu(m_conv_3(torch::relu(m_conv_s2(torch::relu(m_conv_2(torch::relu(m_conv_s1(torch::relu(m_conv_1(x))))))))))).reshape({-1, 1, 20, 20});
+            return m_conv_4(torch::relu(m_conv_3(torch::relu(m_conv_s2(
+                torch::relu(m_conv_2(torch::relu(m_conv_s1(
+                    torch::relu(m_conv_1(x))))))))))).reshape({-1, 1, static_cast<int>(sqrt(x.size(1))), static_cast<int>(sqrt(x.size(1)))});
         }
 
         torch::nn::Conv2d m_conv_1, m_conv_s1, m_conv_2, m_conv_s2, m_conv_3, m_conv_4;

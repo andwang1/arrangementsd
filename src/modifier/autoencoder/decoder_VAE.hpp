@@ -16,7 +16,6 @@ struct DecoderImpl : torch::nn::Module {
         m_tconv_s3(torch::nn::Conv2d(torch::nn::Conv2dOptions(de_hid_dim1, de_hid_dim1, 3).stride(2).transposed(true))),
         m_tconv_m(torch::nn::Conv2d(torch::nn::Conv2dOptions(de_hid_dim1, 1, 4).transposed(true))),
         m_tconv_v(torch::nn::Conv2d(torch::nn::Conv2dOptions(de_hid_dim1, 1, 4).transposed(true))),
-
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
             register_module("m_tconv_1", m_tconv_1);
@@ -32,7 +31,7 @@ struct DecoderImpl : torch::nn::Module {
         {
             torch::Tensor out = torch::relu(m_tconv_s3(torch::relu(m_tconv_3(
                     torch::relu(m_tconv_s2(torch::relu(m_tconv_2(torch::relu(m_tconv_1(
-                        x.reshape({x.size(0), 2, 1, 1})))))))))));
+                        x.reshape({x.size(0), -1, 1, 1})))))))))));
             mu = m_tconv_m(out).reshape({out.size(0), -1});
             logvar = m_tconv_v(out).reshape({out.size(0), -1});
         }

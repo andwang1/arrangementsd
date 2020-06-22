@@ -29,7 +29,7 @@ struct DecoderImpl : torch::nn::Module {
         {
             return m_tconv_4(torch::relu(m_tconv_s3(torch::relu(m_tconv_3(
                     torch::relu(m_tconv_s2(torch::relu(m_tconv_2(torch::relu(m_tconv_1(
-                        z.reshape({z.size(0), 2, 1, 1}))))))))))));
+                        z.reshape({z.size(0), -1, 1, 1}))))))))))));
         }
 
         torch::nn::Conv2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_4;
