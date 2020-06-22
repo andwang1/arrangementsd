@@ -31,22 +31,14 @@ namespace sferes {
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
                 std::cout << "writing... " << fname << std::endl;
 
-                // retrieve all phenotypes and trajectories                
-                matrix_t gen, traj;
-                std::vector<int> is_traj;
+                                // retrieve all phenotypes and trajectories                
+                matrix_t gen, img;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
                 
-                // filter out the realised trajectories
-                matrix_t filtered_traj;
-                std::vector<bool> boundaries;
-                Eigen::VectorXi is_trajectory;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->filter_trajectories(traj, is_trajectory, filtered_traj, boundaries);
-                
-                // get all data
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                                                                    L2_loss, KL_loss, decoder_var);
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
@@ -56,34 +48,24 @@ namespace sferes {
                 for (int i{0}; i < reconstruction.rows(); ++i)
                 {
                     ofs << i << ", RECON, "  <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
-                    ofs << i << ", ACTUAL, " <<  traj.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", ACTUAL, " <<  img.row(i).format(CommaInitFmt) << "\n";
                 }
 
                 #else //VAE or AE
-
-                // hack to make the do while loop below work
-                boundaries.push_back(true);
 
                 // there are more trajectories than reconstructions as there is only one recon per phen
                 size_t traj_index = 0;
                 ofs << "FORMAT: INDIV_INDEX, TYPE, DATA\n";
                 for (int i{0}; i < reconstruction.rows(); ++i)
                 {
+                    ofs << i << ", ACTUAL," <<  img.row(traj_index).format(CommaInitFmt) << "\n";
                     ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", RECON_LOSS," <<  recon_loss_unred.row(i).format(CommaInitFmt) << "\n";
                     #ifdef VAE
                     ofs << i << ", KL_LOSS," <<  KL_loss.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", DECODER_VAR," <<  decoder_var.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", L2_loss," <<  L2_loss.row(i).format(CommaInitFmt) << "\n";
                     #endif
-                    do
-                    {
-                        ofs << i << ", ACTUAL," <<  filtered_traj.row(traj_index).format(CommaInitFmt) << "\n";
-                        #ifdef VAE
-                        ofs << i << ", L2_loss," <<  L2_loss.row(traj_index).format(CommaInitFmt) << "\n";
-                        #endif
-                        ++traj_index;
-                    }
-                    while (!boundaries[traj_index]);
                 }
                 #endif
             }
