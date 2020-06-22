@@ -32,7 +32,7 @@ struct Params {
 
     struct ae {
     SFERES_CONST size_t batch_size = 256;
-    SFERES_CONST size_t nb_epochs = 4000;
+    SFERES_CONST size_t nb_epochs = 10000;
     SFERES_CONST float learning_rate = 1e-4;
     SFERES_CONST float CV_fraction = 0.80;
 
@@ -53,7 +53,7 @@ struct Params {
     SFERES_CONST size_t de_hid_dim2 = 70;
     // output_dim = sim::trajectory_length
 
-    SFERES_CONST bool bias = false;
+    SFERES_CONST bool bias = true;
     };
 
     struct update {
