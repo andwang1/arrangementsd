@@ -14,7 +14,11 @@
 #include "autoencoder/decoder_VAE.hpp"
 #else
 #include "autoencoder/autoencoder_AE.hpp"
+#ifdef AURORA
+#include "autoencoder/encoder_AE_AURORA.hpp"
+#else
 #include "autoencoder/encoder_AE.hpp"
+#endif
 #include "autoencoder/decoder_AE.hpp"
 #endif
 
@@ -179,11 +183,11 @@ public:
     explicit NetworkLoaderAutoEncoder() :
             TParentLoader(TParams::qd::behav_dim,
                           #ifdef AURORA
-                          torch::nn::AnyModule(AutoEncoder(TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::en_hid_dim1, TParams::ae::en_hid_dim2, TParams::qd::behav_dim, 
-                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::bias))),
+                          torch::nn::AnyModule(AutoEncoder(TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::aurora_en_dim1, TParams::ae::aurora_en_dim2, TParams::ae::aurora_en_dim3, TParams::qd::behav_dim, 
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::ae::de_hid_dim3, TParams::nov::discretisation * TParams::nov::discretisation))),
                           #else
-                          torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::ae::en_hid_dim2, TParams::qd::behav_dim, 
-                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::bias))),
+                          torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::ae::en_hid_dim2, TParams::ae::aurora_en_dim3, TParams::qd::behav_dim, 
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::ae::de_hid_dim3, TParams::nov::discretisation * TParams::nov::discretisation))),
                           #endif
             _log_2_pi(log(2 * M_PI)),
             _epochs_trained(0) {}

@@ -32,7 +32,7 @@ struct Params {
 
     struct ae {
     SFERES_CONST size_t batch_size = 256;
-    SFERES_CONST size_t nb_epochs = 10000;
+    SFERES_CONST size_t nb_epochs = 5000;
     SFERES_CONST float learning_rate = 1e-4;
     SFERES_CONST float CV_fraction = 0.80;
 
@@ -44,16 +44,22 @@ struct Params {
     static bool L2_loss;
     static size_t beta;
 
-    // network neurons        
+    // aurora num filter maps
+    SFERES_CONST size_t aurora_en_dim1 = 10;
+    SFERES_CONST size_t aurora_en_dim2 = 20;
+    SFERES_CONST size_t aurora_en_dim3 = 30;
+
+    // network neurons, fully connected
     // input = qd::gen_dim
     SFERES_CONST size_t en_hid_dim1 = 10;
     SFERES_CONST size_t en_hid_dim2 = 20;
     // latent_dim = qd::behav_dim
+    
+    // filter maps
     SFERES_CONST size_t de_hid_dim1 = 40;
-    SFERES_CONST size_t de_hid_dim2 = 70;
+    SFERES_CONST size_t de_hid_dim2 = 20;
+    SFERES_CONST size_t de_hid_dim3 = 10;
     // output_dim = sim::trajectory_length
-
-    SFERES_CONST bool bias = true;
     };
 
     struct update {

@@ -1,0 +1,37 @@
+//
+// Created by Luca Grillotti
+//
+
+#ifndef AE_AURORA_ENCODER_HPP
+#define AE_AURORA_ENCODER_HPP
+
+struct EncoderImpl : torch::nn::Module {
+    EncoderImpl(int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, int latent_dim) :
+        m_conv_1(torch::nn::Conv2d(torch::nn::Conv2dOptions(1, en_hid_dim1, 4))),
+        m_conv_s1(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim1, 3).stride(2))),
+        m_conv_2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim2, 4))),
+        m_conv_s2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim2, 3).stride(2))),
+        m_conv_3(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim3, 2))),
+        m_conv_4(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim3, latent_dim, 1))),
+        m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+        {
+            register_module("conv_1", m_conv_1);
+            register_module("conv_2", m_conv_2);
+            register_module("conv_3", m_conv_3);
+            register_module("conv_4", m_conv_4);
+            register_module("conv_s1", m_conv_s1);
+            register_module("conv_s2", m_conv_s2);
+        }
+
+        torch::Tensor forward(const torch::Tensor &x, torch::Tensor &tmp1, torch::Tensor &tmp2)
+        {
+            return m_conv_4(torch::relu(m_conv_3(torch::relu(m_conv_s2(torch::relu(m_conv_2(torch::relu(m_conv_s1(torch::relu(m_conv_1(x))))))))))).reshape({-1, 1, 20, 20});
+        }
+
+        torch::nn::Conv2d m_conv_1, m_conv_s1, m_conv_2, m_conv_s2, m_conv_3, m_conv_4;
+        torch::Device m_device;
+};
+
+TORCH_MODULE(Encoder);
+
+#endif //EXAMPLE_PYTORCH_ENCODER_HPP

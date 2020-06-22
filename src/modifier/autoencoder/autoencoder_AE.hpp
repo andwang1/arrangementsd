@@ -7,18 +7,22 @@
 
 #include <torch/torch.h>
 
+#ifdef AURORA
+#include "encoder_AE_AURORA.hpp"
+#else
 #include "encoder_AE.hpp"
+#endif
 #include "decoder_AE.hpp"
 
 struct AutoEncoderImpl : torch::nn::Module {
-    AutoEncoderImpl(int input_dim, int en_hid_dim1, int en_hid_dim2, int latent_dim, int de_hid_dim1, int de_hid_dim2, int output_dim, bool bias) :
+    AutoEncoderImpl(int input_dim, int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, 
+                    int latent_dim, int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int output_dim) :
             #ifdef AURORA
-            m_encoder(Encoder(output_dim, en_hid_dim1, en_hid_dim2, latent_dim, true)),
-            m_decoder(Decoder(latent_dim, de_hid_dim1, de_hid_dim2, output_dim, true)) 
+            m_encoder(Encoder(en_hid_dim1, en_hid_dim2, en_hid_dim3, latent_dim)),
             #else
-            m_encoder(Encoder(input_dim, en_hid_dim1, en_hid_dim2, latent_dim, bias)),
-            m_decoder(Decoder(latent_dim, de_hid_dim1, de_hid_dim2, output_dim, bias)) 
+            m_encoder(Encoder(input_dim, en_hid_dim1, en_hid_dim2, latent_dim)),
             #endif
+            m_decoder(Decoder(de_hid_dim1, de_hid_dim2, de_hid_dim3, latent_dim)) 
     {
         register_module("encoder", m_encoder);
         register_module("decoder", m_decoder);
