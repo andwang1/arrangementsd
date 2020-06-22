@@ -30,17 +30,13 @@ namespace sferes {
                 std::cout << "writing... " << fname << std::endl;
 
                 // retrieve all phenotypes and trajectories                
-                matrix_t gen, traj;
-                std::vector<int> is_traj;
+                matrix_t gen, img;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
                 
-                Eigen::VectorXi is_trajectory;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
-
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                                                                    L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                                                                    L2_loss, KL_loss, decoder_var);
 
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
@@ -52,28 +48,27 @@ namespace sferes {
                 double KL = KL_loss.rowwise().sum().mean();
                 double var = decoder_var.rowwise().sum().mean();
 
-                double L2_real_traj = L2_loss_real_trajectories.mean();
-
-                // retrieve trajectories without any interference from random observations
-                matrix_t undisturbed_traj(ea.pop().size(), Params::sim::num_trajectory_elements);
+                // retrieve images without any interference from random observations
+                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
                 for (size_t i{0}; i < ea.pop().size(); ++i)
-                {undisturbed_traj.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();}
-                double L2_undisturbed_real_traj = (undisturbed_traj - reconstruction).array().square().rowwise().sum().mean();
+                {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
+                
+                double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
 
-                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << KL << ", " << var << ", " << L2_real_traj << ", " << L2_undisturbed_real_traj;
+                ofs << ea.gen() << ", " << recon << ", " << KL << ", " << var << ", " << L2 << ", " << L2_undisturbed;
                 #else
 
                 #ifdef AURORA
                 ofs << ea.gen() << ", " << recon;
                 #else // AE
-                double L2_real_traj = L2_loss_real_trajectories.mean();
 
-                matrix_t undisturbed_traj(ea.pop().size(), Params::sim::num_trajectory_elements);
+                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
                 for (size_t i{0}; i < ea.pop().size(); ++i)
-                {undisturbed_traj.row(i) = ea.pop()[i]->fit().get_undisturbed_trajectory();}
-                double L2_undisturbed_real_traj = (undisturbed_traj - reconstruction).array().square().rowwise().sum().mean();
+                {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
+                
+                double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
 
-                ofs << ea.gen() << ", " << recon << ", " << L2_real_traj << ", " << L2_undisturbed_real_traj;
+                ofs << ea.gen() << ", " << recon << ", " << L2_undisturbed;
                 #endif 
 
                 #endif
