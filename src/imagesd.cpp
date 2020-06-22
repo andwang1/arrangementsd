@@ -68,12 +68,7 @@
 #include <sferes/qd/selector/value_selector.hpp>
 #include <sferes/qd/selector/score_proportionate.hpp>
 
-#ifdef AURORA
-#include "modifier/network_loader_pytorch_AURORA.hpp"
-#else
 #include "modifier/network_loader_pytorch.hpp"
-#endif
-
 #include "modifier/dimensionality_reduction.hpp"
 
 #include "stat/stat_current_gen.hpp"
