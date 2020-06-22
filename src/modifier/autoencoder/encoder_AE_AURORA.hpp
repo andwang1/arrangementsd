@@ -21,14 +21,26 @@ struct EncoderImpl : torch::nn::Module {
             register_module("conv_4", m_conv_4);
             register_module("conv_s1", m_conv_s1);
             register_module("conv_s2", m_conv_s2);
+            _initialise_weights();
         }
 
         torch::Tensor forward(const torch::Tensor &x, torch::Tensor &tmp1, torch::Tensor &tmp2)
         {
             return m_conv_4(torch::relu(m_conv_3(torch::relu(m_conv_s2(
                 torch::relu(m_conv_2(torch::relu(m_conv_s1(
-                    torch::relu(m_conv_1(x))))))))))).reshape({-1, 1, static_cast<int>(sqrt(x.size(1))), static_cast<int>(sqrt(x.size(1)))});
+                    torch::relu(m_conv_1(x.reshape({-1, 1, static_cast<int>(sqrt(x.size(1))), static_cast<int>(sqrt(x.size(1)))})))))))))))).reshape({x.size(0), -1});
         }
+
+        // https://github.com/pytorch/vision/blob/master/torchvision/csrc/models/googlenet.cpp#L150
+        void _initialise_weights()
+        {
+            for (auto& module : modules(/*include_self=*/false)) 
+            {
+                if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+                torch::nn::init::kaiming_normal_(M->weight, 0., torch::nn::init::FanMode::FanIn, torch::nn::init::Nonlinearity::ReLU);
+            }
+        }
+
 
         torch::nn::Conv2d m_conv_1, m_conv_s1, m_conv_2, m_conv_s2, m_conv_3, m_conv_4;
         torch::Device m_device;
