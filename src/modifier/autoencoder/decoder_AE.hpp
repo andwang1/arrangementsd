@@ -23,13 +23,24 @@ struct DecoderImpl : torch::nn::Module {
             register_module("m_tconv_s2", m_tconv_s2);
             register_module("m_tconv_s3", m_tconv_s3);
             register_module("m_tconv_s4", m_tconv_4);
+            _initialise_weights();
         }
 
         torch::Tensor forward(const torch::Tensor &z, torch::Tensor &tmp) 
         {
             return m_tconv_4(torch::relu(m_tconv_s3(torch::relu(m_tconv_3(
                     torch::relu(m_tconv_s2(torch::relu(m_tconv_2(torch::relu(m_tconv_1(
-                        z.reshape({z.size(0), -1, 1, 1}))))))))))));
+                        z.reshape({z.size(0), -1, 1, 1})))))))))))).reshape({z.size(0), -1});
+        }
+
+        // https://github.com/pytorch/vision/blob/master/torchvision/csrc/models/googlenet.cpp#L150
+        void _initialise_weights()
+        {
+            for (auto& module : modules(/*include_self=*/false)) 
+            {
+                if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+                torch::nn::init::kaiming_normal_(M->weight, 0., torch::nn::init::FanMode::FanIn, torch::nn::init::Nonlinearity::ReLU);
+            }
         }
 
         torch::nn::Conv2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_4;

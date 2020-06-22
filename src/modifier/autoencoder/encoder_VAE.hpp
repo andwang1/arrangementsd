@@ -17,6 +17,7 @@ struct EncoderImpl : torch::nn::Module {
             register_module("linear_2", m_linear_2);
             register_module("linear_m", m_linear_m);
             register_module("linear_v", m_linear_v);
+            _initialise_weights();
         }
 
         void encode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
@@ -39,6 +40,15 @@ struct EncoderImpl : torch::nn::Module {
             encode(x, encoder_mu, encoder_logvar);
             reparametrize(encoder_mu, encoder_logvar, z);
             return z;
+        }
+
+        void _initialise_weights()
+        {
+            for (auto& module : modules(/*include_self=*/false)) 
+            {
+                if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
+                torch::nn::init::xavier_normal_(M->weight);
+            }
         }
 
 

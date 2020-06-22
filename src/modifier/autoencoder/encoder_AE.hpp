@@ -15,11 +15,21 @@ struct EncoderImpl : torch::nn::Module {
             register_module("linear_1", m_linear_1);
             register_module("linear_2", m_linear_2);
             register_module("linear_3", m_linear_3);
+            _initialise_weights();
         }
 
         torch::Tensor forward(const torch::Tensor &x, torch::Tensor &tmp1, torch::Tensor &tmp2)
         {
             return m_linear_3(torch::relu(m_linear_2(torch::relu(m_linear_1(x)))));
+        }
+
+        void _initialise_weights()
+        {
+            for (auto& module : modules(/*include_self=*/false)) 
+            {
+                if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
+                torch::nn::init::xavier_normal_(M->weight);
+            }
         }
 
 

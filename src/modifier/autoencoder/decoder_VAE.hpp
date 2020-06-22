@@ -25,6 +25,7 @@ struct DecoderImpl : torch::nn::Module {
             register_module("m_tconv_s3", m_tconv_s3);
             register_module("m_tconv_m", m_tconv_m);
             register_module("m_tconv_v", m_tconv_v);
+            _initialise_weights();
         }
 
         void decode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
@@ -49,6 +50,16 @@ struct DecoderImpl : torch::nn::Module {
             // if sample output as well
             // sample_output(mu, logvar, output);
             // return output;
+        }
+
+        // https://github.com/pytorch/vision/blob/master/torchvision/csrc/models/googlenet.cpp#L150
+        void _initialise_weights()
+        {
+            for (auto& module : modules(/*include_self=*/false)) 
+            {
+                if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+                torch::nn::init::kaiming_normal_(M->weight, 0., torch::nn::init::FanMode::FanIn, torch::nn::init::Nonlinearity::ReLU);
+            }
         }
 
         torch::nn::Conv2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_m, m_tconv_v;
