@@ -93,7 +93,9 @@ b2Body* _end_effector;
 FIT_QD(Trajectory)
 {
     public:
-    Trajectory(): _params(Params::qd::gen_dim), _full_trajectory(Params::sim::full_trajectory_length), _image(Params::nov::discretisation * Params::nov::discretisation) {
+    Trajectory(): _params(Params::qd::gen_dim), _full_trajectory(Params::sim::full_trajectory_length), 
+                  _image(Params::nov::discretisation * Params::nov::discretisation),
+                  _undisturbed_image(Params::nov::discretisation * Params::nov::discretisation) {
         for (Eigen::VectorXf &traj : _trajectories)
             {traj.resize(Params::sim::num_trajectory_elements);}
     
@@ -137,6 +139,8 @@ FIT_QD(Trajectory)
         else // if no other balls present in simulation already
             {_undisturbed_trajectories[0] = _trajectories[0];}
 
+        generate_image();
+        generate_undisturbed_image();
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
     }
@@ -158,7 +162,7 @@ FIT_QD(Trajectory)
         }
         simu.run(Params::sim::sim_duration, _trajectories, _full_trajectory, Params::sim::trajectory_length);
 
-        // generate_image();
+
         // Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
         // std::cout << _image.format(CommaInitFmt)  << "\n" << std::endl;
     }
@@ -230,6 +234,22 @@ FIT_QD(Trajectory)
         }
     }
 
+    void generate_undisturbed_image()
+    {
+        // initialise image
+        _undisturbed_image.fill(0);
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            double x = _undisturbed_trajectories[0](i);
+            double y = _undisturbed_trajectories[0](i + 1);
+
+            int index_x = x / Params::nov::discrete_length_x;
+            int index_y = y / Params::nov::discrete_length_y;
+
+            _undisturbed_image[index_x + index_y * Params::nov::discretisation] = 1;
+        }
+    }
+
     int calculate_distance(float &distance, bool &moved)
     {
         Eigen::VectorXf manhattan_dist = _full_trajectory.segment<Params::sim::full_trajectory_length - 2>(0) - 
@@ -254,8 +274,21 @@ FIT_QD(Trajectory)
         }
     }
 
+    int get_bucket_index(double discrete_length_x, double discrete_length_y, int discretisation) const
+    {
+        int bucket_x = _full_trajectory[Params::sim::full_trajectory_length - 2] / discrete_length_x;
+        int bucket_y = _full_trajectory[Params::sim::full_trajectory_length - 1] / discrete_length_y;
+        return bucket_y * discretisation + bucket_x;
+    }
+
     Eigen::VectorXf get_undisturbed_trajectory() const
     {return _undisturbed_trajectories[0];}
+
+    Eigen::VectorXf &get_image()
+    {return _image;}
+
+    Eigen::VectorXf &get_undisturbed_image()
+    {return _undisturbed_image;}
 
     float &entropy() 
     {return _m_entropy;}
@@ -271,13 +304,6 @@ FIT_QD(Trajectory)
 
     bool moved() const
     {return _moved;}
-
-    int get_bucket_index(double discrete_length_x, double discrete_length_y, int discretisation) const
-    {
-        int bucket_x = _full_trajectory[Params::sim::full_trajectory_length - 2] / discrete_length_x;
-        int bucket_y = _full_trajectory[Params::sim::full_trajectory_length - 1] / discrete_length_y;
-        return bucket_y * discretisation + bucket_x;
-    }
 
     // generates images from the trajectories fed into the function
     // void generate_image_sequence()
@@ -314,6 +340,7 @@ FIT_QD(Trajectory)
     Eigen::VectorXf _full_trajectory;
     std::array<int, Params::random::max_num_random + 1> _is_trajectory;
     Eigen::VectorXf _image;
+    Eigen::VectorXf _undisturbed_image;
     
     // std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> _image_frames;
     size_t _m_num_trajectories;

@@ -50,7 +50,11 @@ namespace sferes {
                 } 
                 else if (ea.gen() > 0) 
                 {
+                    #ifdef AURORA
+                    if ((ea.gen() % Params::update::update_frequency == 0) || ea.gen() == 1) 
+                    #else
                     if ((ea.gen() % Params::update::update_frequency == 0)) 
+                    #endif
                     {
                         _is_train_gen = true;
                         update_descriptors(ea);
@@ -64,34 +68,32 @@ namespace sferes {
 
             template<typename EA>
             void update_descriptors(EA &ea) {
-                Mat geno_d, traj_d;
-                std::vector<int> is_trajectory;
+                Mat geno_d, img_d;
                 std::vector<typename EA::indiv_t> content;
 
-                collect_dataset(geno_d, traj_d, is_trajectory, ea, content, true);
+                collect_dataset(geno_d, img_d, ea, content, true);
 
                 #ifndef AURORA
                 // add additionally the phenotypes that had the largest loss in the evaluation but with regenerated trajectories
                 if (Params::ae::pct_extension > 0.001)
                 {
-                    Mat extended_geno, extended_traj;
-                    std::vector<int> extended_is_traj;
-                    extend_dataset(geno_d, traj_d, is_trajectory, ea, content, extended_geno, extended_traj, extended_is_traj, Params::ae::pct_extension);
-                    train_network(extended_geno, extended_traj, extended_is_traj);
+                    Mat extended_geno, extended_img;
+                    extend_dataset(geno_d, img_d, ea, content, extended_geno, extended_img, Params::ae::pct_extension);
+                    train_network(extended_geno, extended_img);
                 }
                 else
-                    {train_network(geno_d, traj_d, is_trajectory);}
+                    {train_network(geno_d, img_d);}
 
                 #else // AURORA
-                train_network(geno_d, traj_d, is_trajectory);
+                train_network(geno_d, img_d);
                 #endif
 
                 update_container(ea);  // clear the archive and re-fill it using the new network
             }
 
             template<typename EA>
-            void collect_dataset(Mat &geno_d, Mat &traj_d, std::vector<int> &is_trajectory, 
-                                EA &ea, std::vector<typename EA::indiv_t> &content, bool training = false) const {
+            void collect_dataset(Mat &geno_d, Mat &img_d, 
+                                 EA &ea, std::vector<typename EA::indiv_t> &content, bool training = false) const {
                 // content will contain all phenotypes
                 if (ea.gen() > 0) 
                     {ea.container().get_full_content(content);} 
@@ -102,56 +104,46 @@ namespace sferes {
                 if (training)
                 {std::random_shuffle (content.begin(), content.end());}
                 
-                // number of phenotypes
-                size_t pop_size = content.size();
                 get_geno(content, geno_d);
-                get_trajectories(content, traj_d, is_trajectory);
+                get_image(content, img_d);
                 
                 if (training) 
-                {std::cout << "Gen " << ea.gen() << " train set composed of " << geno_d.rows() << " phenotypes - Archive size : " << pop_size << std::endl;}
+                {std::cout << "Gen " << ea.gen() << " train set composed of " << geno_d.rows() << " phenotypes - Archive size : " << content.size() << std::endl;}
             }
 
             template<typename EA>
-            void extend_dataset(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory, EA &ea, std::vector<typename EA::indiv_t> &content, 
-                                Mat &extended_geno, Mat &extended_traj, std::vector<int> &extended_is_traj, float pct_extension)
+            void extend_dataset(const Mat &geno_d, const Mat &img_d, EA &ea, std::vector<typename EA::indiv_t> &content, 
+                                Mat &extended_geno, Mat &extended_img, float pct_extension)
             {
                 // extend dataset with the phenotypes with the pct_extension largest recon losses
                 // phenotypes will be copied but trajectories will be regenerated, i.e. can have new random trajectories
                 std::vector<typename EA::indiv_t> copied_pheno;
-                get_additional_phenos(geno_d, traj_d, is_trajectory, content, ea, copied_pheno, pct_extension);
+                get_additional_phenos(geno_d, img_d, content, ea, copied_pheno, pct_extension);
 
                 // shuffle ahead of training
                 std::random_shuffle (copied_pheno.begin(), copied_pheno.end());
                 
                 // retrieve the matrix data
-                Mat additional_geno, additional_traj;
-                std::vector<int> additional_is_traj;
+                Mat additional_geno, additional_img;
                 get_geno(copied_pheno, additional_geno);
-                get_trajectories(copied_pheno, additional_traj, additional_is_traj);
+                get_image(copied_pheno, additional_img);
 
                 // put together for training
                 extended_geno = Mat(geno_d.rows() + additional_geno.rows(), geno_d.cols());
-                extended_traj = Mat(traj_d.rows() + additional_traj.rows(), traj_d.cols());
+                extended_img = Mat(img_d.rows() + additional_img.rows(), img_d.cols());
 
                 // additional first so that they are included in train set after splitting
                 extended_geno << additional_geno, geno_d;
-                extended_traj << additional_traj, traj_d;
-
-                extended_is_traj = additional_is_traj;
-                extended_is_traj.reserve(is_trajectory.size() + additional_is_traj.size());
-                extended_is_traj.insert(extended_is_traj.end(), is_trajectory.begin(), is_trajectory.end());
+                extended_img << additional_img, img_d;
             }
 
             template<typename EA>
-            void get_additional_phenos(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory, std::vector<typename EA::indiv_t> &content, EA &ea,
+            void get_additional_phenos(const Mat &geno_d, const Mat &img_d, std::vector<typename EA::indiv_t> &content, EA &ea,
                                         std::vector<typename EA::indiv_t> &copied_pheno, float pct_extension)
             {
-                Eigen::VectorXi is_trajectories;
-                get_network_loader()->vector_to_eigen(is_trajectory, is_trajectories);
-
-                Mat descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                _network->eval(geno_d, traj_d, is_trajectories, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, 
-                               L2_loss_real_trajectories, KL_loss, decoder_var);
+                Mat descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                _network->eval(geno_d, img_d, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, 
+                               KL_loss, decoder_var);
 
                 int num_copies = pct_extension * geno_d.rows();
                 copy_pheno(content, recon_loss, copied_pheno, num_copies, ea);
@@ -230,47 +222,22 @@ namespace sferes {
                 }
             }
 
-            void get_phen(const pop_t &pop, Mat &data) const {
-                data = Mat(pop.size(), pop[0]->size());
-                for (size_t i = 0; i < pop.size(); i++) {
-                    for (size_t j{0}; j < pop[0]->size(); ++j)
-                    {
-                        data(i, j) = pop[i]->data(j);
-                    }
-                }
+            void get_image(const pop_t &pop, Mat &data) const {
+                data = Mat(pop.size(), Params::nov::discretisation * Params::nov::discretisation);
+                for (size_t i = 0; i < pop.size(); i++) 
+                    {data.row(i) = pop[i]->fit().get_image();}
             }
 
-            void get_trajectories(const pop_t &pop, Mat &data, std::vector<int> &is_trajectory) const {
-                data = Mat(pop.size() * (Params::random::max_num_random + 1), Params::sim::num_trajectory_elements);
-                is_trajectory.reserve(pop.size() * (Params::random::max_num_random + 1));
-                
-                size_t matrix_row_index{0};
-                for (size_t i = 0; i < pop.size(); ++i) 
-                {
-                    // block of rows, populate the trajectories
-                    auto block = data.block(matrix_row_index, 0, (Params::random::max_num_random + 1), Params::sim::num_trajectory_elements);
-                    pop[i]->fit().get_flat_observations(block);
-                    matrix_row_index += Params::random::max_num_random + 1;
-
-                    // populate the vector
-                    for (size_t j {0}; j < Params::random::max_num_random + 1; ++j)
-                    {
-                        is_trajectory.push_back(pop[i]->fit().is_random(j));
-                    }
-                    
-                }
-            }
-
-            void get_stats(const Mat &geno, const Mat &traj, const Eigen::VectorXi &is_traj, 
+            void get_stats(const Mat &geno, const Mat &img, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
-                Mat &L2_loss, Mat &L2_loss_real_trajectories, Mat &KL_loss, Mat &decoder_var) const
+                Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
             {
-                _network->eval(geno, traj, is_traj, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                               L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                               L2_loss, KL_loss, decoder_var);
             }
 
-            void train_network(const Mat &geno_d, const Mat &traj_d, std::vector<int> &is_trajectory) {
-                _network->training(geno_d, traj_d, is_trajectory);
+            void train_network(const Mat &geno_d, const Mat &img_d) {
+                _network->training(geno_d, img_d);
             }
 
             template<typename EA>
@@ -286,16 +253,12 @@ namespace sferes {
                     }
                 }
 
-                Mat filtered_geno, filtered_traj;
-                std::vector<int> is_trajectory;
+                Mat filtered_geno, filtered_img;
                 get_geno(filtered_pop, filtered_geno);
-                get_trajectories(filtered_pop, filtered_traj, is_trajectory);
-
-                // convert to eigen
-                Eigen::VectorXi is_traj = Eigen::Map<Eigen::VectorXi> (is_trajectory.data(), is_trajectory.size());
+                get_image(filtered_pop, filtered_img);
 
                 Mat latent_and_entropy;
-                get_descriptor_autoencoder(filtered_geno, filtered_traj, is_traj, latent_and_entropy);
+                get_descriptor_autoencoder(filtered_geno, filtered_img, latent_and_entropy);
 
                 for (size_t i = 0; i < filtered_pop.size(); i++) 
                 {
@@ -320,12 +283,12 @@ namespace sferes {
 
             }
 
-            void get_descriptor_autoencoder(const Mat &geno_d, const Mat &traj_d, const Eigen::VectorXi &is_trajectory, 
+            void get_descriptor_autoencoder(const Mat &geno_d, const Mat &img_d, 
                                             Mat &latent_and_entropy) const 
             {
-                Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                _network->eval(geno_d, traj_d, is_trajectory, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                _network->eval(geno_d, img_d, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
+                               L2_loss, KL_loss, decoder_var);
 
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;
@@ -411,11 +374,8 @@ namespace sferes {
                 dist = dist - XY;
             }
 
-            void get_reconstruction(const Mat &geno, const Mat &traj, std::vector<int> &is_traj, Mat &reconstruction) const {
-                Eigen::VectorXi is_trajectories;
-                get_network_loader()->vector_to_eigen(is_traj, is_trajectories);
-                
-                _network->get_reconstruction(geno, traj, is_trajectories, reconstruction);
+            void get_reconstruction(const Mat &geno, const Mat &img, Mat &reconstruction) const {
+                _network->get_reconstruction(geno, img, reconstruction);
             }
 
             double get_random_extension_ratio() const
