@@ -234,6 +234,30 @@ FIT_QD(Trajectory)
         }
     }
 
+    // generates images with the random trajectory marked out
+    template<typename block_t>
+    void generate_contrasted_image(block_t &contrasted_img)
+    {
+        // initialise image
+        contrasted_img.fill(0);
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            for (int j{0}; j < _m_num_trajectories + 1; ++j)
+            {
+                double x = _trajectories[j](i);
+                double y = _trajectories[j](i + 1);
+
+                int index_x = x / Params::nov::discrete_length_x;
+                int index_y = y / Params::nov::discrete_length_y;
+                // mark the random trajectories with minus 1 for visualisation purposes
+                if (j == 0)
+                {contrasted_img[index_x + index_y * Params::nov::discretisation] = 1;}
+                else
+                {contrasted_img[index_x + index_y * Params::nov::discretisation] = -1;}
+            }
+        }
+    }
+
     void generate_undisturbed_image()
     {
         // initialise image
