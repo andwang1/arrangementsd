@@ -41,8 +41,11 @@ struct Params {
 
     static double pct_extension;
     static bool full_loss;
-    static bool L2_loss;
+    static bool sigmoid;
     static size_t beta;
+
+    enum class loss : unsigned int {Huber, L1, L2};
+    static loss loss_function;
 
     // aurora num filter maps
     SFERES_CONST size_t aurora_en_dim1 = 10;
@@ -123,9 +126,10 @@ struct Params {
 double Params::nov::l;
 double Params::random::pct_random;
 bool Params::ae::full_loss;
-bool Params::ae::L2_loss;
+bool Params::ae::sigmoid;
 size_t Params::pop::nb_gen;
 size_t Params::ae::beta;
 double Params::ae::pct_extension;
+Params::ae::loss Params::ae::loss_function;
 
 #endif //PARAMS_HPP
