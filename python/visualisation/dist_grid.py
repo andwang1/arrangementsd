@@ -66,7 +66,7 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
             plt.xlim([0, DISCRETISATION])
 
             # vmin/vmax sets limits
-            color = plt.pcolormesh(rows, vmin=-20, vmax=100)
+            color = plt.pcolormesh(rows, vmin=-10, vmax=50)
 
             # plot grid
             plt.grid(which="both")
@@ -166,4 +166,4 @@ def plot_dist_grid_in_dir(path, generate_images=True, save_path=None):
 
 if __name__ == "__main__":
     plot_dist_grid_in_dir(
-        "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/box2dtest/vistest/2020-06-19_19_12_49_126106")
+        "/home/andwang1/airl/balltrajectorysd/results_box2d_exp1/first_run/results_balltrajectorysd_aurora/gen6001_random0_fulllossfalse_beta1_extension0_l2true/2020-06-22_18_14_25_195497")
