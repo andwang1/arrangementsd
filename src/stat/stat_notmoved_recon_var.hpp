@@ -32,23 +32,16 @@ namespace sferes {
                 std::cout << "writing... " << fname << std::endl;
 
                 // retrieve all phenotypes and trajectories                
-                matrix_t gen, traj;
-                std::vector<int> is_traj;
+                matrix_t gen, img;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_trajectories(ea.pop(), traj, is_traj);
-                
-                // filter out the realised trajectories
-                matrix_t filtered_traj;
-                std::vector<bool> boundaries;
-                Eigen::VectorXi is_trajectory;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->vector_to_eigen(is_traj, is_trajectory);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_network_loader()->filter_trajectories(traj, is_trajectory, filtered_traj, boundaries);
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
                 
                 // get all data
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, traj, is_trajectory, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, L2_loss_real_trajectories, KL_loss, decoder_var);
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                                                                    L2_loss, KL_loss, decoder_var);
                 
-                matrix_t recon_not_moved(ea.pop().size(), Params::sim::num_trajectory_elements);
+                matrix_t recon_not_moved(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
                 size_t not_moved_counter{0};
                 for (int i{0}; i < ea.pop().size(); ++i)
                 {
@@ -59,7 +52,7 @@ namespace sferes {
                     }
                 }
 
-                Eigen::VectorXf variance_not_moved = (recon_not_moved.block(0, 0, not_moved_counter, Params::sim::num_trajectory_elements).rowwise() - recon_not_moved.block(0, 0, not_moved_counter, Params::sim::num_trajectory_elements).colwise().mean()).array().square().colwise().sum().array() / (not_moved_counter - 1);
+                Eigen::VectorXf variance_not_moved = (recon_not_moved.block(0, 0, not_moved_counter, Params::nov::discretisation * Params::nov::discretisation).rowwise() - recon_not_moved.block(0, 0, not_moved_counter, Params::nov::discretisation * Params::nov::discretisation).colwise().mean()).array().square().colwise().sum().array() / (not_moved_counter - 1);
                 
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
