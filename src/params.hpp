@@ -44,7 +44,7 @@ struct Params {
     static bool sigmoid;
     static size_t beta;
 
-    enum class loss : unsigned int {Huber, L1, L2};
+    enum class loss : unsigned int {Huber, L1, L2, BCE};
     static loss loss_function;
 
     // aurora num filter maps
