@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import time
 import os
 from exp_config import *
@@ -9,19 +10,15 @@ extension = "0"
 l2 = "true"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/imagesd/test_results/conv/'
-EXP_PATH = f'results_imagesd_aurora/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}_l2{l2}/'
+BASE_PATH = '/home/andwang1/airl/imagesd/test_results/new_traj_stat/'
+EXP_PATH = f'results_imagesd_aurora/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}/'#_l2{l2}/'
 os.chdir(BASE_PATH+EXP_PATH)
 pids = [dir for dir in os.listdir() if os.path.isdir(os.path.join(BASE_PATH+EXP_PATH, dir))]
 PID = pids[0] + "/"
 os.chdir(BASE_PATH)
-FILE_NAME = f'traj_{GEN_NUMBER}.dat'
+FILE_NAME = f'images_{GEN_NUMBER}.dat'
 
 FILE = BASE_PATH + EXP_PATH + PID + FILE_NAME
-
-
-# PLOTTING PARAMETERS
-PAUSE = 2
 
 with open(FILE, 'r') as f:
     lines = f.readlines()[1:]
@@ -47,9 +44,9 @@ for i in range(num_individuals + 1):
 
 for indiv in plotting_data:
     f = plt.figure(figsize=(10, 15))
-    spec = f.add_gridspec(1, 2)
+    spec = f.add_gridspec(2, 4)
     # both kwargs together make the box squared
-    ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
+    ax1 = f.add_subplot(spec[0, :2], aspect='equal', adjustable='box')
     prediction = indiv[0]
 
     x = []
@@ -73,7 +70,7 @@ for indiv in plotting_data:
     ax1.scatter(x, y)
 
     actual = indiv[1]
-    ax2 = f.add_subplot(spec[0, 1], aspect='equal', adjustable='box')
+    ax2 = f.add_subplot(spec[0, 2:], aspect='equal', adjustable='box')
 
     x = []
     y = []
@@ -102,5 +99,18 @@ for indiv in plotting_data:
     ax2.scatter(x_random, y_random, c="red", label="Random")
     ax2.legend(loc="best")
     ax1.set_title("Recon")
-    ax2.set_title("Actual")
+    ax2.set_title("Observations")
+
+    L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
+    ax3 = f.add_subplot(spec[1, 1:3], aspect='equal', adjustable='box')
+    # vmin/vmax sets limits
+    color = plt.pcolormesh(L2, vmin=0, vmax=1)
+    # plot grid
+    ax3.grid(which="both")
+    ax3.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
+    ax3.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    ax3.set_title("L2")
+    ax3.colorbar(color)
+
+    plt.subplots_adjust(hspace=0.6)
     plt.show()

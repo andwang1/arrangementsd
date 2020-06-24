@@ -53,31 +53,18 @@ namespace sferes {
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
 
-                #ifdef AURORA
-                ofs << "FORMAT: INDIV_INDEX, DATA\n";
-                for (int i{0}; i < reconstruction.rows(); ++i)
-                {
-                    ofs << i << ", RECON, "  <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
-                    ofs << i << ", ACTUAL, " <<  contrasted_images.row(i).format(CommaInitFmt) << "\n";
-                }
-
-                #else //VAE or AE
-
-                // there are more trajectories than reconstructions as there is only one recon per phen
-                size_t traj_index = 0;
                 ofs << "FORMAT: INDIV_INDEX, TYPE, DATA\n";
                 for (int i{0}; i < reconstruction.rows(); ++i)
                 {
                     ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
-                    ofs << i << ", ACTUAL," <<  contrasted_images.row(traj_index).format(CommaInitFmt) << "\n";
+                    ofs << i << ", ACTUAL," <<  contrasted_images.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", L2_LOSS," <<  L2_loss.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", RECON_LOSS," <<  recon_loss_unred.row(i).format(CommaInitFmt) << "\n";
                     #ifdef VAE
                     ofs << i << ", KL_LOSS," <<  KL_loss.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", DECODER_VAR," <<  decoder_var.row(i).format(CommaInitFmt) << "\n";
-                    ofs << i << ", L2_loss," <<  L2_loss.row(i).format(CommaInitFmt) << "\n";
                     #endif
                 }
-                #endif
             }
         };
     }

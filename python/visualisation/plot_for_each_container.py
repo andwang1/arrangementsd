@@ -29,9 +29,7 @@ plot_recon_not_moved_var_in_dir(path, GENERATE_EACH_IMAGE)
 
 # PID level plotting
 if variant == "vae":
-    plot_loss_in_dir_VAE(path, is_full_loss, GENERATE_EACH_IMAGE, plot_total_L2=False)
-elif variant == "aurora":
-    plot_loss_in_dir_AE(path, GENERATE_EACH_IMAGE, is_aurora=True)
+    plot_loss_in_dir_VAE(path, is_full_loss, GENERATE_EACH_IMAGE)
 else:
     plot_loss_in_dir_AE(path, GENERATE_EACH_IMAGE)
 

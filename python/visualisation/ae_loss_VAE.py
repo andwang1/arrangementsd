@@ -3,13 +3,12 @@ import os
 
 
 
-def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, plot_total_L2=True, show_train_lines=False, save_path=None):
+def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_lines=False, save_path=None):
     os.chdir(path)
     FILE = f'ae_loss.dat'
 
     total_recon = []
     L2 = []
-    actual_trajectories_L2 = []
     undisturbed_actual_trajectories_L2 = []
     KL = []
     variance = []
@@ -21,11 +20,10 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, plot_total_
         for line in f.readlines():
             data = line.strip().split(",")
             total_recon.append(float(data[1]))
-            L2.append(float(data[2]))
-            KL.append(float(data[3]))
-            variance.append(float(data[4]))
-            actual_trajectories_L2.append(float(data[5]))
-            undisturbed_actual_trajectories_L2.append(float(data[6]))
+            KL.append(float(data[2]))
+            variance.append(float(data[3]))
+            L2.append(float(data[4]))
+            undisturbed_actual_trajectories_L2.append(float(data[5]))
             if "IS_TRAIN" in data[-1]:
                 # gen number, epochstrained / total
                 train_epochs.append((int(data[0]), data[-2].strip()))
@@ -38,19 +36,15 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, plot_total_
         ax2 = f.add_subplot(spec[1, :])
 
         # L2 and variance on one plot
-        if plot_total_L2:
-            ax1.set_ylabel("L2")
-            ax1.set_ylim([0, max(L2)])
-            ln1 = ax1.plot(range(len(total_recon)), L2, c="red", label="L2 - Overall")
-            # ax1.annotate(f"{round(L2[-1],2)}", (len(total_recon) - 1, L2[-1]))
+        ax1.set_ylabel("L2")
+        ax1.set_ylim([0, max(L2)])
+        ln1 = ax1.plot(range(len(L2)), L2, c="red", label="L2 - Overall")
+        ax1.annotate(f"{round(L2[-1], 2)}",
+                     (len(L2) - 1, L2[-1]),
+                     xytext=(len(L2) - 1, L2[-1] * 1.5))
 
-        ln2 = ax1.plot(range(len(actual_trajectories_L2)), actual_trajectories_L2, c="blue", label="L2 - Actual Trajectories")
-        ax1.annotate(f"{round(actual_trajectories_L2[-1], 2)}",
-                     (len(actual_trajectories_L2) - 1, actual_trajectories_L2[-1]),
-                     xytext=(len(actual_trajectories_L2) - 1, actual_trajectories_L2[-1] * 1.5))
-
-        ln3 = ax1.plot(range(len(undisturbed_actual_trajectories_L2)), undisturbed_actual_trajectories_L2, c="brown",
-                       label="L2 - Undist. Actual Trajectories")
+        ln2 = ax1.plot(range(len(undisturbed_actual_trajectories_L2)), undisturbed_actual_trajectories_L2, c="brown",
+                       label="L2 - Undist. Actual Image")
         ax1.annotate(f"{round(undisturbed_actual_trajectories_L2[-1], 2)}",
                      (len(undisturbed_actual_trajectories_L2) - 1, undisturbed_actual_trajectories_L2[-1]),
                      xytext=(len(undisturbed_actual_trajectories_L2) - 1, undisturbed_actual_trajectories_L2[-1] * 0.5))
@@ -59,20 +53,17 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, plot_total_
             var_ax = ax1.twinx()
             var_ax.set_ylabel("Variance")
             var_ax.set_ylim([0, max(variance)])
-            ln4 = var_ax.plot(range(len(total_recon)), variance, c="green", label="Variance")
+            ln3 = var_ax.plot(range(len(L2)), variance, c="green", label="Variance")
             var_ax.annotate(f"{round(variance[-1], 2)}", (len(variance) - 1, variance[-1]))
 
         # train marker
-        if (show_train_lines):
+        if show_train_lines:
             for (train_gen, train_ep) in train_epochs:
                 ax1.axvline(train_gen, ls="--", lw=0.1, c="grey")
                 ax2.axvline(train_gen, ls="--", lw=0.1, c="grey")
 
         # add in legends
-        if plot_total_L2:
-            lns = ln1+ln2+ln3+ln4 if full_loss else ln1+ln2+ln3
-        else:
-            lns = ln2 + ln3 + ln4 if full_loss else ln2 + ln3
+        lns = ln1+ln2+ln3 if full_loss else ln1+ln2
         labs = [l.get_label() for l in lns]
         ax1.legend(lns, labs, loc='best')
 
@@ -97,7 +88,6 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, plot_total_
 
     data_dict["TL"] = total_recon
     data_dict["L2"] = L2
-    data_dict["AL"] = actual_trajectories_L2
     data_dict["UL"] = undisturbed_actual_trajectories_L2
     data_dict["KL"] = KL
     data_dict["VAR"] = variance
