@@ -41,10 +41,10 @@ namespace sferes {
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
                 double recon = recon_loss.mean();
+                double L2 = L2_loss.rowwise().sum().mean();
 
                 #ifdef VAE
                 // these three are unreduced, need row wise sum and then mean
-                double L2 = L2_loss.rowwise().sum().mean();
                 double KL = KL_loss.rowwise().sum().mean();
                 double var = decoder_var.rowwise().sum().mean();
 
@@ -63,7 +63,7 @@ namespace sferes {
                 {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
                 
                 double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
-                ofs << ea.gen() << ", " << recon << ", " << L2_undisturbed;
+                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << L2_undisturbed;
                 #endif
 
                 if (boost::fusion::at_c<0>(ea.fit_modifier()).is_train_gen())
