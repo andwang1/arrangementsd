@@ -272,6 +272,8 @@ public:
                     {loss_tensor = torch::sum(torch::pow(img - reconstruction_tensor, 2) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi), {1}).mean();}
                     else if (TParams::ae::loss_function == TParams::ae::loss::L1)
                     {loss_tensor = torch::sum(torch::abs(img - reconstruction_tensor) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi), {1}).mean();}
+                    else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+                    {loss_tensor = torch::sum(torch::binary_cross_entropy(reconstruction_tensor, img, {} , 0) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi), {1}).mean();}
                     else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
                     {
                         torch::Tensor mask = torch::abs(img - reconstruction_tensor).le(0.5);
@@ -287,6 +289,8 @@ public:
                     {loss_tensor = torch::sum(torch::pow(img - reconstruction_tensor, 2), {1}).mean();}
                     else if (TParams::ae::loss_function == TParams::ae::loss::L1)
                     {loss_tensor = torch::sum(torch::abs(img - reconstruction_tensor), {1}).mean();}
+                    else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+                    {loss_tensor = torch::sum(torch::binary_cross_entropy(reconstruction_tensor, img, {}, 0), {1}).mean();}
                     else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
                     {
                         torch::Tensor mask = torch::abs(img - reconstruction_tensor).le(0.5);
@@ -367,7 +371,6 @@ public:
         #else
         torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(gen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid);
         #endif
-        
         torch::Tensor recon_loss_unreduced = torch::empty({gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation}, torch::device(this->m_device));
 
         if (TParams::ae::full_loss)
@@ -376,6 +379,8 @@ public:
             {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
             else if (TParams::ae::loss_function == TParams::ae::loss::L1)
             {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
+            else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+            {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
             else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
             {
                 for (int i{0}; i < img_tensor.size(0); ++i)
@@ -401,6 +406,8 @@ public:
             {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2);}
             else if (TParams::ae::loss_function == TParams::ae::loss::L1)
             {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor);}
+            else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+            {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0);}
             else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
             {
                 for (int i{0}; i < img_tensor.size(0); ++i)
