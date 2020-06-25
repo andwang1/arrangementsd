@@ -3,6 +3,7 @@ import numpy as np
 import time
 import os
 import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from exp_config import *
 
 variant = "ae"
@@ -115,24 +116,18 @@ for indiv in plotting_data:
             rows.append(column)
             column = []
 
-
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
     np_actual = np.array(actual)
     np_actual[np_actual == -1] = 1
     print((np.array(prediction).reshape(DISCRETISATION, DISCRETISATION) - np_actual.reshape(DISCRETISATION, DISCRETISATION)) **2 - L2 < 0.001)
-    # print(indiv[2])
+    print(indiv[2])
     ax3 = f.add_subplot(spec[1, 1:3], aspect='equal', adjustable='box')
-    # cmap_ax = f.add_subplot() cbar_ax=cmap_ax,
-    sns.heatmap(L2, ax=ax3, vmin=0, vmax=1)#, cbar_kws={"orientation": "horizontal", "use_gridspec": True})
-
-    # # plot grid
-    ax3.set_ylim([0, ROOM_H])
-    plt.xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
-    plt.yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
-    # ax3.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
-    # ax3.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    divider = make_axes_locatable(ax3)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    sns.heatmap(L2, ax=ax3, vmin=0, vmax=1, cbar_ax=cax,
+                xticklabels=np.arange(0, ROOM_W, ROOM_W / DISCRETISATION), yticklabels=np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    ax3.invert_yaxis()
     ax3.set_title("L2")
-    # f.colorbar(color)
 
     plt.subplots_adjust(hspace=0.6)
     plt.show()
