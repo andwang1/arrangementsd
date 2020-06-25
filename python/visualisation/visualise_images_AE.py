@@ -2,16 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
+import seaborn as sns
 from exp_config import *
 
+variant = "ae"
 random = "0.2"
 beta = "1"
 extension = "0"
-l2 = "true"
+lossfunc = "0"
+sigmoid = "true"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/imagesd/test_results/new_traj_stat/'
-EXP_PATH = f'results_imagesd_aurora/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}/'#_l2{l2}/'
+BASE_PATH = '/home/andwang1/airl/imagesd/test_results/losses/'
+EXP_PATH = f'results_imagesd_{variant}/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}_lossfunc{lossfunc}_sigmoid{sigmoid}/'
 os.chdir(BASE_PATH+EXP_PATH)
 pids = [dir for dir in os.listdir() if os.path.isdir(os.path.join(BASE_PATH+EXP_PATH, dir))]
 PID = pids[0] + "/"
@@ -101,16 +104,35 @@ for indiv in plotting_data:
     ax1.set_title("Recon")
     ax2.set_title("Observations")
 
+    rows = []
+    column = []
+    counter_x = 0
+    for i in indiv[2]:
+        column.append(float(i))
+        counter_x += 1
+        if counter_x >= DISCRETISATION:
+            counter_x = 0
+            rows.append(column)
+            column = []
+
+
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
+    np_actual = np.array(actual)
+    np_actual[np_actual == -1] = 1
+    print((np.array(prediction).reshape(DISCRETISATION, DISCRETISATION) - np_actual.reshape(DISCRETISATION, DISCRETISATION)) **2 - L2 < 0.001)
+    # print(indiv[2])
     ax3 = f.add_subplot(spec[1, 1:3], aspect='equal', adjustable='box')
-    # vmin/vmax sets limits
-    color = plt.pcolormesh(L2, vmin=0, vmax=1)
-    # plot grid
-    ax3.grid(which="both")
-    ax3.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
-    ax3.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    # cmap_ax = f.add_subplot() cbar_ax=cmap_ax,
+    sns.heatmap(L2, ax=ax3, vmin=0, vmax=1)#, cbar_kws={"orientation": "horizontal", "use_gridspec": True})
+
+    # # plot grid
+    ax3.set_ylim([0, ROOM_H])
+    plt.xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
+    plt.yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    # ax3.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
+    # ax3.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
     ax3.set_title("L2")
-    ax3.colorbar(color)
+    # f.colorbar(color)
 
     plt.subplots_adjust(hspace=0.6)
     plt.show()
