@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import seaborn as sns
 import os
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from exp_config import *
 
 random = "0.2"
@@ -103,25 +105,21 @@ for indiv in plotting_data:
 
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
     ax3 = f.add_subplot(spec[1, :2], aspect='equal', adjustable='box')
-    # vmin/vmax sets limits
-    color = plt.pcolormesh(L2, vmin=0, vmax=1)
-    # plot grid
-    ax3.grid(which="both")
-    ax3.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
-    ax3.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    divider1 = make_axes_locatable(ax3)
+    cax1 = divider1.append_axes("left", size="5%", pad=0.05)
+    sns.heatmap(L2, ax=ax3, vmin=0, vmax=1, cbar_ax=cax1,
+                xticklabels=np.arange(0, ROOM_W, ROOM_W / DISCRETISATION),
+                yticklabels=np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
     ax3.set_title("L2")
-    ax3.colorbar(color)
 
     var = np.array(indiv[-1]).reshape(DISCRETISATION, DISCRETISATION)
     ax4 = f.add_subplot(spec[1, 2:], aspect='equal', adjustable='box')
-    # vmin/vmax sets limits
-    color = plt.pcolormesh(var, vmin=0, vmax=30)
-    # plot grid
-    ax4.grid(which="both")
-    ax4.set_xticks(range(DISCRETISATION), np.arange(0, ROOM_W, ROOM_W / DISCRETISATION))
-    ax4.set_yticks(range(DISCRETISATION), np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    divider2 = make_axes_locatable(ax4)
+    cax22 = divider2.append_axes("right", size="5%", pad=0.05)
+    sns.heatmap(var, ax=ax4, vmin=0, cbar_ax=cax1,
+                xticklabels=np.arange(0, ROOM_W, ROOM_W / DISCRETISATION),
+                yticklabels=np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
     ax4.set_title("Variance")
-    ax4.colorbar(color)
 
     plt.subplots_adjust(hspace=0.6)
     plt.show()
