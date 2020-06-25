@@ -31,7 +31,7 @@ def plot_recon_not_moved_var_in_dir(path, generate_images=True, save_path=None):
             mean_var.append(float(lines[2].strip()))
 
     if generate_images:
-        f = plt.figure(figsize=(3, 5))
+        f = plt.figure(figsize=(5, 5))
         spec = f.add_gridspec(1, 1)
         ax1 = f.add_subplot(spec[0, 0])
         ln1 = ax1.plot(generations, mean_var, label="Variance", color="red")
