@@ -6,21 +6,13 @@ import os
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from exp_config import *
 
-random = "0.2"
-beta = "1"
-extension = "0"
-l2 = "true"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/imagesd/test_results/new_traj_stat/'
-EXP_PATH = f'results_imagesd_aurora/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}/'#_l2{l2}/'
-os.chdir(BASE_PATH+EXP_PATH)
-pids = [dir for dir in os.listdir() if os.path.isdir(os.path.join(BASE_PATH+EXP_PATH, dir))]
-PID = pids[0] + "/"
-os.chdir(BASE_PATH)
+FULL_PATH = "/home/andwang1/airl/imagesd/test_results/vistest/results_imagesd_vae/--number-gen=6001_--pct-random=0.2_--full-loss=true_--beta=1_--pct-extension=0_--loss-func=1_--sigmoid=false/2020-06-25_11_51_42_14672"
+os.chdir(FULL_PATH)
 FILE_NAME = f'images_{GEN_NUMBER}.dat'
 
-FILE = BASE_PATH + EXP_PATH + PID + FILE_NAME
+FILE = FULL_PATH + "/" + FILE_NAME
 
 with open(FILE, 'r') as f:
     lines = f.readlines()[1:]
@@ -106,20 +98,26 @@ for indiv in plotting_data:
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
     ax3 = f.add_subplot(spec[1, :2], aspect='equal', adjustable='box')
     divider1 = make_axes_locatable(ax3)
-    cax1 = divider1.append_axes("left", size="5%", pad=0.05)
-    sns.heatmap(L2, ax=ax3, vmin=0, vmax=1, cbar_ax=cax1,
+    cax1 = divider1.append_axes("left", size="5%", pad=0.45)
+    cax1.yaxis.set_ticks_position('left')
+    cax1.yaxis.set_label_position('left')
+    sns.heatmap(L2, ax=ax3, vmin=0, cbar_ax=cax1,
                 xticklabels=np.arange(0, ROOM_W, ROOM_W / DISCRETISATION),
                 yticklabels=np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
+    cax1.yaxis.set_ticks_position('left')
+    cax1.yaxis.set_label_position('left')
     ax3.set_title("L2")
+    ax3.invert_yaxis()
 
     var = np.array(indiv[-1]).reshape(DISCRETISATION, DISCRETISATION)
     ax4 = f.add_subplot(spec[1, 2:], aspect='equal', adjustable='box')
     divider2 = make_axes_locatable(ax4)
-    cax22 = divider2.append_axes("right", size="5%", pad=0.05)
-    sns.heatmap(var, ax=ax4, vmin=0, cbar_ax=cax1,
+    cax2 = divider2.append_axes("right", size="5%", pad=0.45)
+    sns.heatmap(var, ax=ax4, vmin=0, cbar_ax=cax2,
                 xticklabels=np.arange(0, ROOM_W, ROOM_W / DISCRETISATION),
                 yticklabels=np.arange(0, ROOM_H, ROOM_H / DISCRETISATION))
     ax4.set_title("Variance")
+    ax4.invert_yaxis()
 
     plt.subplots_adjust(hspace=0.6)
     plt.show()
