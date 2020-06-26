@@ -18,7 +18,7 @@ namespace sferes {
             template<typename EA>
             void refresh(EA &ea) 
             {
-                if ((ea.gen() % Params::stat::save_images == 0)) 
+                if ((ea.gen() % Params::stat::save_images == 0) && ea.gen() > 0) 
                 {
                    std::string prefix = "images_" + boost::lexical_cast<std::string>(ea.gen());
                     _write_images(prefix, ea);
