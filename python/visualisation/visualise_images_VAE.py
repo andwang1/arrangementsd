@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 import seaborn as sns
 import os
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -8,7 +7,7 @@ from exp_config import *
 
 GEN_NUMBER = 6000
 
-FULL_PATH = "/home/andwang1/airl/imagesd/test_results/vistest/results_imagesd_vae/--number-gen=6001_--pct-random=0.2_--full-loss=true_--beta=1_--pct-extension=0_--loss-func=1_--sigmoid=false/2020-06-25_11_51_42_14672"
+FULL_PATH = "/home/andwang1/airl/imagesd/test_results/vistest/results_imagesd_vae/gen6001_random0.2_fulllosstrue_beta1_extension0_lossfunc1_sigmoidfalse/2020-06-25_11_51_42_14672"
 os.chdir(FULL_PATH)
 FILE_NAME = f'images_{GEN_NUMBER}.dat'
 
@@ -37,10 +36,10 @@ for i in range(num_individuals + 1):
     plotting_data.append(indiv_data)
 
 for indiv in plotting_data:
-    f = plt.figure(figsize=(10, 15))
-    spec = f.add_gridspec(2, 4)
+    f = plt.figure(figsize=(10, 10))
+    spec = f.add_gridspec(2, 2)
     # both kwargs together make the box squared
-    ax1 = f.add_subplot(spec[0, :2], aspect='equal', adjustable='box')
+    ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
     prediction = indiv[0]
 
     x = []
@@ -64,7 +63,7 @@ for indiv in plotting_data:
     ax1.scatter(x, y)
 
     actual = indiv[1]
-    ax2 = f.add_subplot(spec[0, 2:], aspect='equal', adjustable='box')
+    ax2 = f.add_subplot(spec[0, 1], aspect='equal', adjustable='box')
 
     x = []
     y = []
@@ -96,7 +95,7 @@ for indiv in plotting_data:
     ax2.set_title("Observations")
 
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
-    ax3 = f.add_subplot(spec[1, :2], aspect='equal', adjustable='box')
+    ax3 = f.add_subplot(spec[1, 0], aspect='equal', adjustable='box')
     divider1 = make_axes_locatable(ax3)
     cax1 = divider1.append_axes("left", size="5%", pad=0.45)
     cax1.yaxis.set_ticks_position('left')
@@ -110,7 +109,7 @@ for indiv in plotting_data:
     ax3.invert_yaxis()
 
     var = np.array(indiv[-1]).reshape(DISCRETISATION, DISCRETISATION)
-    ax4 = f.add_subplot(spec[1, 2:], aspect='equal', adjustable='box')
+    ax4 = f.add_subplot(spec[1, 1], aspect='equal', adjustable='box')
     divider2 = make_axes_locatable(ax4)
     cax2 = divider2.append_axes("right", size="5%", pad=0.45)
     sns.heatmap(var, ax=ax4, vmin=0, cbar_ax=cax2,
