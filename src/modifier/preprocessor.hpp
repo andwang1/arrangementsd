@@ -38,8 +38,9 @@ public:
             res = data;
         } else {
             // res = data.array().rowwise() * m_std_dataset.transpose().array();
-            res = res.array().rowwise() + m_mean_dataset.transpose().array();
+            // res = res.array().rowwise() + m_mean_dataset.transpose().array();
             // res = res.cwiseMax(0.).cwiseMin(1.);
+            res = data.array().rowwise() + m_mean_dataset.transpose().array();
         }
     }
 
