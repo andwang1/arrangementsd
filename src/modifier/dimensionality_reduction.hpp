@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <sferes/stc.hpp>
+#include "preprocessor.hpp"
 
 namespace sferes {
     namespace modif {
@@ -19,6 +20,7 @@ namespace sferes {
             typedef std::vector<std::pair<std::vector<double>, float>> stat_t;
 
             DimensionalityReduction() : _last_update(0), _update_id(0) {
+                _prep.init();
                 _network = std::make_unique<NetworkLoader>();
             }
 
@@ -216,9 +218,7 @@ namespace sferes {
                 data = Mat(pop.size(), pop[0]->gen().size());
                 for (size_t i = 0; i < pop.size(); ++i) {
                     for (size_t j{0}; j < pop[0]->gen().size(); ++j)
-                    {
-                        data(i, j) = pop[i]->gen().data(j);
-                    }
+                        {data(i, j) = pop[i]->gen().data(j);}
                 }
             }
 
@@ -232,12 +232,18 @@ namespace sferes {
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
                 Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
             {
-                _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                Mat scaled_img, scaled_reconstruction;
+                _prep.apply(img, scaled_img);
+                _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
                                L2_loss, KL_loss, decoder_var);
+                _prep.deapply(scaled_reconstruction, reconstruction);
             }
 
             void train_network(const Mat &geno_d, const Mat &img_d) {
-                _network->training(geno_d, img_d);
+                _prep.init(img_d);
+                Mat scaled_img_d;
+                _prep.apply(img_d, scaled_img_d);
+                _network->training(geno_d, scaled_img_d);
             }
 
             template<typename EA>
@@ -286,8 +292,9 @@ namespace sferes {
             void get_descriptor_autoencoder(const Mat &geno_d, const Mat &img_d, 
                                             Mat &latent_and_entropy) const 
             {
-                Mat descriptors, reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                _network->eval(geno_d, img_d, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
+                Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                _prep.apply(img_d, scaled_img_d);
+                _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
                                L2_loss, KL_loss, decoder_var);
 
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
@@ -375,7 +382,10 @@ namespace sferes {
             }
 
             void get_reconstruction(const Mat &geno, const Mat &img, Mat &reconstruction) const {
-                _network->get_reconstruction(geno, img, reconstruction);
+                Mat scaled_img, scaled_reconstruction;
+                _prep.apply(img, scaled_img);
+                _network->get_reconstruction(geno, scaled_img, scaled_reconstruction);
+                _prep.deapply(scaled_reconstruction, reconstruction);
             }
 
             double get_random_extension_ratio() const
@@ -388,7 +398,13 @@ namespace sferes {
                 return &*_network;
             }
 
+            RescaleFeature& prep() {
+                return _prep;
+            }
+
+
         private:
+            RescaleFeature _prep;
             std::unique_ptr<NetworkLoader> _network;
             size_t _last_update;
             size_t _update_id;
