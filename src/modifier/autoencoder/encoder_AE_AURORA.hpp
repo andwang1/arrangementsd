@@ -37,7 +37,7 @@ struct EncoderImpl : torch::nn::Module {
             for (auto& module : modules(/*include_self=*/false)) 
             {
                 if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
-                torch::nn::init::kaiming_normal_(M->weight, 0., torch::nn::init::FanMode::FanIn, torch::nn::init::Nonlinearity::ReLU);
+                torch::nn::init::kaiming_normal_(M->weight, 0., torch::kFanIn, torch::kReLU);
             }
         }
 
