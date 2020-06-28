@@ -107,14 +107,6 @@ public:
         return stc::exact(this)->training(gen_d, img_d, full_train, generation);
     }
 
-    
-
-    void get_reconstruction(const MatrixXf_rm &gen, const MatrixXf_rm &img, 
-                            MatrixXf_rm &reconstruction) {
-        MatrixXf_rm descriptors, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-        eval(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var);
-    }
-
     float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool is_train_set = false) {
         MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
         eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, is_train_set);

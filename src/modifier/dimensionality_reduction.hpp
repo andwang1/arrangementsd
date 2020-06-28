@@ -232,18 +232,23 @@ namespace sferes {
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
                 Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
             {
-                Mat scaled_img, scaled_reconstruction;
-                _prep.apply(img, scaled_img);
-                _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
+                // Mat scaled_img, scaled_reconstruction;
+                // _prep.apply(img, scaled_img);
+                // _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
+                //                L2_loss, KL_loss, decoder_var);
+                // _prep.deapply(scaled_reconstruction, reconstruction);
+
+                _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
                                L2_loss, KL_loss, decoder_var);
-                _prep.deapply(scaled_reconstruction, reconstruction);
             }
 
             void train_network(const Mat &geno_d, const Mat &img_d) {
-                _prep.init(img_d);
-                Mat scaled_img_d;
-                _prep.apply(img_d, scaled_img_d);
-                _network->training(geno_d, scaled_img_d);
+                // _prep.init(img_d);
+                // Mat scaled_img_d;
+                // _prep.apply(img_d, scaled_img_d);
+                // _network->training(geno_d, scaled_img_d);
+
+                _network->training(geno_d, img_d);
             }
 
             template<typename EA>
@@ -292,9 +297,13 @@ namespace sferes {
             void get_descriptor_autoencoder(const Mat &geno_d, const Mat &img_d, 
                                             Mat &latent_and_entropy) const 
             {
+                // Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                // _prep.apply(img_d, scaled_img_d);
+                // _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
+                //                L2_loss, KL_loss, decoder_var);
+
                 Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                _prep.apply(img_d, scaled_img_d);
-                _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
+                _network->eval(geno_d, img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
                                L2_loss, KL_loss, decoder_var);
 
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
@@ -381,18 +390,11 @@ namespace sferes {
                 dist = dist - XY;
             }
 
-            void get_reconstruction(const Mat &geno, const Mat &img, Mat &reconstruction) const {
-                Mat scaled_img, scaled_reconstruction;
-                _prep.apply(img, scaled_img);
-                _network->get_reconstruction(geno, scaled_img, scaled_reconstruction);
-                _prep.deapply(scaled_reconstruction, reconstruction);
-            }
-
             double get_random_extension_ratio() const
             {return _random_extension_ratio;}
 
             bool is_train_gen() const
-            {return _is_train_gen;}
+            {return _is_train_gen;} 
 
             NetworkLoader *get_network_loader() const {
                 return &*_network;
