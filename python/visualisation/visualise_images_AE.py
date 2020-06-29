@@ -6,23 +6,13 @@ import seaborn as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from exp_config import *
 
-variant = "ae"
-random = "0.2"
-beta = "1"
-extension = "0"
-lossfunc = "0"
-sigmoid = "true"
 GEN_NUMBER = 6000
 
-BASE_PATH = '/home/andwang1/airl/imagesd/test_results/losses/'
-EXP_PATH = f'results_imagesd_{variant}/gen6001_random{random}_fulllossfalse_beta{beta}_extension{extension}_lossfunc{lossfunc}_sigmoid{sigmoid}/'
-os.chdir(BASE_PATH+EXP_PATH)
-pids = [dir for dir in os.listdir() if os.path.isdir(os.path.join(BASE_PATH+EXP_PATH, dir))]
-PID = pids[0] + "/"
-os.chdir(BASE_PATH)
+FULL_PATH = "/home/andwang1/airl/imagesd/test_results/vistest/results_imagesd_vae/gen6001_random0.2_fulllosstrue_beta1_extension0_lossfunc1_sigmoidfalse/2020-06-25_11_51_42_14672"
+os.chdir(FULL_PATH)
 FILE_NAME = f'images_{GEN_NUMBER}.dat'
 
-FILE = BASE_PATH + EXP_PATH + PID + FILE_NAME
+FILE = FULL_PATH + "/" + FILE_NAME
 
 with open(FILE, 'r') as f:
     lines = f.readlines()[1:]
@@ -46,7 +36,7 @@ for i in range(num_individuals + 1):
         line_number += 1
     plotting_data.append(indiv_data)
 
-for indiv in plotting_data:
+for indiv in plotting_data[100:]:
     f = plt.figure(figsize=(10, 15))
     spec = f.add_gridspec(2, 4)
     # both kwargs together make the box squared
@@ -117,10 +107,6 @@ for indiv in plotting_data:
             column = []
 
     L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
-    np_actual = np.array(actual)
-    np_actual[np_actual == -1] = 1
-    print((np.array(prediction).reshape(DISCRETISATION, DISCRETISATION) - np_actual.reshape(DISCRETISATION, DISCRETISATION)) **2 - L2 < 0.001)
-    print(indiv[2])
     ax3 = f.add_subplot(spec[1, 1:3], aspect='equal', adjustable='box')
     divider = make_axes_locatable(ax3)
     cax = divider.append_axes("right", size="5%", pad=0.05)
