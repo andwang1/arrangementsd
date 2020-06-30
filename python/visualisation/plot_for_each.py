@@ -673,7 +673,7 @@ for group in groups:
             plt.close()
 
             loss_stoch_dict[f"{variant}{loss_type}"] = {"stoch": stochasticity_values, "L2": L2_values,
-                                                           "AL": AL_values}
+                                                           "UL": UL_values}
 
     os.chdir(f"{EXP_FOLDER}")
 
@@ -689,3 +689,5 @@ for group in groups:
         pk.dump(pos_var_stoch_dict, f)
     with open("pct_moved_data.pk", "wb") as f:
         pk.dump(pct_stoch_dict, f)
+    with open("recon_var_data.pk", "wb") as f:
+        pk.dump(recon_var_stoch_dict, f)
