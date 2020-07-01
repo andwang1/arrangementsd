@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from diversity import plot_diversity_in_dir
 from dist_grid import plot_dist_grid_in_dir
 from pos_var_grid import plot_pos_var_grid_in_dir
@@ -32,5 +33,11 @@ if variant == "vae":
     plot_loss_in_dir_VAE(path, is_full_loss, GENERATE_EACH_IMAGE)
 else:
     plot_loss_in_dir_AE(path, GENERATE_EACH_IMAGE)
+
+os.chdir(path)
+os.makedirs("plots", exist_ok=True)
+image_files = [img for img in os.listdir() if ".png" in img]
+for image in image_files:
+    shutil.move(image, f"plots/{image}")
 
 os.chdir(current_path)
