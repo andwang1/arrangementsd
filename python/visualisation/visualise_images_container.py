@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 import os
 import sys
+import shutil
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from exp_config import *
 
@@ -227,4 +228,9 @@ else:
         plt.subplots_adjust(hspace=0.6)
         plt.savefig(f"image_{j}.jpg")
         plt.close()
+
+os.makedirs("images", exist_ok=True)
+image_files = [img for img in os.listdir() if ".png" in img]
+for image in image_files:
+    shutil.move(image, f"images/{image}")
 
