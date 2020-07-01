@@ -13,12 +13,14 @@ nth = 100
 FULL_PATH = sys.argv[1]
 os.chdir(FULL_PATH)
 files = os.listdir()
+image_dat_files = []
 
 # Find generation numbers
 img_generations = []
 for fname in files:
     if fname.startswith("images_") and ".dat" in fname:
         img_generations.append(fname.rstrip(r".dat")[len("images_"):])
+        image_dat_files.append(fname)
 
 dist_generations = sorted(int(gen) for gen in img_generations)
 GEN_NUMBER = dist_generations[-1]
@@ -234,3 +236,5 @@ image_files = [img for img in os.listdir() if ".png" in img]
 for image in image_files:
     shutil.move(image, f"images/{image}")
 
+for file in image_dat_files:
+    os.remove(file)
