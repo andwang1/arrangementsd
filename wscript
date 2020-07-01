@@ -71,8 +71,8 @@ def build(bld):
     bld.env.INCLUDES_PYTORCH = ['/workspace/include/torch', '/workspace/include/torch/torch/csrc/api/include']
 
     bld.env.LIBPATH_PYTHON = '/usr/lib/x86_64-linux-gnu/'
-    bld.env.LIB_PYTHON = ['python3.6m']
-    bld.env.INCLUDES_PYTHON = '/usr/include/python3.6m'
+    bld.env.LIB_PYTHON = ['python3.7m']
+    bld.env.INCLUDES_PYTHON = '/usr/include/python3.7m'
 
     bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
