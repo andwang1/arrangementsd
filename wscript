@@ -66,8 +66,9 @@ def configure(conf):
 
 
 def build(bld):
+
     bld.env.LIBPATH_PYTORCH = '/workspace/lib/torch/'
-    bld.env.LIB_PYTORCH = 'cuda torch_cpu torch_cuda torch_python torch_global_deps shm caffe2_observers torch c10 c10_cuda caffe2_detectron_ops_gpu caffe2_module_test_dynamic caffe2_nvrtc'.split(' ')
+    bld.env.LIB_PYTORCH = 'torch_cpu torch_cuda torch_global_deps shm torch c10 c10_cuda'.split(' ')
     bld.env.INCLUDES_PYTORCH = ['/workspace/include/torch', '/workspace/include/torch/torch/csrc/api/include']
 
     bld.env.LIBPATH_PYTHON = '/usr/lib/x86_64-linux-gnu/'
@@ -76,12 +77,13 @@ def build(bld):
 
     bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
+
     print(bld.env['magnum_libs'])
     sferes.create_variants(bld,
                            source = 'src/imagesd.cpp',
                            includes='./src . ../../',
                            uselib='TBB BOOST EIGEN PTHREAD MPI'
-                                + ' PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
+                                + 'PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
                            target = 'imagesd',
                            variants = ['AE', 'VAE', 'AURORA'])
