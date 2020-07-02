@@ -121,9 +121,6 @@ From: airl_lab/default/airl_env:pytorch_ci
     mv $CURPATH/$DIRNAME/$PATHNAME/*png $CURPATH/$DIRNAME/$PATHNAME/plots
     
     python3 /git/sferes2/exp/imagesd/python/visualisation/visualise_images_container.py $CURPATH/$DIRNAME/$PATHNAME
-    mv $CURPATH/$DIRNAME/$PATHNAME/*jpg $CURPATH/$DIRNAME/$PATHNAME/images
-    rm $CURPATH/$DIRNAME/$PATHNAME/images_*dat
-
     python3 /git/sferes2/exp/imagesd/python/visualisation/prep/rename_results_dir_container.py $CURPATH/$DIRNAME/$PATHNAME
 
 %apprun vae
