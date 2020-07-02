@@ -74,9 +74,6 @@ def build(bld):
     bld.env.LIB_PYTHON = ['python3.7m']
     bld.env.INCLUDES_PYTHON = '/usr/include/python3.7m'
 
-    bld.env.LIBPATH_CUDA = '/usr/local/cuda-10.1/compat'
-    bld.env.LIB_CUDA = ['cuda', 'nvidia-fatbinaryloader']
-    bld.env.INCLUDES_CUDA = ['/usr/local/cuda-10.1/include']
 
     bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
@@ -86,7 +83,7 @@ def build(bld):
                            source = 'src/imagesd.cpp',
                            includes='./src . ../../',
                            uselib='TBB BOOST EIGEN PTHREAD MPI'
-                                + 'PYTHON CUDA PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
+                                + 'PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
                            target = 'imagesd',
                            variants = ['AE', 'VAE', 'AURORA'])
