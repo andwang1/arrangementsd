@@ -118,8 +118,6 @@ From: airl_lab/default/airl_env:pytorch_ci
     cp /git/sferes2/exp/imagesd/src/params.hpp $CURPATH/$DIRNAME/$PATHNAME
 
     python3 /git/sferes2/exp/imagesd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5
-    mv $CURPATH/$DIRNAME/$PATHNAME/*png $CURPATH/$DIRNAME/$PATHNAME/plots
-    
     python3 /git/sferes2/exp/imagesd/python/visualisation/visualise_images_container.py $CURPATH/$DIRNAME/$PATHNAME
     python3 /git/sferes2/exp/imagesd/python/visualisation/prep/rename_results_dir_container.py $CURPATH/$DIRNAME/$PATHNAME
 
