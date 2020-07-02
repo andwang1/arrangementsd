@@ -66,7 +66,6 @@ def configure(conf):
 
 
 def build(bld):
-
     bld.env.LIBPATH_PYTORCH = '/workspace/lib/torch/'
     bld.env.LIB_PYTORCH = 'torch_cpu torch_cuda torch_global_deps shm torch c10 c10_cuda'.split(' ')
     bld.env.INCLUDES_PYTORCH = ['/workspace/include/torch', '/workspace/include/torch/torch/csrc/api/include']
@@ -74,6 +73,10 @@ def build(bld):
     bld.env.LIBPATH_PYTHON = '/usr/lib/x86_64-linux-gnu/'
     bld.env.LIB_PYTHON = ['python3.7m']
     bld.env.INCLUDES_PYTHON = '/usr/include/python3.7m'
+
+    bld.env.LIBPATH_CUDA = '/usr/local/cuda-10.1/compat'
+    bld.env.LIB_CUDA = ['cuda', 'nvidia-fatbinaryloader']
+    bld.env.INCLUDES_CUDA = ['/usr/local/cuda-10.1/include']
 
     bld.env.INCLUDES_KDTREE = ['/workspace/include']
 
@@ -83,7 +86,7 @@ def build(bld):
                            source = 'src/imagesd.cpp',
                            includes='./src . ../../',
                            uselib='TBB BOOST EIGEN PTHREAD MPI'
-                                + 'PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
+                                + 'PYTHON CUDA PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
                            target = 'imagesd',
                            variants = ['AE', 'VAE', 'AURORA'])
