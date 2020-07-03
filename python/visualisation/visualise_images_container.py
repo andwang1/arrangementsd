@@ -228,7 +228,7 @@ else:
         ax3.set_title("L2")
 
         plt.subplots_adjust(hspace=0.6)
-        plt.savefig(f"image_{j}.jpg")
+        plt.savefig(f"image_{j}.png")
         plt.close()
 
 os.makedirs("images", exist_ok=True)
