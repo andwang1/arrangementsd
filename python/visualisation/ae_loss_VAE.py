@@ -11,7 +11,8 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
     L2 = []
     undisturbed_actual_trajectories_L2 = []
     KL = []
-    variance = []
+    encoder_var = []
+    decoder_var = []
     train_epochs = []
 
     data_dict = {}
@@ -21,19 +22,21 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
             data = line.strip().split(",")
             total_recon.append(float(data[1]))
             KL.append(float(data[2]))
-            variance.append(float(data[3]))
-            L2.append(float(data[4]))
-            undisturbed_actual_trajectories_L2.append(float(data[5]))
+            encoder_var.append(float(data[3]))
+            decoder_var.append(float(data[4]))
+            L2.append(float(data[5]))
+            undisturbed_actual_trajectories_L2.append(float(data[6]))
             if "IS_TRAIN" in data[-1]:
                 # gen number, epochstrained / total
                 train_epochs.append((int(data[0]), data[-2].strip()))
 
     if generate_images:
-        f = plt.figure(figsize=(10, 5))
+        f = plt.figure(figsize=(15, 10))
 
-        spec = f.add_gridspec(2, 2)
+        spec = f.add_gridspec(3, 2)
         ax1 = f.add_subplot(spec[0, :])
         ax2 = f.add_subplot(spec[1, :])
+        ax3 = f.add_subplot(spec[2, :])
 
         # L2 and variance on one plot
         ax1.set_ylabel("L2")
@@ -52,9 +55,9 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
         if full_loss:
             var_ax = ax1.twinx()
             var_ax.set_ylabel("Variance")
-            var_ax.set_ylim([0, max(variance)])
-            ln3 = var_ax.plot(range(len(L2)), variance, c="green", label="Variance")
-            var_ax.annotate(f"{round(variance[-1], 2)}", (len(variance) - 1, variance[-1]))
+            var_ax.set_ylim([0, max(decoder_var)])
+            ln3 = var_ax.plot(range(len(L2)), decoder_var, c="green", label="Variance")
+            var_ax.annotate(f"{round(decoder_var[-1], 2)}", (len(decoder_var) - 1, decoder_var[-1]))
 
         # train marker
         if show_train_lines:
@@ -80,8 +83,15 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
         lns = ln4+ln5
         labs = [l.get_label() for l in lns]
         ax2.legend(lns, labs, loc='best')
+
+        ax3.plot(range(len(total_recon)), encoder_var, c="red", label="Encoder Variance")
+        ax3.legend(loc='best')
+        ax3.annotate(f"{round(encoder_var[-1], 2)}", (len(encoder_var) - 1, encoder_var[-1]))
+        ax3.set_ylabel("Variance")
+
+
         ax1.set_title(f"VAE Loss")
-        ax2.set_xlabel("Generation")
+        ax3.set_xlabel("Generation")
         plt.savefig(f"vae_loss.png")
         plt.close()
         # plt.show()
@@ -90,7 +100,8 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
     data_dict["L2"] = L2
     data_dict["UL"] = undisturbed_actual_trajectories_L2
     data_dict["KL"] = KL
-    data_dict["VAR"] = variance
+    data_dict["VAR"] = decoder_var
+    data_dict["ENVAR"] = encoder_var
     data_dict["TR_EPOCHS"] = train_epochs
     return data_dict
 
