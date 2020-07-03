@@ -731,7 +731,7 @@ for group in groups:
             plt.close()
 
             loss_stoch_dict[f"{variant}{loss_type}"] = {"stoch": stochasticity_values, "L2": L2_values, "ENVAR": ENVAR_values,
-                                                           "AL": AL_values}
+                                                           "UL": UL_values}
 
     os.chdir(f"{EXP_FOLDER}")
 
