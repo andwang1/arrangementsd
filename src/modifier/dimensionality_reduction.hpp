@@ -143,9 +143,9 @@ namespace sferes {
             void get_additional_phenos(const Mat &geno_d, const Mat &img_d, std::vector<typename EA::indiv_t> &content, EA &ea,
                                         std::vector<typename EA::indiv_t> &copied_pheno, float pct_extension)
             {
-                Mat descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                Mat descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var;
                 _network->eval(geno_d, img_d, descriptors, reconstruction, recon_loss, recon_loss_unred, L2_loss, 
-                               KL_loss, decoder_var);
+                               KL_loss, encoder_var, decoder_var);
 
                 int num_copies = pct_extension * geno_d.rows();
                 copy_pheno(content, recon_loss, copied_pheno, num_copies, ea);
@@ -230,16 +230,16 @@ namespace sferes {
 
             void get_stats(const Mat &geno, const Mat &img, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
-                Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
+                Mat &L2_loss, Mat &KL_loss, Mat &encoder_var, Mat &decoder_var) const
             {
                 Mat scaled_img, scaled_reconstruction;
                 _prep.apply(img, scaled_img);
                 _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, decoder_var);
+                               L2_loss, KL_loss, encoder_var, decoder_var);
                 _prep.deapply(scaled_reconstruction, reconstruction);
 
                 // _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                            //    L2_loss, KL_loss, decoder_var);
+                            //    L2_loss, KL_loss, encoder_var, decoder_var);
             }
 
             void train_network(const Mat &geno_d, const Mat &img_d) {
@@ -297,14 +297,14 @@ namespace sferes {
             void get_descriptor_autoencoder(const Mat &geno_d, const Mat &img_d, 
                                             Mat &latent_and_entropy) const 
             {
-                Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var;
                 _prep.apply(img_d, scaled_img_d);
                 _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, decoder_var, Params::qd::sample);
+                               L2_loss, KL_loss, encoder_var, decoder_var, Params::qd::sample);
 
                 // Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
                 // _network->eval(geno_d, img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
-                //                L2_loss, KL_loss, decoder_var);
+                //                L2_loss, KL_loss, encoder_var, decoder_var);
 
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;

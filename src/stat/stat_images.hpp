@@ -36,9 +36,9 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
                 
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, encoder_var, decoder_var;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                                                                    L2_loss, KL_loss, decoder_var);
+                                                                    L2_loss, KL_loss, encoder_var, decoder_var);
 
                 // retrieve images where random trajectories are marked differently
                 matrix_t contrasted_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);

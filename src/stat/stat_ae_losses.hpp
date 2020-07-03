@@ -34,9 +34,9 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
                 
-                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, decoder_var;
+                matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, encoder_var, decoder_var;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                                                                    L2_loss, KL_loss, decoder_var);
+                                                                    L2_loss, KL_loss, encoder_var, decoder_var);
 
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
@@ -46,7 +46,8 @@ namespace sferes {
                 #ifdef VAE
                 // these three are unreduced, need row wise sum and then mean
                 double KL = KL_loss.rowwise().sum().mean();
-                double var = decoder_var.rowwise().sum().mean();
+                double en_var = encoder_var.rowwise().sum().mean();
+                double de_var = decoder_var.rowwise().sum().mean();
 
                 // retrieve images without any interference from random observations
                 matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
@@ -54,7 +55,7 @@ namespace sferes {
                 {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
                 
                 double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
-                ofs << ea.gen() << ", " << recon << ", " << KL << ", " << var << ", " << L2 << ", " << L2_undisturbed;
+                ofs << ea.gen() << ", " << recon << ", " << KL << ", " << en_var << ", " << de_var << ", " << L2 << ", " << L2_undisturbed;
 
                 #else
 

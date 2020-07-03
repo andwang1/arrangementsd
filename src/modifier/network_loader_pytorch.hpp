@@ -64,10 +64,11 @@ public:
               MatrixXf_rm &recon_loss_unred,
               MatrixXf_rm &L2_loss,
               MatrixXf_rm &KL_loss,
+              MatrixXf_rm &encoder_var,
               MatrixXf_rm &decoder_var,
               bool sample = false) {
         stc::exact(this)->eval(gen, img, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, decoder_var, sample);
+                               L2_loss, KL_loss, encoder_var, decoder_var, sample);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor>> &batches, 
@@ -108,8 +109,8 @@ public:
     }
 
     float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool sample = false) {
-        MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, sample);
+        MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var;
+        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var, sample);
         return recon_loss.mean();
     }
 
@@ -345,6 +346,7 @@ public:
               MatrixXf_rm &recon_loss_unred,
               MatrixXf_rm &L2_loss,
               MatrixXf_rm &KL_loss,
+              MatrixXf_rm &encoder_var,
               MatrixXf_rm &decoder_var,
               bool sample = false) 
     {
@@ -432,6 +434,7 @@ public:
 
         #ifdef VAE
         this->get_eigen_matrix_from_torch_tensor(torch::exp(decoder_logvar).cpu(), decoder_var);
+        this->get_eigen_matrix_from_torch_tensor(torch::exp(encoder_logvar).cpu(), encoder_var);
         this->get_eigen_matrix_from_torch_tensor(KL.cpu(), KL_loss);
         #endif
     }
