@@ -232,23 +232,23 @@ namespace sferes {
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
                 Mat &L2_loss, Mat &KL_loss, Mat &decoder_var) const
             {
-                // Mat scaled_img, scaled_reconstruction;
-                // _prep.apply(img, scaled_img);
-                // _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
-                //                L2_loss, KL_loss, decoder_var);
-                // _prep.deapply(scaled_reconstruction, reconstruction);
-
-                _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                Mat scaled_img, scaled_reconstruction;
+                _prep.apply(img, scaled_img);
+                _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
                                L2_loss, KL_loss, decoder_var);
+                _prep.deapply(scaled_reconstruction, reconstruction);
+
+                // _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                            //    L2_loss, KL_loss, decoder_var);
             }
 
             void train_network(const Mat &geno_d, const Mat &img_d) {
-                // _prep.init(img_d);
-                // Mat scaled_img_d;
-                // _prep.apply(img_d, scaled_img_d);
-                // _network->training(geno_d, scaled_img_d);
+                _prep.init(img_d);
+                Mat scaled_img_d;
+                _prep.apply(img_d, scaled_img_d);
+                _network->training(geno_d, scaled_img_d);
 
-                _network->training(geno_d, img_d);
+                // _network->training(geno_d, img_d);
             }
 
             template<typename EA>
@@ -297,14 +297,14 @@ namespace sferes {
             void get_descriptor_autoencoder(const Mat &geno_d, const Mat &img_d, 
                                             Mat &latent_and_entropy) const 
             {
-                // Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                // _prep.apply(img_d, scaled_img_d);
-                // _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
-                //                L2_loss, KL_loss, decoder_var);
-
                 Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-                _network->eval(geno_d, img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, decoder_var);
+                _prep.apply(img_d, scaled_img_d);
+                _network->eval(geno_d, scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
+                               L2_loss, KL_loss, decoder_var, Params::qd::sample);
+
+                // Mat scaled_img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
+                // _network->eval(geno_d, img_d, descriptors, scaled_reconstructed_data, recon_loss, recon_loss_unred, 
+                //                L2_loss, KL_loss, decoder_var);
 
                 latent_and_entropy = Mat(descriptors.rows(), descriptors.cols() + recon_loss.cols());
                 latent_and_entropy << descriptors, recon_loss;
