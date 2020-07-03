@@ -65,9 +65,9 @@ public:
               MatrixXf_rm &L2_loss,
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &decoder_var,
-              bool is_train_set = false) {
+              bool sample = false) {
         stc::exact(this)->eval(gen, img, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, decoder_var, is_train_set);
+                               L2_loss, KL_loss, decoder_var, sample);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor>> &batches, 
@@ -107,9 +107,9 @@ public:
         return stc::exact(this)->training(gen_d, img_d, full_train, generation);
     }
 
-    float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool is_train_set = false) {
+    float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool sample = false) {
         MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var;
-        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, is_train_set);
+        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, decoder_var, sample);
         return recon_loss.mean();
     }
 
@@ -346,7 +346,7 @@ public:
               MatrixXf_rm &L2_loss,
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &decoder_var,
-              bool is_train_set = false) 
+              bool sample = false) 
     {
         torch::NoGradGuard no_grad;
         AutoEncoder auto_encoder = std::static_pointer_cast<AutoEncoderImpl>(this->m_auto_encoder_module.ptr());
@@ -359,9 +359,9 @@ public:
 
         torch::Tensor encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor;
         #ifdef AURORA
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(img_tensor, encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid);
+        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(img_tensor, encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
         #else
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(gen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid);
+        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(gen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
         #endif
         torch::Tensor recon_loss_unreduced = torch::empty({gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation}, torch::device(this->m_device));
 
