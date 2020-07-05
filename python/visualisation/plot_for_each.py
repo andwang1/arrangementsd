@@ -244,15 +244,14 @@ for group in groups:
 
             # at experiment level, plot losses
             L2_values = np.array([repetition["L2"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]])
-            ENVAR_values = np.array(
-                [repetition["ENVAR"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]]).flatten()
             UL_values = np.array([repetition["UL"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]]).flatten()
+            if variant == "vae":
+                ENVAR_values = np.array([repetition["ENVAR"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]]).flatten()
             x = list(range(START_GEN_LOSS_PLOT, len(L2_values[0]) + START_GEN_LOSS_PLOT)) * len(L2_values)
 
             if "fulllosstrue" in exp:
                 f = plt.figure(figsize=(15, 10))
                 spec = f.add_gridspec(3, 2)
-                ax1 = f.add_subplot(spec[0, :])
                 ax2 = f.add_subplot(spec[1, :])
                 ax3 = f.add_subplot(spec[2, :])
                 VAR_values = np.array([repetition["VAR"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]]).flatten()
@@ -278,11 +277,15 @@ for group in groups:
                 labs = [l.get_label() for l in lns]
                 ax2.legend(lns, labs, loc='best')
 
-            else:
+            elif variant == "vae":
                 f = plt.figure(figsize=(10, 5))
                 spec = f.add_gridspec(2, 2)
-                ax1 = f.add_subplot(spec[0, :])
                 ax3 = f.add_subplot(spec[1, :])
+            else:
+                f = plt.figure(figsize=(5, 5))
+                spec = f.add_gridspec(1, 2)
+
+            ax1 = f.add_subplot(spec[0, :])
 
             # plot overall L2 and actual L2
             ln1 = sns.lineplot(x, L2_values.flatten(), estimator="mean", ci="sd", label="Total L2", ax=ax1, color="red")
@@ -296,12 +299,16 @@ for group in groups:
             labs = [l.get_label() for l in lns]
             ax1.legend(lns, labs, loc='best')
 
-            ln7 = sns.lineplot(x, ENVAR_values, estimator="mean", ci="sd", label="Encoder Var.", ax=ax3, color="red")
-            labs = [l.get_label() for l in ln7.get_lines()]
-            ax3.legend(ln7.get_lines(), labs, loc='best')
+            if variant == "vae":
+                ln7 = sns.lineplot(x, ENVAR_values, estimator="mean", ci="sd", label="Encoder Var.", ax=ax3, color="red")
+                labs = [l.get_label() for l in ln7.get_lines()]
+                ax3.legend(ln7.get_lines(), labs, loc='best')
 
             ax1.set_title(f"Losses")
-            ax3.set_xlabel("Generation")
+            if variant == "vae":
+                ax3.set_xlabel("Generation")
+            else:
+                ax1.set_xlabel("Generation")
 
             plt.savefig("losses.png")
             plt.close()
@@ -647,8 +654,10 @@ for group in groups:
                 for repetition in variant_loss_dict["_".join(components)]:
                     L2_values.append(repetition["L2"][START_GEN_LOSS_PLOT:])
                     UL_values.append(repetition["UL"][START_GEN_LOSS_PLOT:])
-                    ENVAR_values.append(repetition["ENVAR"][START_GEN_LOSS_PLOT:])
                     stochasticity_values.append([stochasticity] * len(repetition["L2"][START_GEN_LOSS_PLOT:]))
+
+                    if variant == "vae":
+                        ENVAR_values.append(repetition["ENVAR"][START_GEN_LOSS_PLOT:])
 
                     if loss_type == "fulllosstrue":
                         VAR_values.append(repetition["VAR"][START_GEN_LOSS_PLOT:])
@@ -663,7 +672,8 @@ for group in groups:
             stochasticity_values = np.array(stochasticity_values).flatten()
             L2_values = np.array(L2_values).flatten()
             UL_values = np.array(UL_values).flatten()
-            ENVAR_values = np.array(ENVAR_values).flatten()
+            if variant == "vae":
+                ENVAR_values = np.array(ENVAR_values).flatten()
 
             if loss_type == "fulllosstrue":
                 VAR_values = np.array(VAR_values).flatten()
@@ -672,7 +682,6 @@ for group in groups:
 
                 f = plt.figure(figsize=(15, 10))
                 spec = f.add_gridspec(3, 2)
-                ax1 = f.add_subplot(spec[0, :])
                 ax2 = f.add_subplot(spec[1, :])
                 ax3 = f.add_subplot(spec[2, :])
 
@@ -697,11 +706,15 @@ for group in groups:
                 labs = [l.get_label() for l in lns]
                 ax2.legend(lns, labs, loc='best')
 
-            else:
+            elif variant == "vae":
                 f = plt.figure(figsize=(10, 5))
                 spec = f.add_gridspec(2, 2)
-                ax1 = f.add_subplot(spec[0, :])
                 ax3 = f.add_subplot(spec[1, :])
+            else:
+                f = plt.figure(figsize=(5, 5))
+                spec = f.add_gridspec(1, 2)
+
+            ax1 = f.add_subplot(spec[0, :])
 
             # plot overall L2 and actual L2
             ln1 = sns.lineplot(stochasticity_values, L2_values, estimator="mean", ci="sd", label="Total L2", ax=ax1, color="red")
@@ -716,12 +729,16 @@ for group in groups:
             labs = [l.get_label() for l in lns]
             ax1.legend(lns, labs, loc='best')
 
-            ln7 = sns.lineplot(stochasticity_values, ENVAR_values, estimator="mean", ci="sd", label="Encoder Var.", ax=ax3, color="red")
-            labs = [l.get_label() for l in ln7.get_lines()]
-            ax3.legend(ln7.get_lines(), labs, loc='best')
+            if variant == "vae":
+                ln7 = sns.lineplot(stochasticity_values, ENVAR_values, estimator="mean", ci="sd", label="Encoder Var.", ax=ax3, color="red")
+                labs = [l.get_label() for l in ln7.get_lines()]
+                ax3.legend(ln7.get_lines(), labs, loc='best')
 
             ax1.set_title(f"Losses")
-            ax3.set_xlabel("Stochasticity")
+            if variant == "vae":
+                ax3.set_xlabel("Stochasticity")
+            else:
+                ax1.set_xlabel("Stochasticity")
 
             if loss_type == "fulllosstrue":
                 plt.savefig(f"losses_fullloss.png")
