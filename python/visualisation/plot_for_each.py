@@ -17,7 +17,7 @@ GENERATE_PID_IMAGES = True
 GENERATE_EXP_IMAGES = False
 START_GEN_LOSS_PLOT = 500
 
-results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_bsd_exp1/"
+results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_imagesd_exp1"
 groups = [group_name for group_name in os.listdir(results_dir) if
             os.path.isdir(os.path.join(results_dir, group_name)) and group_name != "plots"]
 
@@ -489,6 +489,7 @@ for group in groups:
                     for repetition in variant_pos_var_dict["_".join(components)]:
                         PV_values.append(repetition["PV"][i])
                         PVE_values.append(repetition["PVE"][i])
+                        stochasticity_values.append(stochasticity)
                     for repetition in variant_dist_dict["_".join(components)]:
                         PCT_values.append(repetition["PCT"][i])
 
@@ -550,6 +551,7 @@ for group in groups:
                     for repetition in variant_entropy_dict["_".join(components)]:
                         EV_values.append(repetition["EV"][i])
                         EVE_values.append(repetition["EVE"][i])
+                        stochasticity_values.append(stochasticity)
                     for repetition in variant_dist_dict["_".join(components)]:
                         PCT_values.append(repetition["PCT"][i])
 
