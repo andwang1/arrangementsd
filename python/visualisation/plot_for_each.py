@@ -13,13 +13,25 @@ from visualisation.ae_loss_VAE import plot_loss_in_dir_VAE
 from visualisation.latent_space import plot_latent_space_in_dir
 from visualisation.recon_notmoved_var import plot_recon_not_moved_var_in_dir
 
-GENERATE_PID_IMAGES = True
+GENERATE_PID_IMAGES = False
 GENERATE_EXP_IMAGES = False
 START_GEN_LOSS_PLOT = 500
 
 results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_imagesd_exp1"
-groups = [group_name for group_name in os.listdir(results_dir) if
-            os.path.isdir(os.path.join(results_dir, group_name)) and group_name != "plots"]
+groups = {group_name for group_name in os.listdir(results_dir) if
+            os.path.isdir(os.path.join(results_dir, group_name)) and group_name != "plots"}
+
+# exclude_dirs = {"smoothl1", "l2beta0", "l2", "l1beta0", "l1"}
+# groups -= exclude_dirs
+
+only_dirs = {
+"huberbeta0",
+# "l1nosample",
+# "random_solutions"
+}
+groups &= only_dirs
+
+print(groups)
 
 for group in groups:
     EXP_FOLDER = f"{results_dir}/{group}"
@@ -545,6 +557,7 @@ for group in groups:
                 stochasticity_values = []
 
                 for stochasticity in stochasticities:
+                    print(f"Stochasticity {stochasticity}")
                     # take correct dictionary according to stochasticity
                     components[1] = f"random{stochasticity}"
                     components[2] = loss_type
@@ -558,6 +571,8 @@ for group in groups:
                 f = plt.figure(figsize=(10, 5))
                 spec = f.add_gridspec(3, 1)
                 ax1 = f.add_subplot(spec[:2, 0])
+                print(len(stochasticity_values))
+                print(len(EV_values))
                 ln1 = sns.lineplot(stochasticity_values, EV_values, estimator="mean", ci="sd", label="Mean Entropy",
                                    ax=ax1,
                                    color="red")
