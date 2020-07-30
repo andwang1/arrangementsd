@@ -99,7 +99,7 @@ From: airl_lab/default/airl_env:pytorch_ci
    fi
    
    cd /git/sferes2/exp/imagesd/
-   checkout synth_imgs
+   git checkout synth_imgs
 
    cd /git/sferes2/
    ./setup.sh $SETUP_ARGS
