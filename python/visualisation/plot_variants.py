@@ -7,10 +7,16 @@ path = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_imagesd_exp1"
 os.chdir(path)
 
 plotting_groups = [
-["l1"],
+["sigmoidbce", "l2"],
+# ["l1", "l2"],
+# ["l2withsampling", "l2"],
+["huberbeta0", "huberbeta1"],
+# ["l2", "l2beta0"],
+# ["l1", "l1beta0"],
+# ["huberbeta0", "l1beta0", "l2beta0"]
 ]
 
-colours = ["blue", "brown", "grey", "red", "purple", "green", "pink"]
+colours = ["blue", "brown", "grey", "red", "purple", "green", "pink", "orange"]
 
 # make legend bigger
 plt.rc('legend', fontsize=35)
@@ -144,7 +150,7 @@ for group in plotting_groups:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
     ax1.set_title("Entropy of Trajectory Positions Excl. No-Move")
-    ax1.set_ylabel("Mean Mean Entropy")
+    ax1.set_ylabel("Mean Entropy")
     ax1.set_xlabel("Stochasticity")
     plt.savefig(f"{save_dir}/pdf/entropy_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/entropy_{'_'.join(group)}.png")
@@ -165,7 +171,7 @@ for group in plotting_groups:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
     ax1.set_title("Variance of Trajectory Positions")
-    ax1.set_ylabel("Mean Mean Variance")
+    ax1.set_ylabel("Mean Variance")
     ax1.set_xlabel("Stochasticity")
     plt.savefig(f"{save_dir}/pdf/posvar_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/posvar_{'_'.join(group)}.png")
@@ -188,7 +194,7 @@ for group in plotting_groups:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
     ax1.set_title("Reconstruction Var. of No-Move solutions")
-    ax1.set_ylabel("Mean Mean Reconstruction Variance")
+    ax1.set_ylabel("Mean Reconstruction Variance")
     ax1.set_xlabel("Stochasticity")
     plt.savefig(f"{save_dir}/pdf/recon_var_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/recon_var_{'_'.join(group)}.png")
@@ -210,32 +216,32 @@ for group in plotting_groups:
             if i == 0 and len(group) > 1:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_ylabel("Mean Mean Variance")
+    ax1.set_ylabel("Mean Variance")
     ax1.set_xlabel("Stochasticity")
     ax1.set_title(f"Variance of Latent Descriptors of No-Move Solutions")
     plt.savefig(f"{save_dir}/pdf/latent_var_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/latent_var_{'_'.join(group)}.png")
     plt.close()
 
-    # f = plt.figure(figsize=(20, 20))
-    # spec = f.add_gridspec(1, 2)
-    # ax1 = f.add_subplot(spec[0, :])
-    # colour_count = 0
-    # for i, member in enumerate(group):
-    #     with open(f"{member}/loss_data.pk", "rb") as f:
-    #         log_data = pk.load(f)
-    #
-    #     for variant, data in log_data.items():
-    #         if "vae" not in variant:
-    #             continue
-    #         sns.lineplot(data["stoch"], data["ENVAR"], estimator="mean", ci="sd", label=f"{member}-{variant}", ax=ax1,
-    #                      color=colours[colour_count])
-    #         if i == 0 and len(group) > 1:
-    #             ax1.lines[-1].set_linestyle("--")
-    #         colour_count += 1
-    # ax1.set_ylabel("Mean Mean Variance")
-    # ax1.set_xlabel("Stochasticity")
-    # ax1.set_title(f"Encoder Variance")
-    # plt.savefig(f"{save_dir}/pdf/encoder_var_{'_'.join(group)}.pdf")
-    # plt.savefig(f"{save_dir}/encoder_var_{'_'.join(group)}.png")
-    # plt.close()
+    f = plt.figure(figsize=(20, 20))
+    spec = f.add_gridspec(1, 2)
+    ax1 = f.add_subplot(spec[0, :])
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/loss_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if "vae" not in variant:
+                continue
+            sns.lineplot(data["stoch"], data["ENVAR"] / 2, estimator="mean", ci="sd", label=f"{member}-{variant}", ax=ax1,
+                         color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax1.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax1.set_ylabel("Mean Variance")
+    ax1.set_xlabel("Stochasticity")
+    ax1.set_title(f"Encoder Variance")
+    plt.savefig(f"{save_dir}/pdf/encoder_var_{'_'.join(group)}.pdf")
+    plt.savefig(f"{save_dir}/encoder_var_{'_'.join(group)}.png")
+    plt.close()
