@@ -21,13 +21,11 @@ results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_imagesd_exp1"
 groups = {group_name for group_name in os.listdir(results_dir) if
             os.path.isdir(os.path.join(results_dir, group_name)) and group_name != "plots"}
 
-# exclude_dirs = {"smoothl1", "l2beta0", "l2", "l1beta0", "l1"}
+# exclude_dirs = {"huber"}
 # groups -= exclude_dirs
 
 only_dirs = {
-"huberbeta0",
-# "l1nosample",
-# "random_solutions"
+"l2",
 }
 groups &= only_dirs
 
@@ -557,7 +555,6 @@ for group in groups:
                 stochasticity_values = []
 
                 for stochasticity in stochasticities:
-                    print(f"Stochasticity {stochasticity}")
                     # take correct dictionary according to stochasticity
                     components[1] = f"random{stochasticity}"
                     components[2] = loss_type
@@ -571,8 +568,6 @@ for group in groups:
                 f = plt.figure(figsize=(10, 5))
                 spec = f.add_gridspec(3, 1)
                 ax1 = f.add_subplot(spec[:2, 0])
-                print(len(stochasticity_values))
-                print(len(EV_values))
                 ln1 = sns.lineplot(stochasticity_values, EV_values, estimator="mean", ci="sd", label="Mean Entropy",
                                    ax=ax1,
                                    color="red")
@@ -670,6 +665,7 @@ for group in groups:
                     continue
                 for repetition in variant_loss_dict["_".join(components)]:
                     L2_values.append(repetition["L2"][START_GEN_LOSS_PLOT:])
+                    # print(f"Stoch: {stochasticity}, {len(repetition['L2'][START_GEN_LOSS_PLOT:])}")
                     UL_values.append(repetition["UL"][START_GEN_LOSS_PLOT:])
                     stochasticity_values.append([stochasticity] * len(repetition["L2"][START_GEN_LOSS_PLOT:]))
 
@@ -693,15 +689,25 @@ for group in groups:
                 ENVAR_values = np.array(ENVAR_values).flatten()
 
             if loss_type == "fulllosstrue":
+                f = plt.figure(figsize=(15, 10))
+                spec = f.add_gridspec(3, 2)
+            elif variant == "vae":
+                f = plt.figure(figsize=(10, 5))
+                spec = f.add_gridspec(2, 2)
+                ax3 = f.add_subplot(spec[1, :])
+            else:
+                f = plt.figure(figsize=(5, 5))
+                spec = f.add_gridspec(1, 2)
+
+            ax1 = f.add_subplot(spec[0, :])
+
+            if loss_type == "fulllosstrue":
                 VAR_values = np.array(VAR_values).flatten()
                 KL_values = np.array(KL_values).flatten()
                 TL_values = np.array(TL_values).flatten()
 
-                f = plt.figure(figsize=(15, 10))
-                spec = f.add_gridspec(3, 2)
                 ax2 = f.add_subplot(spec[1, :])
                 ax3 = f.add_subplot(spec[2, :])
-
 
                 var_ax = ax1.twinx()
                 ln3 = sns.lineplot(stochasticity_values, VAR_values, estimator="mean", ci="sd", label="Decoder Var.", ax=var_ax,
@@ -723,15 +729,6 @@ for group in groups:
                 labs = [l.get_label() for l in lns]
                 ax2.legend(lns, labs, loc='best')
 
-            elif variant == "vae":
-                f = plt.figure(figsize=(10, 5))
-                spec = f.add_gridspec(2, 2)
-                ax3 = f.add_subplot(spec[1, :])
-            else:
-                f = plt.figure(figsize=(5, 5))
-                spec = f.add_gridspec(1, 2)
-
-            ax1 = f.add_subplot(spec[0, :])
 
             # plot overall L2 and actual L2
             ln1 = sns.lineplot(stochasticity_values, L2_values, estimator="mean", ci="sd", label="Total L2", ax=ax1, color="red")
