@@ -11,6 +11,6 @@ os.chdir(path_to_variant)
 components = result_dir.split("_")
 args = [i.split("=")[-1] for i in components]
 
-new_result_dir_name = f"gen{args[0]}_random{args[1]}_fullloss{args[2]}_beta{args[3]}_extension{args[4]}_lossfunc{args[5]}_sigmoid{args[6]}_sample{args[7]}"
+new_result_dir_name = f"gen{args[0]}_random{args[1]}_fullloss{args[2]}_beta{args[3]}_extension{args[4]}_lossfunc{args[5]}_sigmoid{args[6]}_sample{args[7]}_tsne{args[8]}"
 
 os.rename(result_dir, new_result_dir_name)
