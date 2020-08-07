@@ -125,6 +125,7 @@ struct Arguments {
     double pct_extension;
     unsigned int loss_func;
     bool sample;
+    unsigned int sne;
 };
 
 void get_arguments(const boost::program_options::options_description &desc, Arguments &arg, int argc, char **argv) {
@@ -144,6 +145,7 @@ void get_arguments(const boost::program_options::options_description &desc, Argu
     arg.pct_extension = vm["pct-extension"].as<double>();
     arg.loss_func = vm["loss-func"].as<unsigned int>();
     arg.sample = vm["sample"].as<bool>();
+    arg.sne = vm["sne"].as<unsigned int>();
 }
 
 int main(int argc, char **argv) {
@@ -169,6 +171,8 @@ int main(int argc, char **argv) {
                 ("loss-func", boost::program_options::value<unsigned int>(), "Loss function: 0 = Huber, 1 = L1, 2 = L2");
     desc.add_options()
                 ("sample", boost::program_options::value<bool>(), "Sample Encoder for BD");
+    desc.add_options()
+                ("sne", boost::program_options::value<unsigned int>(), "0 = No SNE, 1 = SNE, 2 = TSNE");
 
     get_arguments(desc, arg, argc, argv);
 
@@ -197,6 +201,8 @@ int main(int argc, char **argv) {
     Params::ae::sigmoid = arg.sigmoid;
     // sample encoder for BD
     Params::qd::sample = arg.sample;
+    // TSNE or SNE
+    Params::ae::add_sne_criterion = static_cast<Params::ae::sne>(arg.sne);
 
     typedef Trajectory<params_t> fit_t;
     typedef sferes::gen::EvoFloat<Params::qd::gen_dim, params_t> gen_t;

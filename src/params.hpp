@@ -47,6 +47,8 @@ struct Params {
     enum class loss : unsigned int {Huber, L1, L2, BCE};
     static loss loss_function;
 
+    SFERES_CONST float target_perplexity = batch_size * 0.1;
+
     // aurora num filter maps
     SFERES_CONST size_t aurora_en_dim1 = 10;
     SFERES_CONST size_t aurora_en_dim2 = 20;
@@ -63,6 +65,9 @@ struct Params {
     SFERES_CONST size_t de_hid_dim2 = 20;
     SFERES_CONST size_t de_hid_dim3 = 10;
     // output_dim = sim::trajectory_length
+
+    enum class sne : unsigned int {NoSNE, SNE, TSNE};
+    static sne add_sne_criterion;
     };
 
     struct update {
@@ -133,5 +138,6 @@ size_t Params::ae::beta;
 double Params::ae::pct_extension;
 Params::ae::loss Params::ae::loss_function;
 bool Params::qd::sample;
+Params::ae::sne Params::ae::add_sne_criterion;
 
 #endif //PARAMS_HPP
