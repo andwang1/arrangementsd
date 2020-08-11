@@ -25,7 +25,7 @@ groups = {group_name for group_name in os.listdir(results_dir) if
 # groups -= exclude_dirs
 
 only_dirs = {
-"l2",
+"l2_nosampletrain",
 }
 groups &= only_dirs
 

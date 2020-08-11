@@ -12,8 +12,8 @@ plotting_groups = [
     # ["l2withsampling", "l2withsampling_beta0"],
     # ["l2", "l2withsampling"],
     # ["l2", "l2beta0"],
-    ["l2_nosampletrain", "l2"],
-    # ["l2_nosampletrain", "l2beta0_nosampletrain"],
+    # ["l2_nosampletrain", "l2"],
+    ["l2_nosampletrain", "l2beta0_nosampletrain"],
 ]
 
 colours = ["blue", "brown", "grey", "green", "purple", "red", "pink", "orange"]
