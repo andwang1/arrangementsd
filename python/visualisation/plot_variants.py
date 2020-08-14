@@ -13,7 +13,11 @@ plotting_groups = [
     # ["l2", "l2withsampling"],
     # ["l2", "l2beta0"],
     # ["l2_nosampletrain", "l2"],
-    ["l2_nosampletrain", "l2beta0_nosampletrain"],
+    # ["l2_nosampletrain", "l2beta0_nosampletrain"],
+    # ["l2", "l2beta0"],
+    # ["l2", "l2nosample"],
+# ["l2nosample", "l2_nosampletrain"],
+    ["l2_nosampletrain", "l2nosample"]
 ]
 
 colours = ["blue", "brown", "grey", "green", "purple", "red", "pink", "orange"]
@@ -72,9 +76,12 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["DIV"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1, color=colours[colour_count])
+
             data_stats = pd.DataFrame(data)[["stoch", "DIV"]].groupby("stoch").describe()
             quart25 = data_stats[('DIV', '25%')]
             quart75 = data_stats[('DIV', '75%')]
@@ -98,6 +105,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["PCT"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1,
@@ -125,6 +134,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["MDE"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1,
@@ -152,6 +163,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["VDE"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1,
@@ -179,6 +192,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["EVE"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1,
@@ -206,6 +221,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             variant_name = variant if not variant.startswith("ae") else "ae"
             sns.lineplot(data["stoch"], data["PV"], estimator=np.median, ci=None, label=f"{member}-{variant_name}",
                          ax=ax1,
@@ -233,6 +250,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             if "aurora" in variant:
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
@@ -262,6 +281,8 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
             if "aurora" in variant:
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
@@ -291,11 +312,84 @@ for group in plotting_groups:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
-            if "vae" not in variant:
+            if len(data["stoch"]) == 0:
+                continue
+            if "aurora" in variant or variant.startswith("ae") or "TSNE" not in data or len(data["TSNE"]) == 0:
+                continue
+            sns.lineplot(data["stoch"], data["TSNE"], estimator=np.median, ci=None, label=f"{member}-{variant}",
+                         ax=ax1,
+                         color=colours[colour_count])
+            empty_keys = [k for k in data if not len(data[k])]
+            for k in empty_keys:
+                del data[k]
+            data = pd.DataFrame(data)[["stoch", "TSNE"]]
+            data_stats = data.groupby("stoch").describe()
+            quart25 = data_stats[('TSNE', '25%')]
+            quart75 = data_stats[('TSNE', '75%')]
+            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax1.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax1.set_ylabel("SNE" if "tsne" not in member else "T-SNE")
+    ax1.set_xlabel("Stochasticity")
+    ax1.set_title("SNE" if "tsne" not in member else "T-SNE")
+    plt.savefig(f"{save_dir}/pdf/tsne_{'_'.join(group)}.pdf")
+    plt.savefig(f"{save_dir}/tsne_{'_'.join(group)}.png")
+    plt.close()
+
+    f = plt.figure(figsize=(20, 20))
+    spec = f.add_gridspec(1, 2)
+    ax1 = f.add_subplot(spec[0, :])
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/loss_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if "aurora" in variant or variant.startswith("ae") or "beta0" in member:
+                continue
+            sns.lineplot(data["stoch"], data["KL"], estimator=np.median, ci=None, label=f"{member}-{variant}",
+                         ax=ax1,
+                         color=colours[colour_count])
+            empty_keys = [k for k in data if not len(data[k])]
+            for k in empty_keys:
+                del data[k]
+            data = pd.DataFrame(data)[["stoch", "KL"]]
+            data_stats = data.groupby("stoch").describe()
+            quart25 = data_stats[('KL', '25%')]
+            quart75 = data_stats[('KL', '75%')]
+            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax1.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax1.set_ylabel("KL")
+    ax1.set_xlabel("Stochasticity")
+    ax1.set_title("KL Loss")
+    plt.savefig(f"{save_dir}/pdf/kl_{'_'.join(group)}.pdf")
+    plt.savefig(f"{save_dir}/kl_{'_'.join(group)}.png")
+    plt.close()
+
+    f = plt.figure(figsize=(20, 20))
+    spec = f.add_gridspec(1, 2)
+    ax1 = f.add_subplot(spec[0, :])
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/loss_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if "aurora" in variant or variant.startswith("ae") or "nosampletrain" in member or "ENVAR" not in data:
                 continue
             sns.lineplot(data["stoch"], data["ENVAR"] / 2, estimator=np.median, ci=None, label=f"{member}-{variant}",
                          ax=ax1,
                          color=colours[colour_count])
+            empty_keys = [k for k in data if not len(data[k])]
+            for k in empty_keys:
+                del data[k]
             data = pd.DataFrame(data)[["stoch", "ENVAR"]]
             data["ENVAR"] /= 2
             data_stats = data.groupby("stoch").describe()

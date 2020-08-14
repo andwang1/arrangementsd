@@ -25,7 +25,7 @@ groups = {group_name for group_name in os.listdir(results_dir) if
 # groups -= exclude_dirs
 
 only_dirs = {
-"l2_nosampletrain",
+"l2beta0nosample",
 }
 groups &= only_dirs
 
@@ -650,6 +650,7 @@ for group in groups:
             VAR_values = []
             TL_values = []
             KL_values = []
+            TSNE_values = []
 
             stochasticity_values = []
 
@@ -664,18 +665,19 @@ for group in groups:
                     is_data_recorded = False
                     continue
                 for repetition in variant_loss_dict["_".join(components)]:
-                    L2_values.append(repetition["L2"][START_GEN_LOSS_PLOT:])
-                    # print(f"Stoch: {stochasticity}, {len(repetition['L2'][START_GEN_LOSS_PLOT:])}")
-                    UL_values.append(repetition["UL"][START_GEN_LOSS_PLOT:])
-                    stochasticity_values.append([stochasticity] * len(repetition["L2"][START_GEN_LOSS_PLOT:]))
+                    L2_values.append(repetition["L2"][-1])
+                    UL_values.append(repetition["UL"][-1])
+                    stochasticity_values.append(stochasticity)
 
                     if variant == "vae":
-                        ENVAR_values.append(repetition["ENVAR"][START_GEN_LOSS_PLOT:])
+                        ENVAR_values.append(repetition["ENVAR"][-1])
+                        KL_values.append(repetition["KL"][-1])
 
                     if loss_type == "fulllosstrue":
-                        VAR_values.append(repetition["VAR"][START_GEN_LOSS_PLOT:])
-                        KL_values.append(repetition["KL"][START_GEN_LOSS_PLOT:])
-                        TL_values.append(repetition["TL"][START_GEN_LOSS_PLOT:])
+                        VAR_values.append(repetition["VAR"][-1])
+                        TL_values.append(repetition["TL"][-1])
+                    if "TSNE" in repetition and repetition["TSNE"]:
+                        TSNE_values.append(repetition["TSNE"][-1])
 
             if not is_data_recorded:
                 continue
@@ -687,6 +689,9 @@ for group in groups:
             UL_values = np.array(UL_values).flatten()
             if variant == "vae":
                 ENVAR_values = np.array(ENVAR_values).flatten()
+                KL_values = np.array(KL_values).flatten()
+            if TSNE_values:
+                TSNE_values = np.array(TSNE_values).flatten()
 
             if loss_type == "fulllosstrue":
                 f = plt.figure(figsize=(15, 10))
@@ -703,7 +708,6 @@ for group in groups:
 
             if loss_type == "fulllosstrue":
                 VAR_values = np.array(VAR_values).flatten()
-                KL_values = np.array(KL_values).flatten()
                 TL_values = np.array(TL_values).flatten()
 
                 ax2 = f.add_subplot(spec[1, :])
@@ -717,7 +721,10 @@ for group in groups:
 
                 ln4 = sns.lineplot(stochasticity_values, TL_values, estimator="mean", ci="sd", label="Total Loss", ax=ax2, color="red")
                 ax2.set_ylabel("Total Loss")
-
+                print(stochasticity_values)
+                print(KL_values)
+                print(len(stochasticity_values))
+                print(len(KL_values))
                 KL_ax = ax2.twinx()
                 ln5 = sns.lineplot(stochasticity_values, KL_values, estimator="mean", ci="sd", label="KL", ax=KL_ax, color="blue")
                 KL_ax.set_ylabel("KL")
@@ -762,7 +769,7 @@ for group in groups:
             plt.close()
 
             loss_stoch_dict[f"{variant}{loss_type}"] = {"stoch": stochasticity_values, "L2": L2_values, "ENVAR": ENVAR_values,
-                                                           "UL": UL_values}
+                                                           "UL": UL_values, "TSNE": TSNE_values, "KL": KL_values}
 
     os.chdir(f"{EXP_FOLDER}")
 

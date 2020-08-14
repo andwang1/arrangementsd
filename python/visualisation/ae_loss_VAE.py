@@ -14,6 +14,11 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
     encoder_var = []
     decoder_var = []
     train_epochs = []
+    tsne = []
+
+    exp_spec = path.split("/")[-2]
+    tsne_option = exp_spec.split("_")[-1][-1]
+
 
     data_dict = {}
 
@@ -27,6 +32,8 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
             L2.append(float(data[5]))
             undisturbed_actual_trajectories_L2.append(float(data[6]))
             if "IS_TRAIN" in data[-1]:
+                if tsne_option and "tsne" in exp_spec:
+                    tsne.append(float(data[7]))
                 # gen number, epochstrained / total
                 train_epochs.append((int(data[0]), data[-2].strip()))
 
@@ -58,6 +65,7 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
             var_ax.set_ylim([0, max(decoder_var)])
             ln3 = var_ax.plot(range(len(L2)), decoder_var, c="green", label="Variance")
             var_ax.annotate(f"{round(decoder_var[-1], 2)}", (len(decoder_var) - 1, decoder_var[-1]))
+
 
         # train marker
         if show_train_lines:
@@ -103,6 +111,7 @@ def plot_loss_in_dir_VAE(path, full_loss=True, generate_images=True, show_train_
     data_dict["VAR"] = decoder_var
     data_dict["ENVAR"] = encoder_var
     data_dict["TR_EPOCHS"] = train_epochs
+    data_dict["TSNE"] = tsne
     return data_dict
 
 
