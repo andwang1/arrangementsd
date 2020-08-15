@@ -3,7 +3,8 @@ import numpy as np
 from exp_config import *
 import os
 
-
+# make font bigger
+plt.rc('font', size=20)
 def plot_latent_space_in_dir(path, generate_images=True, save_path=None):
     os.chdir(path)
     files = os.listdir()
