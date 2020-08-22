@@ -76,18 +76,9 @@ struct Params {
     SFERES_CONST size_t update_period = 10;
     };
     
-    struct nov {
-        static double l;
-        SFERES_CONST double k = 15;
-        SFERES_CONST double eps = 0.1;
-        // the discretisation used to create the diversity bin data
-        SFERES_CONST size_t discretisation = 20;
-        SFERES_CONST double discrete_length_x = double(sim::ROOM_W) / nov::discretisation;
-        SFERES_CONST double discrete_length_y = double(sim::ROOM_H) / nov::discretisation;
-    };
 
     struct pop {
-        SFERES_CONST size_t size = 256;
+        SFERES_CONST size_t size = 1024;
         static size_t nb_gen;
         SFERES_CONST size_t dump_period = 500;
     };
@@ -115,7 +106,19 @@ struct Params {
         SFERES_CONST size_t behav_dim = 2;
         // influences l = targeted size of pop
         SFERES_CONST int resolution = 8000; 
+        SFERES_CONST int num_train_archives = 5;
         static bool sample;
+    };
+
+
+    struct nov {
+        static std::array<double, qd::num_train_archives + 1> l;
+        SFERES_CONST double k = 15;
+        SFERES_CONST double eps = 0.1;
+        // the discretisation used to create the diversity bin data
+        SFERES_CONST size_t discretisation = 20;
+        SFERES_CONST double discrete_length_x = double(sim::ROOM_W) / nov::discretisation;
+        SFERES_CONST double discrete_length_y = double(sim::ROOM_H) / nov::discretisation;
     };
 
     struct stat {
@@ -128,8 +131,9 @@ struct Params {
     };
 };
 
+std::array<double, Params::qd::num_train_archives + 1> Params::nov::l;
+
 // cmd line args
-double Params::nov::l;
 double Params::random::pct_random;
 bool Params::ae::full_loss;
 bool Params::ae::sigmoid;

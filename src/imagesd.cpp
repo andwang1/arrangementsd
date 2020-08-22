@@ -87,35 +87,8 @@
 #include "params.hpp"
 #include "trajectory.hpp"
 #include "phen.hpp"
-
-// quick hack to have "write" access to the container, this need to be added to the main API later.
-template<typename Phen, typename Eval, typename Stat, typename FitModifier, typename Select, typename Container, typename Params, typename Exact = stc::Itself>
-class QualityDiversity_2
-        : public sferes::qd::QualityDiversity<Phen, Eval, Stat, FitModifier, Select, Container, Params, typename stc::FindExact<QualityDiversity_2<Phen, Eval, Stat, FitModifier, Select, Container, Params, Exact>, Exact>::ret> {
-
-public:
-
-    typedef Phen phen_t;
-    typedef boost::shared_ptr <Phen> indiv_t;
-    typedef typename std::vector<indiv_t> pop_t;
-    typedef typename pop_t::iterator it_t;
-
-    pop_t pop_advers;
-    // pop_t& get_pop_advers() { return this->pop_advers; }
-
-    Container &container() { return this->_container; }
-
-    void add(pop_t &pop_off, std::vector<bool> &added, pop_t &pop_parents) {
-        this->_add(pop_off, added, pop_parents);
-    }
-
-    // Same function, but without the need of parent.
-    void add(pop_t &pop_off, std::vector<bool> &added) {
-        std::cout << "adding with l: " << Params::nov::l << std::endl;
-        this->_add(pop_off, added);
-    }
-
-};
+#include "archive_2.hpp"
+#include "quality_diversity_2.hpp"
 
 struct Arguments {
     size_t number_cpus;
@@ -184,7 +157,7 @@ int main(int argc, char **argv) {
     tbb::task_scheduler_init init(arg.number_cpus);
 
     typedef Params params_t;
-    Params::nov::l = 0;
+    std::fill(Params::nov::l.begin(), Params::nov::l.end(), 0);
 
     // cmd line arguments
     // number of generations
@@ -221,7 +194,7 @@ int main(int argc, char **argv) {
                     sferes::qd::container::SortBasedStorage< boost::shared_ptr<phen_t>>
                 >::type storage_t;
 
-    typedef sferes::qd::container::Archive<phen_t, storage_t, params_t> container_t;
+    typedef sferes::qd::container::Archive_2<phen_t, storage_t, params_t> container_t;
 
     // if GRAPHICS
     // typedef sferes::eval::Eval<Params> eval_t;
@@ -243,7 +216,7 @@ int main(int argc, char **argv) {
                 > stat_t;
 
 
-    typedef sferes::qd::selector::NoSelection<phen_t, params_t> selector_t;
+    typedef sferes::qd::selector::Uniform<phen_t, params_t> selector_t;
 
     typedef QualityDiversity_2 <phen_t, eval_t, stat_t, modifier_t, selector_t, container_t, params_t> ea_t;
 
