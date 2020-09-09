@@ -64,8 +64,8 @@ namespace sferes {
                 }
 
                 // one-off observation generation to get diversity stats for gen 0
-                // if (ea.gen() == 0)
-                //     {generate_observations(ea.pop());}
+                if (ea.gen() == 0)
+                    {generate_observations(ea.pop());}
 
                 if (!ea.offspring().size())
                     {return;}
@@ -113,8 +113,8 @@ namespace sferes {
                 // get additional training content
                 ea.get_full_content_train_archives(content);
 
-                // // generate all observations that have not been generated yet
-                // generate_observations(content);
+                // generate all observations that have not been generated yet
+                generate_observations(content);
 
                 // shuffle content here before getting the data so that the trajectories are also shuffled effectively
                 if (training)

@@ -130,17 +130,7 @@ FIT_QD(Trajectory)
             else 
                 {_is_trajectory[i] = 0;}
         }
-        // create trajectories
-        simulate(_params, _is_trajectory);
-
-        // for diversity and loss tracking generate only the real trajectory without any randomness 
-        if (_m_num_trajectories > 0)
-            {simulate(_params);}
-        else // if no other balls present in simulation already
-            {_undisturbed_trajectories[0] = _trajectories[0];}
-
-        generate_image();
-        generate_undisturbed_image();
+        
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
     }
@@ -189,6 +179,26 @@ FIT_QD(Trajectory)
         // }
 
         simu.run(Params::sim::sim_duration, _undisturbed_trajectories, _full_trajectory, Params::sim::trajectory_length);
+    }
+
+    void create_observations()
+    {
+        if (!_observations_generated)
+        {
+            // create trajectories
+            simulate(_params, _is_trajectory);
+
+            // for diversity and loss tracking generate only the real trajectory without any randomness 
+            if (_m_num_trajectories > 0)
+                {simulate(_params);}
+            else // if no other balls present in simulation already
+                {_undisturbed_trajectories[0] = _trajectories[0];}
+
+            generate_image();
+            generate_undisturbed_image();
+
+            _observations_generated = true;
+        }
     }
     
     int calculate_diversity_bins(std::bitset<Params::nov::discretisation * Params::nov::discretisation> &crossed_buckets) const
@@ -370,6 +380,8 @@ FIT_QD(Trajectory)
     size_t _m_num_trajectories;
     bool _moved;
     float _m_entropy;
+
+    bool _observations_generated{false};
 };
 
 #endif //TRAJECTORY_HPP
