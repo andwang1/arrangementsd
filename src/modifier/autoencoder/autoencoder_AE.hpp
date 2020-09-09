@@ -16,7 +16,7 @@
 
 struct AutoEncoderImpl : torch::nn::Module {
     AutoEncoderImpl(int input_dim, int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, 
-                    int latent_dim, int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int output_dim) :
+                    int latent_dim, int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int output_dim, bool notused) :
             #ifdef AURORA
             m_encoder(Encoder(en_hid_dim1, en_hid_dim2, en_hid_dim3, latent_dim)),
             #else

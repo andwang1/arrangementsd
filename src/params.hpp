@@ -31,7 +31,7 @@ struct Params {
     };
 
     struct ae {
-    SFERES_CONST size_t batch_size = 1024;
+    SFERES_CONST size_t batch_size = 256;
     SFERES_CONST size_t nb_epochs = 5000;
     SFERES_CONST float learning_rate = 1e-4;
     SFERES_CONST float CV_fraction = 0.80;
@@ -68,6 +68,8 @@ struct Params {
 
     enum class sne : unsigned int {NoSNE, SNE, TSNE};
     static sne add_sne_criterion;
+
+    static bool sample_train;
     };
 
     struct update {
@@ -78,7 +80,7 @@ struct Params {
     
 
     struct pop {
-        SFERES_CONST size_t size = 1024;
+        SFERES_CONST size_t size = 256;
         static size_t nb_gen;
         SFERES_CONST size_t dump_period = 500;
     };
@@ -106,7 +108,7 @@ struct Params {
         SFERES_CONST size_t behav_dim = 2;
         // influences l = targeted size of pop
         SFERES_CONST int resolution = 8000; 
-        SFERES_CONST int num_train_archives = 5;
+        SFERES_CONST int num_train_archives = 0;
         static bool sample;
     };
 
@@ -141,6 +143,7 @@ size_t Params::pop::nb_gen;
 size_t Params::ae::beta;
 double Params::ae::pct_extension;
 Params::ae::loss Params::ae::loss_function;
+bool Params::ae::sample_train;
 bool Params::qd::sample;
 Params::ae::sne Params::ae::add_sne_criterion;
 

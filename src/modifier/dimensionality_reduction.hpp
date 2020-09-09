@@ -63,6 +63,10 @@ namespace sferes {
                     }
                 }
 
+                // one-off observation generation to get diversity stats for gen 0
+                if (ea.gen() == 0)
+                    {generate_observations(ea.pop());}
+
                 if (!ea.offspring().size())
                     {return;}
                 assign_descriptor_to_population(ea, ea.offspring());
@@ -108,6 +112,9 @@ namespace sferes {
                 
                 // get additional training content
                 ea.get_full_content_train_archives(content);
+
+                // generate all observations that have not been generated yet
+                generate_observations(content);
 
                 // shuffle content here before getting the data so that the trajectories are also shuffled effectively
                 if (training)
@@ -220,7 +227,6 @@ namespace sferes {
                 }
             }
 
-
             void get_geno(const pop_t &pop, Mat &data) const {
                 data = Mat(pop.size(), pop[0]->gen().size());
                 for (size_t i = 0; i < pop.size(); ++i) {
@@ -234,6 +240,19 @@ namespace sferes {
                 for (size_t i = 0; i < pop.size(); i++) 
                     {data.row(i) = pop[i]->fit().get_image();}
             }
+
+            void generate_observations(pop_t &pop) const {
+                tbb::parallel_for(tbb::blocked_range<long>(0, pop.size()),
+                    [&](tbb::blocked_range<long> r)
+                {
+                    for (long i=r.begin(); i<r.end(); ++i)
+                        {pop[i]->fit().create_observations();}
+                });
+            }
+            // function to call before collecting dataset, tbb loop to simulate trajectories, 
+            // takes as input the phen
+            //need to do it once in gen 0 for all the stats, but then can just do only while training
+            // call function in trajectory that returns if already set, else simulates
 
             void get_stats(const Mat &geno, const Mat &img, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
