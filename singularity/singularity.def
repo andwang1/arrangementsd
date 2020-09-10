@@ -17,7 +17,6 @@ From: airl_lab/default/airl_env:pytorch_ci
 
     # Install Useful libraries
     apt-get update
-    apt-get upgrade -y
     export DEBIAN_FRONTEND=noninteractive
     apt-get install -y  python3-matplotlib python3-numpy python3.7-dev python3-opencv python3-pip python3.7-tk graphviz xdg-utils
     apt-get install -y  gdb
@@ -109,7 +108,7 @@ From: airl_lab/default/airl_env:pytorch_ci
     bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
 
     CURPATH=$(pwd)
-    DIRNAME=results_$1/$2_$4_$5_$6_$7_$8_$9_$10_$11
+    DIRNAME=results_$1/$2_$4_$5_$6_$7_$8_$9_$10_$11_$12
     PATHNAME=$(date +%Y-%m-%d_%H_%M_%S)_$$
 
     mkdir -p $CURPATH/$DIRNAME/$PATHNAME/plots
