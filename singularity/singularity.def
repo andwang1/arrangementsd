@@ -13,7 +13,7 @@ From: airl_lab/default/airl_env:pytorch_ci
 
     export LD_LIBRARY_PATH="/workspace/lib:$LD_LIBRARY_PATH"
     cd /git/sferes2
-    mkdir imagesd
+    mkdir arrangementsd
 
     # Install Useful libraries
     apt-get update
@@ -27,6 +27,7 @@ From: airl_lab/default/airl_env:pytorch_ci
    cd /git
    git clone https://github.com/erincatto/box2d.git ./box2d
    cd ./box2d
+   git checkout 8815e0963d2c042309ab302fadcea47034f352cb
    sed -i 's/STATIC/SHARED'/g ./src/CMakeLists.txt
    sed -i 's/#define b2_velocityThreshold\t\t1.0f/#define b2_velocityThreshold\t\t0.0f/' ./include/box2d/b2_settings.h
    mkdir build
@@ -74,32 +75,31 @@ From: airl_lab/default/airl_env:pytorch_ci
 
 
    cd /git/sferes2/exp/
-   mkdir imagesd
+   mkdir arrangementsd
    #====================================================================================================
    exit 0 #NOTFORFINAL - the lines below this "exit" will be executed only when building the final image
    #====================================================================================================
    if [ ! -z "${CI_JOB_TOKEN}" ] # this enables the automated build in the CI environment
    then
-        git clone --recurse-submodules https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/imagesd.git imagesd/
+        git clone --recurse-submodules https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/arrangementsd.git arrangementsd/
    elif [ ! -z "${PERSONAL_TOKEN}" ]
    then
-        git clone --recurse-submodules https://oauth:${PERSONAL_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/imagesd.git imagesd/
+        git clone --recurse-submodules https://oauth:${PERSONAL_TOKEN}@gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/arrangementsd.git arrangementsd/
    else
-        git clone --recurse-submodules https://gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/imagesd.git imagesd/
+        git clone --recurse-submodules https://gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/experiments/arrangementsd.git arrangementsd/
    fi
 
    if [ ! -z "${CI_COMMIT_SHA}" ]
    then
      echo 'Launching the experiment at commit: '${CI_COMMIT_SHA}
-     cd imagesd/
+     cd arrangementsd/
      git checkout ${CI_COMMIT_SHA}
      git submodule update
    else
      echo 'Launching the experiment from branch Master'
    fi
    
-   cd /git/sferes2/exp/imagesd/
-   git checkout synth_imgs
+   cd /git/sferes2/exp/arrangementsd/
 
    cd /git/sferes2/
    ./setup.sh $SETUP_ARGS
@@ -116,15 +116,15 @@ From: airl_lab/default/airl_env:pytorch_ci
 
     cd /git/sferes2/
 
-    echo Launching command \'build/exp/imagesd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12\'
-    build/exp/imagesd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12
-    echo Launching command \'python3 /git/sferes2/exp/imagesd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5\'
+    echo Launching command \'build/exp/arrangementsd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12\'
+    build/exp/arrangementsd/$1 -d $CURPATH/$DIRNAME/$PATHNAME $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12
+    echo Launching command \'python3 /git/sferes2/exp/arrangementsd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5\'
     
-    cp /git/sferes2/exp/imagesd/src/params.hpp $CURPATH/$DIRNAME/$PATHNAME
+    cp /git/sferes2/exp/arrangementsd/src/params.hpp $CURPATH/$DIRNAME/$PATHNAME
 
-    python3 /git/sferes2/exp/imagesd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5
-    python3 /git/sferes2/exp/imagesd/python/visualisation/visualise_images_container.py $CURPATH/$DIRNAME/$PATHNAME
-    python3 /git/sferes2/exp/imagesd/python/visualisation/prep/rename_results_dir_container.py $CURPATH/$DIRNAME/$PATHNAME
+    python3 /git/sferes2/exp/arrangementsd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5
+    python3 /git/sferes2/exp/arrangementsd/python/visualisation/visualise_images_container.py $CURPATH/$DIRNAME/$PATHNAME
+    python3 /git/sferes2/exp/arrangementsd/python/visualisation/prep/rename_results_dir_container.py $CURPATH/$DIRNAME/$PATHNAME
 
 %apprun vae
     bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
@@ -138,8 +138,8 @@ From: airl_lab/default/airl_env:pytorch_ci
     tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
     mkdir -p $tmp_dir
 
-    echo Launching command \'build/exp/imagesd/balltrajectory_vae -d $tmp_dir $1 $2 $3\'
-    build/exp/imagesd/balltrajectory_vae -d $tmp_dir $1 $2 $3
+    echo Launching command \'build/exp/arrangementsd/balltrajectory_vae -d $tmp_dir $1 $2 $3\'
+    build/exp/arrangementsd/balltrajectory_vae -d $tmp_dir $1 $2 $3
 
 %apprun ae
     bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
@@ -153,8 +153,8 @@ From: airl_lab/default/airl_env:pytorch_ci
     tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
     mkdir -p $tmp_dir
 
-    echo Launching command \'build/exp/imagesd/balltrajectory_ae -d $tmp_dir $1 $2 $3\'
-    build/exp/imagesd/balltrajectory_ae -d $tmp_dir $1 $2 $3
+    echo Launching command \'build/exp/arrangementsd/balltrajectory_ae -d $tmp_dir $1 $2 $3\'
+    build/exp/arrangementsd/balltrajectory_ae -d $tmp_dir $1 $2 $3
 
 %apprun aurora
     bash -c 'sleep $[ ( $RANDOM % 90 )  + 1 ]s'
@@ -168,8 +168,8 @@ From: airl_lab/default/airl_env:pytorch_ci
     tmp_dir=$(mktemp -d -p $CURPATH/$DIRNAME/ ${PATHNAME}_XXX)
     mkdir -p $tmp_dir
 
-    echo Launching command \'build/exp/imagesd/balltrajectory_aurora -d $tmp_dir $1 $2 $3\'
-    build/exp/imagesd/balltrajectory_aurora -d $tmp_dir $1 $2 $3
+    echo Launching command \'build/exp/arrangementsd/balltrajectory_aurora -d $tmp_dir $1 $2 $3\'
+    build/exp/arrangementsd/balltrajectory_aurora -d $tmp_dir $1 $2 $3
 
 
 %help

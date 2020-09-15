@@ -24,7 +24,7 @@ import magnum
 import magnum_integration
 import magnum_plugins
 
-PROJECT_NAME = "imagesd"
+PROJECT_NAME = "arrangementsd"
 
 
 def get_relative_path(waf_tool_name):
@@ -80,10 +80,10 @@ def build(bld):
 
     print(bld.env['magnum_libs'])
     sferes.create_variants(bld,
-                           source = 'src/imagesd.cpp',
+                           source = 'src/arrangementsd.cpp',
                            includes='./src . ../../',
                            uselib='TBB BOOST EIGEN PTHREAD MPI'
                                 + 'PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
-                           target = 'imagesd',
-                           variants = ['AE', 'VAE', 'AURORA'])
+                           target = 'arrangementsd',
+                           variants = ['VAE', 'AURORA'])
