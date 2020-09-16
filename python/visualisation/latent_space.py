@@ -56,7 +56,7 @@ def plot_latent_space_in_dir(path, generate_images=True, save_path=None):
         circ = plt.Circle((0, 0), radius=1, facecolor="None", edgecolor="black", linestyle="--", linewidth=2)
         ax1.add_patch(circ)
 
-        plt.title(f"Latent Space - Gen {GEN_NUMBER} - Total Num. {len(x)} - % Moved {round(100 * (len(x[is_moved]) / len(x)), 1)}")
+        plt.title(f"BD Space in Final Generation - % Solutions Moving an Object: {round(100 * (len(x[is_moved]) / len(x)), 1)}")
         plt.xlabel("Latent X")
         plt.ylabel("Latent Y")
         plt.legend()
