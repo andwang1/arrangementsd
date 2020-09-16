@@ -68,6 +68,7 @@ From: airl_lab/default/airl_env:pytorch_ci
    cd /git
    git clone https://gitlab.doc.ic.ac.uk/AIRL/students_projects/2019-2020/andy_wang/tools/robox2d.git ./robox2d
    cd ./robox2d
+   git checkout moveobjects
    ./waf configure --prefix /workspace --shared --magnum_install_dir  /workspace  --magnum_integration_install_dir /workspace --magnum_plugins_install_dir /workspace --corrade_install_dir /workspace
    ./waf
    ./waf install
