@@ -173,35 +173,76 @@ if "vae" in FILE:
 
 else:
     for j, indiv in enumerate(plotting_data):
-        f = plt.figure(figsize=(20, 20))
+        f = plt.figure(figsize=(10, 10))
         spec = f.add_gridspec(2, 2)
         # both kwargs together make the box squared
         ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
         prediction = indiv[0]
-        prediction = np.array(prediction).reshape((DISCRETISATION, DISCRETISATION))
-        ax1.imshow(prediction, vmin=0, vmax=1, cmap="gray")
+
+        x = []
+        y = []
+        counter_x = 0
+        counter_y = 0
+        for entry in prediction:
+            if counter_x >= DISCRETISATION:
+                counter_x = 0
+                counter_y += 1
+                if counter_y >= DISCRETISATION:
+                    counter_y = 0
+
+            if entry >= 0.5:
+                x.append(counter_x * (ROOM_W / DISCRETISATION))
+                y.append(counter_y * (ROOM_H / DISCRETISATION))
+            counter_x += 1
 
         ax1.set_ylim([0, ROOM_H])
         ax1.set_xlim([0, ROOM_W])
+        ax1.scatter(x, y)
 
-        actual = indiv[1]
         ax2 = f.add_subplot(spec[0, 1], aspect='equal', adjustable='box')
+        actual = indiv[1]
+        x = []
+        y = []
+        counter_x = 0
+        counter_y = 0
+        for entry in actual:
+            if counter_x >= DISCRETISATION:
+                counter_x = 0
+                counter_y += 1
+                if counter_y >= DISCRETISATION:
+                    counter_y = 0
 
-        actual = np.array(actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax2.imshow(actual, vmin=0, vmax=1, cmap="gray")
+            if entry == 1:
+                x.append(counter_x * (ROOM_W / DISCRETISATION))
+                y.append(counter_y * (ROOM_H / DISCRETISATION))
+            counter_x += 1
 
         ax2.set_ylim([0, ROOM_H])
         ax2.set_xlim([0, ROOM_W])
-        ax2.legend(loc="best")
+        ax2.scatter(x, y)
 
         noise_free_actual = indiv[2]
         ax3 = f.add_subplot(spec[1, 0], aspect='equal', adjustable='box')
 
-        noise_free_actual = np.array(noise_free_actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax3.imshow(noise_free_actual, vmin=0, vmax=1, cmap="gray")
+        x = []
+        y = []
+        counter_x = 0
+        counter_y = 0
+        for entry in noise_free_actual:
+            if counter_x >= DISCRETISATION:
+                counter_x = 0
+                counter_y += 1
+                if counter_y >= DISCRETISATION:
+                    counter_y = 0
+
+            if entry == 1:
+                x.append(counter_x * (ROOM_W / DISCRETISATION))
+                y.append(counter_y * (ROOM_H / DISCRETISATION))
+            counter_x += 1
 
         ax3.set_ylim([0, ROOM_H])
         ax3.set_xlim([0, ROOM_W])
+        ax3.scatter(x, y)
 
         ax1.set_title("Construction")
         ax2.set_title("Actual Observation")
