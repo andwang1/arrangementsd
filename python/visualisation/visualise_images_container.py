@@ -62,7 +62,7 @@ else:
 # plot
 if "vae" in FILE:
     for j, indiv in enumerate(plotting_data):
-        f = plt.figure(figsize=(20, 30))
+        f = plt.figure(figsize=(13, 8))
         spec = f.add_gridspec(2, 3)
         # both kwargs together make the box squared
         ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
