@@ -193,6 +193,30 @@ FIT_QD(Trajectory)
         }
     }
 
+    void create_undisturbed_observations()
+    {
+        if (!_undisturbed_trajectories_generated)
+        {
+            // for diversity and loss tracking generate only the real trajectory without any randomness 
+            if (_apply_force)
+            {
+                simulate(_params);
+                generate_undisturbed_image();
+            }
+            else // if no noise in simulation already
+            {
+                _undisturbed_trajectories = _trajectories;
+                _undisturbed_image = _image;
+            }
+            _undisturbed_trajectories_generated = true;
+        }
+    }
+    
+    void generate_image()
+        {generate_image_last_position();}
+
+    void generate_undisturbed_image()
+        {generate_undisturbed_image_last_position();}
 
     void find_ball_pixel_indices(double x, double y, std::vector<int> &indices)
     {
@@ -271,9 +295,29 @@ FIT_QD(Trajectory)
 
     }
 
-    
-    // generates images from the trajectories simulated
-    void generate_image()
+    void generate_image_last_position()
+    {
+        // initialise image
+        _image.fill(0);
+        for (int j{0}; j < 2; ++j)
+        {
+            double x = _trajectories[j][Params::sim::num_trajectory_elements - 2];
+            double y = _trajectories[j][Params::sim::num_trajectory_elements - 1];
+
+            std::vector<int> indices(12, -1);
+
+            find_ball_pixel_indices(x, y, indices);
+            
+            for (int &index : indices)
+            {
+                if (index != -1)
+                    {_image[index] = 1;}
+            }
+        }
+
+    }
+
+    void generate_image_long_exposure()
     {
         // initialise image
         _image.fill(0);
@@ -297,14 +341,14 @@ FIT_QD(Trajectory)
         }
     }
 
-    void generate_undisturbed_image()
+    void generate_undisturbed_image_last_position()
     {
         // initialise image
         _undisturbed_image.fill(0);
-        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        for (int j{0}; j < 2; ++j)
         {
-            double x = _undisturbed_trajectories[0](i);
-            double y = _undisturbed_trajectories[0](i + 1);
+            double x = _undisturbed_trajectories[j][Params::sim::num_trajectory_elements - 2];
+            double y = _undisturbed_trajectories[j][Params::sim::num_trajectory_elements - 1];
 
             std::vector<int> indices(12, -1);
 
@@ -314,6 +358,36 @@ FIT_QD(Trajectory)
             {
                 if (index != -1)
                     {_undisturbed_image[index] = 1;}
+            }
+        }
+        // std::cout << "HELLO";
+        // Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
+        // std::cout << _undisturbed_trajectories[0].format(CommaInitFmt) << std::endl;
+        // std::cout << "\n";
+        // std::cout << _undisturbed_image.format(CommaInitFmt);
+        // exit(0);
+    }
+
+    void generate_undisturbed_image_longexposure()
+    {
+        // initialise image
+        _undisturbed_image.fill(0);
+        for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
+        {
+            for (int j{0}; j < 2; ++j)
+            {
+                double x = _undisturbed_trajectories[j](i);
+                double y = _undisturbed_trajectories[j](i + 1);
+
+                std::vector<int> indices(12, -1);
+
+                find_ball_pixel_indices(x, y, indices);
+
+                for (int &index : indices)
+                {
+                    if (index != -1)
+                        {_undisturbed_image[index] = 1;}
+                }
             }
         }
     }
@@ -443,6 +517,7 @@ FIT_QD(Trajectory)
     float _m_entropy;
 
     bool _observations_generated{false};
+    bool _undisturbed_trajectories_generated{false};
 };
 
 #endif //TRAJECTORY_HPP
