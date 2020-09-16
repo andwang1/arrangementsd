@@ -140,12 +140,7 @@ namespace sferes {
 
                 #else
 
-                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
-                for (size_t i{0}; i < ea.pop().size(); ++i)
-                {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
-                
-                double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
-                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << L2_undisturbed;
+                ofs << ea.gen() << ", " << recon << ", " << L2;
                 #endif
 
                 if (boost::fusion::at_c<0>(ea.fit_modifier()).is_train_gen())
