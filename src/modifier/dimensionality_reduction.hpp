@@ -252,6 +252,16 @@ namespace sferes {
                         {pop[i]->fit().create_observations();}
                 });
             }
+
+            void generate_undisturbed_observations(const pop_t &pop) const {
+                tbb::parallel_for(tbb::blocked_range<long>(0, pop.size()),
+                    [&](tbb::blocked_range<long> r)
+                {
+                    for (long i=r.begin(); i<r.end(); ++i)
+                        {pop[i]->fit().create_undisturbed_observations();}
+                });
+            }
+
             // function to call before collecting dataset, tbb loop to simulate trajectories, 
             // takes as input the phen
             //need to do it once in gen 0 for all the stats, but then can just do only while training

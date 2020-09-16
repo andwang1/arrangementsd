@@ -29,8 +29,12 @@ namespace sferes {
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
                 std::cout << "writing... " << fname << std::endl;
 
+                #ifndef AURORA
                 // generate missing observations
                 boost::fusion::at_c<0>(ea.fit_modifier()).generate_observations(ea.pop());
+                #else // if AURORA then all normal observations aare already generated, need only addditionally the undisturbed ones
+                boost::fusion::at_c<0>(ea.fit_modifier()).generate_undisturbed_observations(ea.pop());
+                #endif
 
                 // retrieve all phenotypes and trajectories                
                 matrix_t gen, img;
