@@ -50,6 +50,13 @@ namespace sferes {
                 double recon = recon_loss.mean();
                 double L2 = L2_loss.rowwise().sum().mean();
 
+                // retrieve images without any interference from random observations
+                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
+                for (size_t i{0}; i < ea.pop().size(); ++i)
+                {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
+                
+                double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
+
                 #ifdef VAE
                 float sne_loss{-99};
                 if ((boost::fusion::at_c<0>(ea.fit_modifier()).is_train_gen()) && (Params::ae::add_sne_criterion != Params::ae::sne::NoSNE))
@@ -129,25 +136,16 @@ namespace sferes {
                     sne_loss /= num_batches;
                     // loop end
                 }
-                #endif
 
-                #ifdef VAE
                 // these three are unreduced, need row wise sum and then mean
                 double KL = KL_loss.rowwise().sum().mean();
                 double en_var = encoder_var.rowwise().sum().mean();
                 double de_var = decoder_var.rowwise().sum().mean();
 
-                // retrieve images without any interference from random observations
-                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
-                for (size_t i{0}; i < ea.pop().size(); ++i)
-                {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
-                
-                double L2_undisturbed = (undisturbed_images - reconstruction).array().square().rowwise().sum().mean();
                 ofs << ea.gen() << ", " << recon << ", " << KL << ", " << en_var << ", " << de_var << ", " << L2 << ", " << L2_undisturbed;
 
-                #else
-
-                ofs << ea.gen() << ", " << recon << ", " << L2;
+                #else // AURORA
+                ofs << ea.gen() << ", " << recon << ", " << L2 << ", " << L2_undisturbed;
                 #endif
 
                 if (boost::fusion::at_c<0>(ea.fit_modifier()).is_train_gen())
