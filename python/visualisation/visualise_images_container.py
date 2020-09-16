@@ -33,29 +33,44 @@ with open(FILE, 'r') as f:
     lines = f.readlines()[1:]
 
 # list of lists of recon, trajectories, losses
-plotting_data = []
+all_data = []
 
-num_individuals = int(lines[-1].strip().split(",")[0])
-
-line_number = 0
-file_length = len(lines)
-
-# collect the data from the file
-while line_number < file_length:
-    if int(lines[line_number].strip().split(",")[0]) % nth != 0:
-        line_number += 1
+for line in lines:
+    indiv_counter = int(line.strip().split(",")[0])
+    if indiv_counter % nth !=0:
         continue
 
-    indiv_data = []
-    indiv_index = int(lines[line_number].strip().split(",")[0])
-    while line_number != file_length:
-        data = lines[line_number].strip().split(",")
-        line_number += 1
-        if int(data[0]) != indiv_index:
-            data.append(indiv_data)
-            break
-        indiv_data.append([float(i) for i in data[2:]])
-    plotting_data.append(indiv_data)
+    data = line.strip().split(",")
+    all_data.append([float(i) for i in data[2:]])
+
+plotting_data = []
+indiv_data = []
+
+if "vae" in FILE:
+    for i, data in enumerate(all_data):
+        if i % 7 == 0 and i > 0:
+            plotting_data.append(indiv_data)
+            indiv_data = []
+        indiv_data.append(data)
+else:
+    for i, data in enumerate(all_data):
+        if i % 5 == 0 and i > 0:
+            plotting_data.append(indiv_data)
+            indiv_data = []
+        indiv_data.append(data)
+
+if "vae" in FILE:
+    for i, data in enumerate(all_data):
+        if i % 6 == 0 and i > 0:
+            plotting_data.append(indiv_data)
+            indiv_data = []
+        indiv_data.append(data)
+else:
+    for i, data in enumerate(all_data):
+        if i % 4 == 0 and i > 0:
+            plotting_data.append(indiv_data)
+            indiv_data = []
+        indiv_data.append(data)
 
 # plot
 if "vae" in FILE:
