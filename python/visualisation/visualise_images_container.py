@@ -81,7 +81,7 @@ if "vae" in FILE:
         ax2.set_xlim([0, ROOM_W])
         ax2.legend(loc="best")
 
-        noise_free_actual = indiv[3]
+        noise_free_actual = indiv[2]
         ax3 = f.add_subplot(spec[0, 2], aspect='equal', adjustable='box')
 
         noise_free_actual = np.array(noise_free_actual).reshape((DISCRETISATION, DISCRETISATION))
@@ -145,7 +145,7 @@ else:
         ax2.set_xlim([0, ROOM_W])
         ax2.legend(loc="best")
 
-        noise_free_actual = indiv[3]
+        noise_free_actual = indiv[2]
         ax3 = f.add_subplot(spec[1, 0], aspect='equal', adjustable='box')
 
         noise_free_actual = np.array(noise_free_actual).reshape((DISCRETISATION, DISCRETISATION))
@@ -169,7 +169,7 @@ else:
                 rows.append(column)
                 column = []
 
-        L2 = np.array(indiv[2]).reshape(DISCRETISATION, DISCRETISATION)
+        L2 = np.array(indiv[3]).reshape(DISCRETISATION, DISCRETISATION)
         ax3 = f.add_subplot(spec[1, 1], aspect='equal', adjustable='box')
         divider = make_axes_locatable(ax3)
         cax = divider.append_axes("right", size="5%", pad=0.05)
