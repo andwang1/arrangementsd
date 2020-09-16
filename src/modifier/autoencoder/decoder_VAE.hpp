@@ -9,13 +9,13 @@
 
 struct DecoderImpl : torch::nn::Module {
     DecoderImpl(int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int latent_dim) :
-        m_tconv_1(torch::nn::Conv2d(torch::nn::Conv2dOptions(latent_dim, de_hid_dim3, 1))),
-        m_tconv_2(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 2)),
-        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 3).stride(2)),
-        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 4)),
-        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 3).stride(2)),
-        m_tconv_m(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 4)),
-        m_tconv_v(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 4)),
+        m_tconv_1(torch::nn::ConvTranspose2dOptions(latent_dim, de_hid_dim3, 3)),
+        m_tconv_2(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 3)),
+        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 4).stride(2)),
+        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 5)),
+        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 5).stride(2)),
+        m_tconv_m(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 6)),
+        m_tconv_v(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 6)),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
             register_module("m_tconv_1", m_tconv_1);
@@ -62,8 +62,7 @@ struct DecoderImpl : torch::nn::Module {
             }
         }
 
-        torch::nn::Conv2d m_tconv_1;
-        torch::nn::ConvTranspose2d m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_m, m_tconv_v;
+        torch::nn::ConvTranspose2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_m, m_tconv_v;
         torch::Device m_device;
 };
 

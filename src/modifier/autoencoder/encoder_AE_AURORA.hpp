@@ -7,12 +7,12 @@
 
 struct EncoderImpl : torch::nn::Module {
     EncoderImpl(int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, int latent_dim) :
-        m_conv_1(torch::nn::Conv2d(torch::nn::Conv2dOptions(1, en_hid_dim1, 4))),
-        m_conv_s1(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim1, 3).stride(2))),
-        m_conv_2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim2, 4))),
-        m_conv_s2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim2, 3).stride(2))),
-        m_conv_3(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim3, 2))),
-        m_conv_4(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim3, latent_dim, 1))),
+        m_conv_1(torch::nn::Conv2d(torch::nn::Conv2dOptions(1, en_hid_dim1, 6))),
+        m_conv_s1(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim1, 5).stride(2))),
+        m_conv_2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim2, 5))),
+        m_conv_s2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim2, 4).stride(2))),
+        m_conv_3(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim3, 3))),
+        m_conv_4(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim3, latent_dim, 3))),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
             register_module("conv_1", m_conv_1);

@@ -103,9 +103,6 @@ FIT_QD(Trajectory)
         for (size_t i = 0; i < ind.size(); ++i)
             _params[i] = ind.data(i);
 
-        // track number of random trajectories
-        _m_num_trajectories = 0;
-
         // noise in environment
         float prob = rng::rng(rng::gen);
         _apply_force = prob < Params::random::pct_random;
@@ -182,7 +179,7 @@ FIT_QD(Trajectory)
             generate_image();
 
             // for diversity and loss tracking generate only the real trajectory without any randomness 
-            if (_m_num_trajectories > 0)
+            if (_apply_force)
             {
                 simulate(_params);
                 generate_undisturbed_image();
@@ -195,6 +192,85 @@ FIT_QD(Trajectory)
             _observations_generated = true;
         }
     }
+
+
+    void find_ball_pixel_indices(double x, double y, std::vector<int> &indices)
+    {
+        int index_x = x / Params::nov::discrete_length_x;
+        int index_y = y / Params::nov::discrete_length_y;
+
+        // find the ball location
+        int bucket = index_x + index_y * Params::nov::discretisation;
+        
+        // placing center to the right of the bucket
+        // 4x1 central row
+        if (x - static_cast<float>(index_x * Params::nov::discrete_length_x) > (Params::nov::discrete_length_x / 2))
+        {
+            indices[0] = (index_x - 1 >= 0) ? bucket - 1 : -1;
+            indices[1] = bucket;
+            indices[2] = (index_x + 1 <= Params::nov::discretisation - 1) ? bucket + 1 : -1;
+            indices[3] = (index_x + 2 <= Params::nov::discretisation - 1) ? bucket + 2 : -1;
+        }
+        else // place to the left
+        {
+            indices[0] = (index_x - 2 >= 0) ? bucket - 2 : -1;
+            indices[1] = (index_x - 1 >= 0) ? bucket - 1 : -1;
+            indices[2] = bucket;
+            indices[3] = (index_x + 1 <= Params::nov::discretisation - 1) ? bucket + 1 : -1;
+        }
+
+        // place second central row above, because ball is closer to the top
+        if (y - static_cast<float>(index_y * Params::nov::discrete_length_y) > (Params::nov::discrete_length_y / 2))
+        {
+            // central row 4x1
+            if (index_y + 1 <= Params::nov::discretisation - 1)
+            {
+                indices[4] = (indices[0] != -1) ? indices[0] + Params::nov::discretisation : -1;
+                indices[5] = (indices[1] != -1) ? indices[1] + Params::nov::discretisation : -1;
+                indices[6] = (indices[2] != -1) ? indices[2] + Params::nov::discretisation : -1;
+                indices[7] = (indices[3] != -1) ? indices[3] + Params::nov::discretisation : -1;
+
+                // top row 2x1
+                if (index_y + 2 <= Params::nov::discretisation - 1)
+                {
+                    indices[8] = (indices[5] != -1) ? indices[5] + Params::nov::discretisation : -1;
+                    indices[9] = (indices[6] != -1) ? indices[6] + Params::nov::discretisation : -1;
+                }
+            }
+            // bottom row 2x1
+            if (index_y - 1 >= 0)
+            {
+                indices[10] = (indices[1] != -1) ? indices[1] - Params::nov::discretisation : -1;
+                indices[11] = (indices[2] != -1) ? indices[2] - Params::nov::discretisation : -1;
+            }
+        }
+        else // going down
+        {
+            // central row 4x1
+            if (index_y - 1 >= 0)
+            {
+                indices[4] = (indices[0] != -1) ? indices[0] - Params::nov::discretisation : -1;
+                indices[5] = (indices[1] != -1) ? indices[1] - Params::nov::discretisation : -1;
+                indices[6] = (indices[2] != -1) ? indices[2] - Params::nov::discretisation : -1;
+                indices[7] = (indices[3] != -1) ? indices[3] - Params::nov::discretisation : -1;
+
+                // bottom row 2x1
+                if (index_y - 2 >= 0)
+                {
+                    indices[8] = (indices[5] != -1) ? indices[5] - Params::nov::discretisation : -1;
+                    indices[9] = (indices[6] != -1) ? indices[6] - Params::nov::discretisation : -1;
+                }
+            }
+            // top row 2x1
+            if (index_y + 1 <= Params::nov::discretisation - 1)
+            {
+                indices[10] = (indices[1] != -1) ? indices[1] + Params::nov::discretisation : -1;
+                indices[11] = (indices[2] != -1) ? indices[2] + Params::nov::discretisation : -1;
+            }
+        }
+
+    }
+
     
     // generates images from the trajectories simulated
     void generate_image()
@@ -203,15 +279,20 @@ FIT_QD(Trajectory)
         _image.fill(0);
         for (int i {0}; i < Params::sim::num_trajectory_elements; i += 2)
         {
-            for (int j{0}; j < _m_num_trajectories + 1; ++j)
+            for (int j{0}; j < 2; ++j)
             {
                 double x = _trajectories[j](i);
                 double y = _trajectories[j](i + 1);
 
-                int index_x = x / Params::nov::discrete_length_x;
-                int index_y = y / Params::nov::discrete_length_y;
+                std::vector<int> indices(12, -1);
 
-                _image[index_x + index_y * Params::nov::discretisation] = 1;
+                find_ball_pixel_indices(x, y, indices);
+                
+                for (int &index : indices)
+                {
+                    if (index != -1)
+                        {_image[index] = 1;}
+                }
             }
         }
     }
@@ -225,10 +306,15 @@ FIT_QD(Trajectory)
             double x = _undisturbed_trajectories[0](i);
             double y = _undisturbed_trajectories[0](i + 1);
 
-            int index_x = x / Params::nov::discrete_length_x;
-            int index_y = y / Params::nov::discrete_length_y;
+            std::vector<int> indices(12, -1);
 
-            _undisturbed_image[index_x + index_y * Params::nov::discretisation] = 1;
+            find_ball_pixel_indices(x, y, indices);
+
+            for (int &index : indices)
+            {
+                if (index != -1)
+                    {_undisturbed_image[index] = 1;}
+            }
         }
     }
 
@@ -306,17 +392,14 @@ FIT_QD(Trajectory)
     float &entropy() 
     {return _m_entropy;}
 
-    size_t num_trajectories() const
-    {return _m_num_trajectories;}
-
     int get_idx_ball_moved_by_noise() const
     {return _ball_moved_by_noise;}
 
     Eigen::VectorXd &params()
     {return _params;}
 
-    bool moved() const
-    {return _moved;}
+    bool is_influenced_by_noise() const
+    {return _apply_force;}
 
     // generates images from the trajectories fed into the function
     // void generate_image_sequence()
@@ -357,8 +440,6 @@ FIT_QD(Trajectory)
     Eigen::VectorXf _undisturbed_image;
     
     // std::array<Eigen::Matrix<float, Params::nov::discretisation, Params::nov::discretisation>, Params::sim::trajectory_length> _image_frames;
-    size_t _m_num_trajectories;
-    bool _moved;
     float _m_entropy;
 
     bool _observations_generated{false};

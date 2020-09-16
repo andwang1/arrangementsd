@@ -120,7 +120,7 @@ struct Params {
         SFERES_CONST double k = 15;
         SFERES_CONST double eps = 0.1;
         // the discretisation used to create the diversity bin data
-        SFERES_CONST size_t discretisation = 20;
+        SFERES_CONST size_t discretisation = 40;
         SFERES_CONST double discrete_length_x = double(sim::ROOM_W) / nov::discretisation;
         SFERES_CONST double discrete_length_y = double(sim::ROOM_H) / nov::discretisation;
     };
