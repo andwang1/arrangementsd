@@ -41,6 +41,8 @@ namespace sferes {
                 std::vector<float> undist_ball_2_x_arr(ea.pop().size());
                 std::vector<float> undist_ball_2_y_arr(ea.pop().size());
 
+                std::vector<int> idx_ball_moved(ea.pop().size());
+
                 for (int i{0}; i < ea.pop().size(); ++i)
                 {
                     float ball_1_x, ball_1_y, ball_2_x, ball_2_y, undist_ball_1_x, undist_ball_1_y, undist_ball_2_x, undist_ball_2_y;
@@ -53,12 +55,14 @@ namespace sferes {
                     undist_ball_1_y_arr[i] = undist_ball_1_y;
                     undist_ball_2_x_arr[i] = undist_ball_2_x;
                     undist_ball_2_y_arr[i] = undist_ball_2_y;
+
+                    idx_ball_moved[i] = ea.pop()->fit().get_idx_ball_moved_by_noise();
                 }
 
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(8);
 
-                ofs << "Lower Ball X, Lower Ball Y, Higher Ball X, Higher Ball Y, Undisturbed Lower Ball X, Undisturbed Lower Ball Y, Undisturbed Higher Ball X, Undisturbed Higher Ball Y\n";
+                ofs << "Lower Ball X, Lower Ball Y, Higher Ball X, Higher Ball Y, Undisturbed Lower Ball X, Undisturbed Lower Ball Y, Undisturbed Higher Ball X, Undisturbed Higher Ball Y, Index of Ball that was affected by noise\n";
 
                 for (float &i: ball_1_x_arr)
                     {ofs << i << ",";}
@@ -82,6 +86,9 @@ namespace sferes {
                     {ofs << i << ",";}
                 ofs << "\n";
                 for (float &i: undist_ball_2_y_arr)
+                    {ofs << i << ",";}
+                ofs << "\n";                    
+                for (int &i: idx_ball_moved)
                     {ofs << i << ",";}
             }
         };
