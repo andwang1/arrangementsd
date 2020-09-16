@@ -66,7 +66,7 @@ if "vae" in FILE:
         ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
         prediction = indiv[0]
         prediction = np.array(prediction).reshape((DISCRETISATION, DISCRETISATION))
-        ax1.imshow(prediction, vmin=0, vmax=1)
+        ax1.imshow(prediction, vmin=0, vmax=1, cmap="gray")
 
         ax1.set_ylim([0, ROOM_H])
         ax1.set_xlim([0, ROOM_W])
@@ -75,7 +75,7 @@ if "vae" in FILE:
         ax2 = f.add_subplot(spec[0, 1], aspect='equal', adjustable='box')
 
         actual = np.array(actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax2.imshow(actual, vmin=0, vmax=1)
+        ax2.imshow(actual, vmin=0, vmax=1, cmap="gray")
 
         ax2.set_ylim([0, ROOM_H])
         ax2.set_xlim([0, ROOM_W])
@@ -85,7 +85,7 @@ if "vae" in FILE:
         ax3 = f.add_subplot(spec[0, 2], aspect='equal', adjustable='box')
 
         noise_free_actual = np.array(noise_free_actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax3.imshow(noise_free_actual, vmin=0, vmax=1)
+        ax3.imshow(noise_free_actual, vmin=0, vmax=1, cmap="gray")
 
         ax3.set_ylim([0, ROOM_H])
         ax3.set_xlim([0, ROOM_W])
@@ -130,7 +130,7 @@ else:
         ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
         prediction = indiv[0]
         prediction = np.array(prediction).reshape((DISCRETISATION, DISCRETISATION))
-        ax1.imshow(prediction, vmin=0, vmax=1)
+        ax1.imshow(prediction, vmin=0, vmax=1, cmap="gray")
 
         ax1.set_ylim([0, ROOM_H])
         ax1.set_xlim([0, ROOM_W])
@@ -139,7 +139,7 @@ else:
         ax2 = f.add_subplot(spec[0, 1], aspect='equal', adjustable='box')
 
         actual = np.array(actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax2.imshow(actual, vmin=0, vmax=1)
+        ax2.imshow(actual, vmin=0, vmax=1, cmap="gray")
 
         ax2.set_ylim([0, ROOM_H])
         ax2.set_xlim([0, ROOM_W])
@@ -149,7 +149,7 @@ else:
         ax3 = f.add_subplot(spec[1, 0], aspect='equal', adjustable='box')
 
         noise_free_actual = np.array(noise_free_actual).reshape((DISCRETISATION, DISCRETISATION))
-        ax3.imshow(noise_free_actual, vmin=0, vmax=1)
+        ax3.imshow(noise_free_actual, vmin=0, vmax=1, cmap="gray")
 
         ax3.set_ylim([0, ROOM_H])
         ax3.set_xlim([0, ROOM_W])
