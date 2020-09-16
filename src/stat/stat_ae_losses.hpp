@@ -29,6 +29,9 @@ namespace sferes {
                 std::string fname = ea.res_dir() + "/" + prefix + std::string(".dat");
                 std::cout << "writing... " << fname << std::endl;
 
+                // generate missing observations
+                boost::fusion::at_c<0>(ea.fit_modifier()).generate_observations(ea.pop());
+
                 // retrieve all phenotypes and trajectories                
                 matrix_t gen, img;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);

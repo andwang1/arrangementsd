@@ -201,7 +201,7 @@ namespace sferes {
                     copied_phen[i]->fit().eval(*copied_phen[i]);
 
                     // record the number of individuals that have a random trajectory attached
-                    if (content[sorted_indices[i]]->fit().num_trajectories() > 0)
+                    if (content[sorted_indices[i]]->fit().is_influenced_by_noise())
                     {++count_has_random;}
                 }
                 std::cout << "Additional Phen (hasrandom / total): " << count_has_random << "/" << num_copies << "\n";
@@ -215,7 +215,7 @@ namespace sferes {
                 for (size_t i{0}; i < content.size(); ++i)
                 {
                     // if has random trajectory
-                    if (content[i]->fit().num_trajectories() > 0)
+                    if (content[i]->fit().is_influenced_by_noise())
                     {
                         // record index
                         indices.push_back(i);
@@ -244,7 +244,7 @@ namespace sferes {
                     {data.row(i) = pop[i]->fit().get_image();}
             }
 
-            void generate_observations(pop_t &pop) const {
+            void generate_observations(const pop_t &pop) const {
                 tbb::parallel_for(tbb::blocked_range<long>(0, pop.size()),
                     [&](tbb::blocked_range<long> r)
                 {
