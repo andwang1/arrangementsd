@@ -35,11 +35,6 @@ def plot_latent_density_in_dir(path, generate_images=True, save_path=None):
             x.append(float(data[1]))
             y.append(float(data[2]))
 
-        DIST_FILE_NAME = f'distances{GEN_NUMBER}.dat'
-        with open(DIST_FILE_NAME, "r") as f:
-            lines = f.readlines()
-        moved_indices = [int(i) for i in lines[5].strip().split()]
-
         fig = plt.figure(figsize=(15, 15))
         spec = fig.add_gridspec(1,1)
         ax1 = fig.add_subplot(spec[:, :], aspect='equal', adjustable='box')
@@ -57,12 +52,12 @@ def plot_latent_density_in_dir(path, generate_images=True, save_path=None):
 
         scatterplot = ax1.scatter(x, y, c=avg_density)
         cbar = plt.colorbar(scatterplot)
-        cbar.set_label('Latent Density', rotation=270, labelpad=30)
+        cbar.set_label(f'Average Distance to BDs of {NUM_NEIGHBOURS} Nearest Solutions', rotation=270, labelpad=30)
 
         circ = plt.Circle((0, 0), radius=1, facecolor="None", edgecolor="black", linestyle="--", linewidth=2)
         ax1.add_patch(circ)
 
-        plt.title(f"Latent Space - Gen {GEN_NUMBER} - Total Num. {len(x)} - % Moved {round(100 * (len(moved_indices) / len(x)), 1)}")
+        plt.title(f"BD Space")
         plt.xlabel("Latent X")
         plt.ylabel("Latent Y")
 
