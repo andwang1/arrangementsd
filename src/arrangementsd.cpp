@@ -197,8 +197,8 @@ int main(int argc, char **argv) {
     typedef sferes::qd::container::Archive_2<phen_t, storage_t, params_t> container_t;
 
     // if GRAPHICS
-    typedef sferes::eval::Eval<Params> eval_t;
-    // typedef sferes::eval::Parallel<params_t> eval_t;
+    // typedef sferes::eval::Eval<Params> eval_t;
+    typedef sferes::eval::Parallel<params_t> eval_t;
 
     typedef boost::fusion::vector<
                     sferes::stat::QdContainer<phen_t, params_t>,

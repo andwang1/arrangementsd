@@ -11,15 +11,17 @@ struct Params {
     struct sim {
     SFERES_CONST float ROOM_H = 5.f;
     SFERES_CONST float ROOM_W = 5.f;
-    SFERES_CONST float start_x = 3.55f;
-    SFERES_CONST float start_y = 3.f;
+    SFERES_CONST float ball1_x = 3.55f;
+    SFERES_CONST float ball1_y = 3.f;
+    SFERES_CONST float ball2_x = 2.55f;
+    SFERES_CONST float ball2_y = 1.7f;
 
     SFERES_CONST int trajectory_length = 50;
     SFERES_CONST int num_trajectory_elements = 2 * trajectory_length;
 
-    SFERES_CONST float radius = 0.15f;
+    SFERES_CONST float radius = 0.25f;
     SFERES_CONST bool enable_graphics = false;
-    SFERES_CONST float max_force = 1.5f;
+    SFERES_CONST float max_force = 70;
     SFERES_CONST float sim_duration = 10.f;
     // *100 timesteps in simulation, *2 two coordinates for each timestep
     SFERES_CONST int full_trajectory_length = sim_duration * 100 * 2;
@@ -103,7 +105,7 @@ struct Params {
     };
 
     struct qd {
-        SFERES_CONST size_t gen_dim = 4;
+        SFERES_CONST size_t gen_dim = 8;
         SFERES_CONST size_t phen_dim = 2;
         SFERES_CONST size_t behav_dim = 2;
         // influences l = targeted size of pop
