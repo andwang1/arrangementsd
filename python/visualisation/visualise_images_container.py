@@ -59,24 +59,11 @@ else:
             indiv_data = []
         indiv_data.append(data)
 
-if "vae" in FILE:
-    for i, data in enumerate(all_data):
-        if i % 6 == 0 and i > 0:
-            plotting_data.append(indiv_data)
-            indiv_data = []
-        indiv_data.append(data)
-else:
-    for i, data in enumerate(all_data):
-        if i % 4 == 0 and i > 0:
-            plotting_data.append(indiv_data)
-            indiv_data = []
-        indiv_data.append(data)
-
 # plot
 if "vae" in FILE:
     for j, indiv in enumerate(plotting_data):
-        f = plt.figure(figsize=(30, 20))
-        spec = f.add_gridspec(3, 2)
+        f = plt.figure(figsize=(20, 30))
+        spec = f.add_gridspec(2, 3)
         # both kwargs together make the box squared
         ax1 = f.add_subplot(spec[0, 0], aspect='equal', adjustable='box')
         prediction = indiv[0]
