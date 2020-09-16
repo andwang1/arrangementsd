@@ -40,15 +40,11 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
                                                                     L2_loss, KL_loss, encoder_var, decoder_var);
 
-                #ifndef AURORA
-
                 // retrieve undisturbed images
                 matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
                 for (int i{0}; i < ea.pop().size(); ++i)
                     {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
 
-                #endif
-                                          
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
@@ -58,9 +54,7 @@ namespace sferes {
                 {
                     ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", ACTUAL," <<  img.row(i).format(CommaInitFmt) << "\n";
-                    #ifndef AURORA
                     ofs << i << ", ACTUAL_UNDIST," <<  undisturbed_images.row(i).format(CommaInitFmt) << "\n";
-                    #endif
                     ofs << i << ", L2_LOSS," <<  L2_loss.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", RECON_LOSS," <<  recon_loss_unred.row(i).format(CommaInitFmt) << "\n";
                     #ifdef VAE
