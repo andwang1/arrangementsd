@@ -56,7 +56,7 @@ namespace sferes {
                     undist_ball_2_x_arr[i] = undist_ball_2_x;
                     undist_ball_2_y_arr[i] = undist_ball_2_y;
 
-                    idx_ball_moved[i] = ea.pop()->fit().get_idx_ball_moved_by_noise();
+                    idx_ball_moved[i] = ea.pop()[i]->fit().get_idx_ball_moved_by_noise();
                 }
 
                 std::ofstream ofs(fname.c_str());
