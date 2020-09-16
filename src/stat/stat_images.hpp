@@ -18,7 +18,7 @@ namespace sferes {
             template<typename EA>
             void refresh(EA &ea) 
             {
-                if ((ea.gen() % Params::stat::save_images == 0) && ea.gen() > 0) 
+                if ((ea.gen() == Params::pop::nb_gen - 1)) 
                 {
                    std::string prefix = "images_" + boost::lexical_cast<std::string>(ea.gen());
                     _write_images(prefix, ea);
@@ -40,15 +40,15 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
                                                                     L2_loss, KL_loss, encoder_var, decoder_var);
 
-                // retrieve images where random trajectories are marked differently
-                matrix_t contrasted_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
+                #ifndef AURORA
 
+                // retrieve undisturbed images
+                matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
                 for (int i{0}; i < ea.pop().size(); ++i)
-                {
-                    auto block = contrasted_images.block<1, Params::nov::discretisation * Params::nov::discretisation>(i, 0);
-                    ea.pop()[i]->fit().generate_contrasted_image(block);
-                }
-                                                        
+                    {undisturbed_images.row(i) = ea.pop()[i]->fit().get_undisturbed_image();}
+
+                #endif
+                                          
                 std::ofstream ofs(fname.c_str());
                 ofs.precision(17);
                 Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
@@ -57,7 +57,10 @@ namespace sferes {
                 for (int i{0}; i < reconstruction.rows(); ++i)
                 {
                     ofs << i << ", RECON," <<  reconstruction.row(i).format(CommaInitFmt) << "\n";
-                    ofs << i << ", ACTUAL," <<  contrasted_images.row(i).format(CommaInitFmt) << "\n";
+                    ofs << i << ", ACTUAL," <<  img.row(i).format(CommaInitFmt) << "\n";
+                    #ifndef AURORA
+                    ofs << i << ", ACTUAL_UNDIST," <<  undisturbed_images.row(i).format(CommaInitFmt) << "\n";
+                    #endif
                     ofs << i << ", L2_LOSS," <<  L2_loss.row(i).format(CommaInitFmt) << "\n";
                     ofs << i << ", RECON_LOSS," <<  recon_loss_unred.row(i).format(CommaInitFmt) << "\n";
                     #ifdef VAE
