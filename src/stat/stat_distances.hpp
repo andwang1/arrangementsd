@@ -34,29 +34,34 @@ namespace sferes {
 
                 std::vector<float> distances1_arr(ea.pop().size());
                 std::vector<float> distances2_arr(ea.pop().size());
-                std::vector<bool> moved1_arr(ea.pop().size());
-                std::vector<bool> moved2_arr(ea.pop().size());
-                
+                std::vector<float> undist_distances1_arr(ea.pop().size());
+                std::vector<float> undist_distances2_arr(ea.pop().size());
+
+
                 for (int i{0}; i < ea.pop().size(); ++i)
                 {
-                    float distances1, distances2;
-                    bool moved1, moved2;
-                    ea.pop()[i]->fit().calculate_distance(distances1, moved1, distances2, moved2);
+                    float distances1, distances2, undist_distances1, undist_distances2;
+                    ea.pop()[i]->fit().calculate_distance(distances1, distances2, undist_distances1, undist_distances2);
                     distances1_arr[i] = distances1;
                     distances2_arr[i] = distances2;
-                    moved1_arr[i] = moved1;
-                    moved2_arr[i] = moved2;
+                    undist_distances1_arr[i] = undist_distances1;
+                    undist_distances2_arr[i] = undist_distances2;
                 }
                 
                 std::ofstream ofs(fname.c_str());
-                ofs.precision(17);
-                ofs << "Lower Ball Distance, Higher Ball Distance\n";
+                ofs.precision(8);
+                ofs << "Lower Ball Distance, Higher Ball Distance, Undisturbed Lower Ball Distance, Undisturbed Higher Ball Distance\n";
                 
                 for (float &i : distances1_arr)
                     {ofs << i << ",";}
                 ofs << "\n";
-
                 for (float &i : distances2_arr)
+                    {ofs << i << ",";}
+                ofs << "\n";
+                for (float &i : undist_distances1_arr)
+                    {ofs << i << ",";}
+                ofs << "\n";
+                for (float &i : undist_distances2_arr)
                     {ofs << i << ",";}
             }
         };
