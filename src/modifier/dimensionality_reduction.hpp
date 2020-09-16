@@ -52,20 +52,21 @@ namespace sferes {
                 } 
                 else if (ea.gen() > 0) 
                 {
-                    #ifdef AURORA
-                    if ((ea.gen() % Params::update::update_frequency == 0) || ea.gen() == 1) 
-                    #else
                     if ((ea.gen() % Params::update::update_frequency == 0)) 
-                    #endif
                     {
                         _is_train_gen = true;
                         update_descriptors(ea);
                     }
                 }
 
+                #ifndef AURORA
                 // one-off observation generation to get diversity stats for gen 0
                 if (ea.gen() == 0)
-                    {generate_observations(ea.pop());}
+                {
+                    generate_observations(ea.pop());
+                    generate_observations(ea.offspring());
+                }
+                #endif
 
                 if (!ea.offspring().size())
                     {return;}
@@ -113,8 +114,10 @@ namespace sferes {
                 // get additional training content
                 ea.get_full_content_train_archives(content);
 
+                #ifndef AURORA
                 // generate all observations that have not been generated yet
                 generate_observations(content);
+                #endif
 
                 // shuffle content here before getting the data so that the trajectories are also shuffled effectively
                 if (training)
