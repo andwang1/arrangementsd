@@ -73,16 +73,11 @@
 #include "modifier/dimensionality_reduction.hpp"
 
 #include "stat/stat_current_gen.hpp"
-#include "stat/stat_model_autoencoder.hpp"
 #include "stat/stat_modifier.hpp"
 #include "stat/stat_images.hpp"
-#include "stat/stat_undisturbed_traj.hpp"
+#include "stat/stat_end_positions.hpp"
 #include "stat/stat_ae_losses.hpp"
-#include "stat/stat_diversity.hpp"
 #include "stat/stat_distances.hpp"
-#include "stat/stat_similarity.hpp"
-#include "stat/stat_entropy.hpp"
-#include "stat/stat_notmoved_recon_var.hpp"
 
 #include "params.hpp"
 #include "trajectory.hpp"
@@ -202,22 +197,17 @@ int main(int argc, char **argv) {
     typedef sferes::qd::container::Archive_2<phen_t, storage_t, params_t> container_t;
 
     // if GRAPHICS
-    // typedef sferes::eval::Eval<Params> eval_t;
-    typedef sferes::eval::Parallel<params_t> eval_t;
+    typedef sferes::eval::Eval<Params> eval_t;
+    // typedef sferes::eval::Parallel<params_t> eval_t;
 
     typedef boost::fusion::vector<
                     sferes::stat::QdContainer<phen_t, params_t>,
                     sferes::stat::QdProgress<phen_t, params_t>,
                     sferes::stat::Losses<phen_t, params_t>,
                     sferes::stat::Images<phen_t, params_t>,
-                    sferes::stat::UndisturbedTrajectories<phen_t, params_t>,
-                    sferes::stat::Diversity<phen_t, params_t>,
                     sferes::stat::Distances<phen_t, params_t>,
-                    // similarity needs to run after distances as it gets info on whether the ball moved from distances
-                    sferes::stat::Similarity<phen_t, params_t>,
-                    sferes::stat::Entropy<phen_t, params_t>,
                     sferes::stat::Modifier<phen_t, params_t>,
-                    sferes::stat::NotMovedReconVar<phen_t, params_t>
+                    sferes::stat::EndPositions<phen_t, params_t>
                 > stat_t;
 
 
