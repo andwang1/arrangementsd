@@ -37,10 +37,9 @@ def plot_latent_space_in_dir(path, generate_images=True, save_path=None):
         MOVED_INDICES_FILE_NAME = f'distances{GEN_NUMBER}.dat'
         with open(MOVED_INDICES_FILE_NAME, "r") as f:
             lines = f.readlines()
-        moved_indices = [int(i) for i in lines[5].strip().split()]
-
-        is_moved = np.array([False] * len(x))
-        is_moved[moved_indices] = True
+        lower_ball_moved = np.array([float(i) for i in lines[1].strip().split()[:-1]]) > 1e-6
+        higher_ball_moved = np.array([float(i) for i in lines[2].strip().split()[:-1]]) > 1e-6
+        is_moved = np.logical_or(lower_ball_moved, higher_ball_moved)
 
         fig = plt.figure(figsize=(15, 15))
         max_value = np.max(np.abs(np.array([x, y])))
