@@ -38,42 +38,12 @@ namespace sferes {
                  * assign those values to the population (every step)
                  * */
 
-                _is_train_gen = false;
-                if (Params::update::update_frequency == -1) 
-                {
-                    if (Params::update::update_period > 0 && 
-                       (ea.gen() == 1 || ea.gen() == _last_update + Params::update::update_period * std::pow(2, _update_id - 1))) 
-                    {
-                        ++_update_id;
-                        _last_update = ea.gen();
-                        _is_train_gen = true;
-                        update_descriptors(ea);
-                    }
-                } 
-                else if (ea.gen() > 0) 
-                {
-                    if ((ea.gen() % Params::update::update_frequency == 0)) 
-                    {
-                        _is_train_gen = true;
-                        update_descriptors(ea);
-                    }
-                }
+                if ((ea.gen() > 1) && (!ea.pop().empty())) 
+                    {this->update_l(ea.pop(), 0);}
+                else if (!ea.offspring().empty())
+                    {this->initialise_l(ea.offspring(), 0);}
 
-                #ifndef AURORA
-                // one-off observation generation to get diversity stats for gen 0
-                if (ea.gen() == 0)
-                {
-                    generate_observations(ea.pop());
-                    generate_observations(ea.offspring());
-                }
-                #endif
-
-                if (!ea.offspring().size())
-                    {return;}
-                assign_descriptor_to_population(ea, ea.offspring());
-
-                if (Params::qd::num_train_archives > 0)
-                    {refresh_l_train_archives(ea);}
+                std::cout << "l = " << Params::nov::l[0] << "; size_pop = " << ea.pop().size() << std::endl;
             }
 
             template<typename EA>

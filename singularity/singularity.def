@@ -101,6 +101,7 @@ From: airl_lab/default/airl_env:pytorch_ci
    fi
    
    cd /git/sferes2/exp/arrangementsd/
+   git checkout handcrafted_BD
 
    cd /git/sferes2/
    ./setup.sh $SETUP_ARGS
@@ -124,7 +125,6 @@ From: airl_lab/default/airl_env:pytorch_ci
     cp /git/sferes2/exp/arrangementsd/src/params.hpp $CURPATH/$DIRNAME/$PATHNAME
 
     python3 /git/sferes2/exp/arrangementsd/python/visualisation/plot_for_each_container.py $CURPATH/$DIRNAME/$PATHNAME $1 $5
-    python3 /git/sferes2/exp/arrangementsd/python/visualisation/visualise_images_container.py $CURPATH/$DIRNAME/$PATHNAME
     python3 /git/sferes2/exp/arrangementsd/python/visualisation/prep/rename_results_dir_container.py $CURPATH/$DIRNAME/$PATHNAME
 
 %apprun vae

@@ -107,11 +107,14 @@ FIT_QD(Trajectory)
         float prob = rng::rng(rng::gen);
         _apply_force = prob < Params::random::pct_random;
 
-        #ifdef AURORA
-        simulate(_params, _ball_moved_by_noise, _apply_force);
-        generate_image();
-        #endif
-               
+        create_observations();
+        std::vector<double> dd(Params::qd::behav_dim, -1.);
+        dd[0] = _trajectories[0][0];
+        dd[1] = _trajectories[0][1];
+        dd[2] = _trajectories[1][0];
+        dd[3] = _trajectories[1][1];
+        this->set_desc(dd);
+
         // FITNESS: constant because we're interested in exploration
         this->_value = -1;
     }

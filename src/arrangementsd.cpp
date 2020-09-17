@@ -203,8 +203,6 @@ int main(int argc, char **argv) {
     typedef boost::fusion::vector<
                     sferes::stat::QdContainer<phen_t, params_t>,
                     sferes::stat::QdProgress<phen_t, params_t>,
-                    sferes::stat::Losses<phen_t, params_t>,
-                    sferes::stat::Images<phen_t, params_t>,
                     sferes::stat::Distances<phen_t, params_t>,
                     sferes::stat::Modifier<phen_t, params_t>,
                     sferes::stat::EndPositions<phen_t, params_t>

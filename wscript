@@ -86,4 +86,4 @@ def build(bld):
                                 + 'PYTHON PYTORCH KDTREE SDL ROBOX2D BOX2D' + bld.env['magnum_libs'],
                            use = 'sferes2',
                            target = 'arrangementsd',
-                           variants = ['VAE', 'AURORA'])
+                           variants = ['MANUAL'])
