@@ -507,7 +507,8 @@ public:
         size_t row_index{0};
 
         descriptors = MatrixXf_rm(gen.rows(), TParams::qd::behav_dim);
-        reconstructed_data = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
+        if (store_constructions)
+            {reconstructed_data = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);}
         recon_loss = MatrixXf_rm(gen.rows(), 1);
         recon_loss_unred = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
         L2_loss = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
