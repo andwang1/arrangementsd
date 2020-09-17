@@ -269,13 +269,14 @@ namespace sferes {
 
             void get_stats(const Mat &geno, const Mat &img, 
                 Mat &descriptors, Mat &reconstruction, Mat &recon_loss, Mat &recon_loss_unred,  
-                Mat &L2_loss, Mat &KL_loss, Mat &encoder_var, Mat &decoder_var) const
+                Mat &L2_loss, Mat &KL_loss, Mat &encoder_var, Mat &decoder_var, bool store_constructions = false) const
             {
                 Mat scaled_img, scaled_reconstruction;
                 _prep.apply(img, scaled_img);
                 _network->eval(geno, scaled_img, descriptors, scaled_reconstruction, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, encoder_var, decoder_var);
-                _prep.deapply(scaled_reconstruction, reconstruction);
+                               L2_loss, KL_loss, encoder_var, decoder_var, store_constructions);
+                if (store_constructions)
+                    {_prep.deapply(scaled_reconstruction, reconstruction);}
 
                 // _network->eval(geno, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
                             //    L2_loss, KL_loss, encoder_var, decoder_var);

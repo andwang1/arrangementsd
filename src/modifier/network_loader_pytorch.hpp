@@ -66,9 +66,10 @@ public:
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &encoder_var,
               MatrixXf_rm &decoder_var,
+              bool store_constructions = false,
               bool sample = false) {
         stc::exact(this)->eval(gen, img, descriptors, reconstructed_data, recon_loss, recon_loss_unred, 
-                               L2_loss, KL_loss, encoder_var, decoder_var, sample);
+                               L2_loss, KL_loss, encoder_var, decoder_var, store_constructions, sample);
     }
     
     void prepare_batches(std::vector<std::tuple<torch::Tensor, torch::Tensor>> &batches, 
@@ -108,9 +109,9 @@ public:
         return stc::exact(this)->training(gen_d, img_d, full_train, generation);
     }
 
-    float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool sample = false) {
+    float get_avg_recon_loss(const MatrixXf_rm &gen, const MatrixXf_rm &img, bool store_constructions = false, bool sample = false) {
         MatrixXf_rm descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var;
-        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var, sample);
+        eval(gen, img, descriptors, reconst, recon_loss, recon_loss_unred, L2_loss, KL_loss, encoder_var, decoder_var, store_constructions, sample);
         return recon_loss.mean();
     }
 
@@ -136,6 +137,13 @@ public:
             M = Eigen::Map<MatrixXf_rm>(data, T.size(0), total_size_individual_tensor);
         }
     }
+
+    void get_eigen_matrix_block_from_torch_tensor(const torch::Tensor &T, MatrixXf_rm &data, size_t start_row, size_t num_rows) const {
+        MatrixXf_rm temp;
+        get_eigen_matrix_from_torch_tensor(T, temp);
+        data.middleRows(start_row, num_rows) = temp;
+    }
+
 
     void get_tuple_from_eigen_matrices(const MatrixXf_rm &M1, const MatrixXf_rm &M2,
                                         torch::Tensor &T1, torch::Tensor &T2, 
@@ -489,95 +497,111 @@ public:
               MatrixXf_rm &KL_loss,
               MatrixXf_rm &encoder_var,
               MatrixXf_rm &decoder_var,
+              bool store_constructions = false,
               bool sample = false) 
     {
         torch::NoGradGuard no_grad;
         AutoEncoder auto_encoder = std::static_pointer_cast<AutoEncoderImpl>(this->m_auto_encoder_module.ptr());
         auto_encoder->eval();
+        
+        size_t row_index{0};
 
-        torch::Tensor gen_tensor, img_tensor;
-        this->get_torch_tensor_from_eigen_matrix(gen, gen_tensor);
-        this->get_torch_tensor_from_eigen_matrix(img, img_tensor);
-	    img_tensor = img_tensor.to(this->m_device);
-
-        torch::Tensor encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor;
-        #ifdef AURORA
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(img_tensor, encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
-        #else
-        torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(gen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
-        #endif
-        torch::Tensor recon_loss_unreduced = torch::empty({gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation}, torch::device(this->m_device));
-
-        if (TParams::ae::full_loss)
-        {
-            if (TParams::ae::loss_function == TParams::ae::loss::L2)
-            {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::L1)
-            {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
-            {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
+        descriptors = MatrixXf_rm(gen.rows(), TParams::qd::behav_dim);
+        reconstructed_data = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
+        recon_loss = MatrixXf_rm(gen.rows(), 1);
+        recon_loss_unred = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
+        L2_loss = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
+        decoder_var = MatrixXf_rm(gen.rows(), TParams::nov::discretisation * TParams::nov::discretisation);
+        encoder_var = MatrixXf_rm(gen.rows(), TParams::qd::behav_dim);
+        KL_loss = MatrixXf_rm(gen.rows(), TParams::qd::behav_dim);
+        while (row_index < gen.rows() - 1)
+        {   
+            int batch_size = (row_index + TParams::ae::batch_size < gen.rows()) ? TParams::ae::batch_size : (gen.rows() - row_index);
+            torch::Tensor gen_tensor, img_tensor;
+            this->get_torch_tensor_from_eigen_matrix(gen.middleRows(row_index, batch_size), gen_tensor);
+            this->get_torch_tensor_from_eigen_matrix(img.middleRows(row_index, batch_size), img_tensor);
+            img_tensor = img_tensor.to(this->m_device);
+            torch::Tensor encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor;
+            #ifdef AURORA
+            torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(img_tensor, encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
+            #else
+            torch::Tensor reconstruction_tensor = auto_encoder->forward_get_latent(gen_tensor.to(this->m_device), encoder_mu, encoder_logvar, decoder_logvar, descriptors_tensor, TParams::ae::sigmoid, sample);
+            #endif
+            torch::Tensor recon_loss_unreduced = torch::empty({batch_size, TParams::nov::discretisation * TParams::nov::discretisation}, torch::device(this->m_device));
+            if (TParams::ae::full_loss)
             {
-                for (int i{0}; i < img_tensor.size(0); ++i)
+                if (TParams::ae::loss_function == TParams::ae::loss::L2)
+                {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::L1)
+                {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+                {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0) / (2 * torch::exp(decoder_logvar)) + 0.5 * (decoder_logvar + _log_2_pi);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
                 {
-                    torch::Tensor mask = torch::abs(img_tensor[i] - reconstruction_tensor[i]).le(0.5);
-                    torch::Tensor flipped_mask = mask.logical_not();
-                    long num_le = mask.sum().item<long>();
+                    for (int i{0}; i < img_tensor.size(0); ++i)
+                    {
+                        torch::Tensor mask = torch::abs(img_tensor[i] - reconstruction_tensor[i]).le(0.5);
+                        torch::Tensor flipped_mask = mask.logical_not();
+                        long num_le = mask.sum().item<long>();
 
-                    // rows and columns passed in
-                    recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
-                                                    torch::arange(num_le, torch::dtype(torch::kLong))}, 
-                                                    0.5 * (torch::pow((img_tensor[i] - reconstruction_tensor[i]).index(mask), 2) / (2 * torch::exp(decoder_logvar[i].index(mask))) + 0.5 * (decoder_logvar[i].index(mask) + _log_2_pi)), false);
+                        // rows and columns passed in
+                        recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
+                                                        torch::arange(num_le, torch::dtype(torch::kLong))}, 
+                                                        0.5 * (torch::pow((img_tensor[i] - reconstruction_tensor[i]).index(mask), 2) / (2 * torch::exp(decoder_logvar[i].index(mask))) + 0.5 * (decoder_logvar[i].index(mask) + _log_2_pi)), false);
 
-                    recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
-                                                    torch::arange(num_le, static_cast<long>(TParams::nov::discretisation * TParams::nov::discretisation), torch::dtype(torch::kLong))},
-                                                    0.5 * (torch::abs((img_tensor[i] - reconstruction_tensor[i]).index(flipped_mask)) / (2 * torch::exp(decoder_logvar[i].index(flipped_mask))) + 0.5 * (decoder_logvar[i].index(flipped_mask) + _log_2_pi)) - _huber_delta_exp, false);
+                        recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
+                                                        torch::arange(num_le, static_cast<long>(TParams::nov::discretisation * TParams::nov::discretisation), torch::dtype(torch::kLong))},
+                                                        0.5 * (torch::abs((img_tensor[i] - reconstruction_tensor[i]).index(flipped_mask)) / (2 * torch::exp(decoder_logvar[i].index(flipped_mask))) + 0.5 * (decoder_logvar[i].index(flipped_mask) + _log_2_pi)) - _huber_delta_exp, false);
+                    }
                 }
             }
-        }
-        else
-        {
-            if (TParams::ae::loss_function == TParams::ae::loss::L2)
-            {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::L1)
-            {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
-            {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0);}
-            else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
+            else
             {
-                for (int i{0}; i < img_tensor.size(0); ++i)
+                if (TParams::ae::loss_function == TParams::ae::loss::L2)
+                {recon_loss_unreduced = torch::pow(img_tensor - reconstruction_tensor, 2);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::L1)
+                {recon_loss_unreduced = torch::abs(img_tensor - reconstruction_tensor);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::BCE)
+                {recon_loss_unreduced = torch::binary_cross_entropy(reconstruction_tensor, img_tensor, {}, 0);}
+                else if (TParams::ae::loss_function == TParams::ae::loss::Huber)
                 {
-                    torch::Tensor mask = torch::abs(img_tensor[i] - reconstruction_tensor[i]).le(0.5);
-                    recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
-                                                    torch::arange(mask.sum().item<long>(), torch::dtype(torch::kLong))}, 
-                                                    0.5 * torch::pow((img_tensor[i] - reconstruction_tensor[i]).index(mask), 2), false);
+                    for (int i{0}; i < img_tensor.size(0); ++i)
+                    {
+                        torch::Tensor mask = torch::abs(img_tensor[i] - reconstruction_tensor[i]).le(0.5);
+                        recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
+                                                        torch::arange(mask.sum().item<long>(), torch::dtype(torch::kLong))}, 
+                                                        0.5 * torch::pow((img_tensor[i] - reconstruction_tensor[i]).index(mask), 2), false);
 
-                    recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
-                                                    torch::arange(mask.sum().item<long>(), static_cast<long>(TParams::nov::discretisation * TParams::nov::discretisation), torch::dtype(torch::kLong))},
-                                                    0.5 * torch::abs((img_tensor[i] - reconstruction_tensor[i]).index(mask.logical_not())) - _huber_delta_exp, false);
+                        recon_loss_unreduced.index_put_({torch::ones(1, torch::dtype(torch::kLong)) * i, 
+                                                        torch::arange(mask.sum().item<long>(), static_cast<long>(TParams::nov::discretisation * TParams::nov::discretisation), torch::dtype(torch::kLong))},
+                                                        0.5 * torch::abs((img_tensor[i] - reconstruction_tensor[i]).index(mask.logical_not())) - _huber_delta_exp, false);
+                    }
                 }
             }
+            torch::Tensor L2 = torch::pow(img_tensor - reconstruction_tensor, 2);
+            torch::Tensor reconstruction_loss = torch::sum(recon_loss_unreduced, {1});
+            // KL divergence
+            #ifdef VAE
+            torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
+            reconstruction_loss += torch::sum(KL, {1});
+            #endif
+
+
+            this->get_eigen_matrix_block_from_torch_tensor(descriptors_tensor.cpu(), descriptors, row_index, batch_size);
+            if (store_constructions)
+                {this->get_eigen_matrix_block_from_torch_tensor(reconstruction_tensor.cpu(), reconstructed_data, row_index, batch_size);}
+            this->get_eigen_matrix_block_from_torch_tensor(reconstruction_loss.cpu(), recon_loss, row_index, batch_size);
+            this->get_eigen_matrix_block_from_torch_tensor(recon_loss_unreduced.cpu(), recon_loss_unred, row_index, batch_size);
+            this->get_eigen_matrix_block_from_torch_tensor(L2.cpu(), L2_loss, row_index, batch_size);
+
+            #ifdef VAE
+            this->get_eigen_matrix_block_from_torch_tensor(torch::exp(decoder_logvar.cpu()), decoder_var, row_index, batch_size);
+            this->get_eigen_matrix_block_from_torch_tensor(torch::exp(encoder_logvar.cpu()), encoder_var, row_index, batch_size);
+            this->get_eigen_matrix_block_from_torch_tensor(KL.cpu(), KL_loss, row_index, batch_size);
+            #endif
+
+            row_index += batch_size;
         }
-        torch::Tensor L2 = torch::pow(img_tensor - reconstruction_tensor, 2);
-        torch::Tensor reconstruction_loss = torch::sum(recon_loss_unreduced, {1});
-        // KL divergence
-        #ifdef VAE
-        torch::Tensor KL = -0.5 * TParams::ae::beta * (1 + encoder_logvar - torch::pow(encoder_mu, 2) - torch::exp(encoder_logvar));
-        reconstruction_loss += torch::sum(KL, {1});
-        #endif
-
-
-        this->get_eigen_matrix_from_torch_tensor(descriptors_tensor.cpu(), descriptors);
-        this->get_eigen_matrix_from_torch_tensor(reconstruction_tensor.cpu(), reconstructed_data);
-        this->get_eigen_matrix_from_torch_tensor(reconstruction_loss.cpu(), recon_loss);
-        this->get_eigen_matrix_from_torch_tensor(recon_loss_unreduced.cpu(), recon_loss_unred);
-        this->get_eigen_matrix_from_torch_tensor(L2.cpu(), L2_loss);
-
-        #ifdef VAE
-        this->get_eigen_matrix_from_torch_tensor(torch::exp(decoder_logvar).cpu(), decoder_var);
-        this->get_eigen_matrix_from_torch_tensor(torch::exp(encoder_logvar).cpu(), encoder_var);
-        this->get_eigen_matrix_from_torch_tensor(KL.cpu(), KL_loss);
-        #endif
     }
 
     float _log_2_pi;
