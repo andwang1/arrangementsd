@@ -36,14 +36,14 @@ namespace sferes {
                 boost::fusion::at_c<0>(ea.fit_modifier()).generate_undisturbed_observations(ea.pop());
                 #endif
 
-                // retrieve all phenotypes and trajectories                
-                matrix_t gen, img;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
-                
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, encoder_var, decoder_var;
-                boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                                                                    L2_loss, KL_loss, encoder_var, decoder_var);
+                {
+                    matrix_t gen, img;
+                    boost::fusion::at_c<0>(ea.fit_modifier()).get_geno(ea.pop(), gen);
+                    boost::fusion::at_c<0>(ea.fit_modifier()).get_image(ea.pop(), img);
+                    boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
+                                                                        L2_loss, KL_loss, encoder_var, decoder_var, true);
+                }
 
                 std::ofstream ofs(fname.c_str(), std::ofstream::app);
                 ofs.precision(17);
