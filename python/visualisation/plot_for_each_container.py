@@ -24,12 +24,6 @@ plot_pct_move_in_dir(path, GENERATE_EACH_IMAGE)
 # plot_latent_density_in_dir(path, GENERATE_EACH_IMAGE)
 # plot_latent_space_in_dir(path)
 
-# PID level plotting
-if variant == "vae":
-    plot_loss_in_dir_VAE(path, is_full_loss, GENERATE_EACH_IMAGE)
-else:
-    plot_loss_in_dir_AE(path, GENERATE_EACH_IMAGE)
-
 os.chdir(path)
 os.makedirs("plots", exist_ok=True)
 image_files = [img for img in os.listdir() if ".png" in img]
