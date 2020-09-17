@@ -19,9 +19,9 @@ variant = application.split("_")[-1]
 is_full_loss = "true" in sys.argv[3]
 
 print(f"PROCESSING VISUALISATIONS - {path}")
-plot_latent_density_in_dir(path, GENERATE_EACH_IMAGE)
 plot_pos_var_in_dir(path, GENERATE_EACH_IMAGE)
 plot_pct_move_in_dir(path, GENERATE_EACH_IMAGE)
+# plot_latent_density_in_dir(path, GENERATE_EACH_IMAGE)
 # plot_latent_space_in_dir(path)
 
 # PID level plotting
