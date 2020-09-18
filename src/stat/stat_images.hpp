@@ -38,7 +38,7 @@ namespace sferes {
                 
                 matrix_t descriptors, recon_loss, recon_loss_unred, reconstruction, L2_loss, KL_loss, encoder_var, decoder_var;
                 boost::fusion::at_c<0>(ea.fit_modifier()).get_stats(gen, img, descriptors, reconstruction, recon_loss, recon_loss_unred, 
-                                                                    L2_loss, KL_loss, encoder_var, decoder_var);
+                                                                    L2_loss, KL_loss, encoder_var, decoder_var, true);
 
                 // retrieve undisturbed images
                 matrix_t undisturbed_images(ea.pop().size(), Params::nov::discretisation * Params::nov::discretisation);
