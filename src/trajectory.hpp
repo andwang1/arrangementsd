@@ -109,10 +109,10 @@ FIT_QD(Trajectory)
 
         create_observations();
         std::vector<double> dd(Params::qd::behav_dim, -1.);
-        dd[0] = _trajectories[0][0];
-        dd[1] = _trajectories[0][1];
-        dd[2] = _trajectories[1][0];
-        dd[3] = _trajectories[1][1];
+        dd[0] = _trajectories[0][Params::sim::num_trajectory_elements - 2];;
+        dd[1] = _trajectories[0][Params::sim::num_trajectory_elements - 1];;
+        dd[2] = _trajectories[1][Params::sim::num_trajectory_elements - 2];;
+        dd[3] = _trajectories[1][Params::sim::num_trajectory_elements - 1];;
         this->set_desc(dd);
 
         // FITNESS: constant because we're interested in exploration
