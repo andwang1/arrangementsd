@@ -44,6 +44,9 @@ namespace sferes {
                     {this->initialise_l(ea.offspring(), 0);}
 
                 std::cout << "l = " << Params::nov::l[0] << "; size_pop = " << ea.pop().size() << std::endl;
+
+                if (ea.gen() > 1)
+                    {update_container(ea);}
             }
 
             template<typename EA>
@@ -355,11 +358,6 @@ namespace sferes {
                 ea.container().get_full_content(tmp_pop);
                 ea.container().erase_content();
                 std::cout << "size pop: " << tmp_pop.size() << std::endl;
-
-                this->assign_descriptor_to_population(ea, tmp_pop);
-
-                // update l to maintain a number of indiv lower than Params::resolution
-                std::cout << "NEW L= " << Params::nov::l[0] << std::endl;
 
                 // Addition of the offspring to the container
                 std::vector<bool> added;
