@@ -44,7 +44,7 @@ def plot_pct_move_in_dir(path, generate_images=True, save_path=None):
         ax1 = f.add_subplot(spec[0, 0])
         ln1 = ax1.plot(generations, lower_pct, label="% Moving Lower Object", color="red")
         ln2 = ax1.plot(generations, higher_pct, label="% Moving Upper Object", color="blue")
-        ln3 = ax1.plot(generations, both_pct, label="% Moving Both Objects", color="green")
+        ln3 = ax1.plot(generations, both_pct, label="% Moving Either Object", color="green")
         ax1.set_ylabel("%")
         ax1.set_xlabel("Generation")
         ax1.set_title("% Solutions Moving Objects")
