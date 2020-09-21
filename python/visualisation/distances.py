@@ -38,16 +38,19 @@ def plot_dist_in_dir(path, generate_images=True, save_path=None):
             undist_lower_dist = [float(i) for i in lines[3].strip().split(",")[:-1]]
             undist_upper_dist = [float(i) for i in lines[4].strip().split(",")[:-1]]
 
-        gens.extend([int(GEN_NUMBER)] * len(lower_dist))
-        lower_ball_dist.extend(lower_dist)
-        upper_ball_dist.extend(upper_dist)
-        undist_lower_ball_dist.extend(undist_lower_dist)
-        undist_upper_ball_dist.extend(undist_upper_dist)
+        gens.append([int(GEN_NUMBER)] * len(lower_dist))
+        lower_ball_dist.append(lower_dist)
+        upper_ball_dist.append(upper_dist)
+        undist_lower_ball_dist.append(undist_lower_dist)
+        undist_upper_ball_dist.append(undist_upper_dist)
 
     data_dict = {"gen": gens, "LBD": lower_ball_dist, "UBD": upper_ball_dist, "ULBD": undist_lower_ball_dist, "UUBD": undist_upper_ball_dist}
 
     if generate_images:
-        data_stats = pd.DataFrame(data_dict)
+        data = {"gen": np.array(gens).flatten(),
+                "LBD": np.array(lower_ball_dist).flatten(), "UBD": np.array(upper_ball_dist).flatten(),
+                "ULBD": np.array(undist_lower_ball_dist).flatten(), "UUBD": np.array(undist_upper_ball_dist).flatten()}
+        data_stats = pd.DataFrame(data)
 
         f = plt.figure(figsize=(6, 10))
         spec = f.add_gridspec(2, 1)
