@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 from visualisation.produce_name import produce_name
 
-path = "/media/andwang1/SAMSUNG/MSC_INDIV/results_box2d_imagesd_exp1"
+path = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD2"
 os.chdir(path)
 
 plotting_groups = [
-    ["aurora", "l2ae", "l2"],
+    ["AURORA", "best"],
     # ["l2", "l2withsampling"],
     # ["l2", "l2beta0"],
     # ["l2_nosampletrain", "l2"],
@@ -124,41 +124,11 @@ for group in plotting_groups:
     plt.close()
 
     f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
-    colour_count = 0
-    for i, member in enumerate(group):
-        with open(f"{member}/diversity_data.pk", "rb") as f:
-            log_data = pk.load(f)
-
-        for variant, data in log_data.items():
-            if len(data["stoch"]) == 0:
-                continue
-            if any({loss in variant for loss in skip_loss_type}):
-                continue
-            variant_name = variant if not variant.startswith("ae") else "ae"
-            print(data)
-            sns.lineplot(data["stoch"], data["DIV"], estimator=np.median, ci=None, label=produce_name(member, variant),
-                         ax=ax1, color=colours[colour_count])
-            data.pop("TSNE", None)
-            data.pop("TSNEstoch", None)
-            data_stats = pd.DataFrame(data)[["stoch", "DIV"]].groupby("stoch").describe()
-            quart25 = data_stats[('DIV', '25%')]
-            quart75 = data_stats[('DIV', '75%')]
-            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
-            if i == 0 and len(group) > 1:
-                ax1.lines[-1].set_linestyle("--")
-            colour_count += 1
-    ax1.set_title("Diversity Score")
-    ax1.set_ylabel("Diversity")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/diversity_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/diversity_{'_'.join(group)}.png")
-    plt.close()
-
-    f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
+    spec = f.add_gridspec(2, 2)
+    ax1 = f.add_subplot(spec[0, 0])
+    ax2 = f.add_subplot(spec[0, 1])
+    ax3 = f.add_subplot(spec[1, 0])
+    ax4 = f.add_subplot(spec[1, 1])
     colour_count = 0
     for i, member in enumerate(group):
         with open(f"{member}/pct_moved_data.pk", "rb") as f:
@@ -170,26 +140,101 @@ for group in plotting_groups:
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["PCT"], estimator=np.median, ci=None, label=produce_name(member, variant),
+            sns.lineplot(data["stoch"], data["PLOW"], estimator=np.median, ci=None, label=produce_name(member, variant),
                          ax=ax1,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "PCT"]].groupby("stoch").describe()
-            quart25 = data_stats[('PCT', '25%')]
-            quart75 = data_stats[('PCT', '75%')]
+            data_stats = pd.DataFrame(data)[["stoch", "PLOW"]].groupby("stoch").describe()
+            quart25 = data_stats[('PLOW', '25%')]
+            quart75 = data_stats[('PLOW', '75%')]
             ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("% Solutions Moving The Puck")
+    ax1.set_title("Object 1")
     ax1.set_ylabel("%")
-    ax1.set_xlabel("Stochasticity")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/pct_moved_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["PUPP"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax2,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "PUPP"]].groupby("stoch").describe()
+            quart25 = data_stats[('PUPP', '25%')]
+            quart75 = data_stats[('PUPP', '75%')]
+            ax2.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax2.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax2.set_title("Object 2")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/pct_moved_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["PEIT"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax3,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "PEIT"]].groupby("stoch").describe()
+            quart25 = data_stats[('PEIT', '25%')]
+            quart75 = data_stats[('PEIT', '75%')]
+            ax3.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax3.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax3.set_title("Either Object")
+    ax3.set_xlabel("Stochasticity")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/pct_moved_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["PBOT"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax4,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "PBOT"]].groupby("stoch").describe()
+            quart25 = data_stats[('PBOT', '25%')]
+            quart75 = data_stats[('PBOT', '75%')]
+            ax4.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax4.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax4.set_title("Both Objects")
+    ax4.set_xlabel("Stochasticity")
+    plt.suptitle("% Solutions Moving")
+
     plt.savefig(f"{save_dir}/pdf/pct_moved_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/pct_moved_{'_'.join(group)}.png")
     plt.close()
 
     f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
+    spec = f.add_gridspec(2, 2)
+    ax1 = f.add_subplot(spec[0, 0])
+    ax2 = f.add_subplot(spec[0, 1])
+    ax3 = f.add_subplot(spec[1, 0])
+    ax4 = f.add_subplot(spec[1, 1])
     colour_count = 0
     for i, member in enumerate(group):
         with open(f"{member}/dist_data.pk", "rb") as f:
@@ -201,88 +246,102 @@ for group in plotting_groups:
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["MDE"], estimator=np.median, ci=None, label=produce_name(member, variant),
+            sns.lineplot(data["stoch"], data["LBD"], estimator=np.median, ci=None, label=produce_name(member, variant),
                          ax=ax1,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "MDE"]].groupby("stoch").describe()
-            quart25 = data_stats[('MDE', '25%')]
-            quart75 = data_stats[('MDE', '75%')]
+            data_stats = pd.DataFrame(data)[["stoch", "LBD"]].groupby("stoch").describe()
+            quart25 = data_stats[('LBD', '25%')]
+            quart75 = data_stats[('LBD', '75%')]
             ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("Trajectory Distances Excl. No-Move Solutions")
+    ax1.set_title("Object 1 with Noise")
     ax1.set_ylabel("Distance")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/dist_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/dist_{'_'.join(group)}.png")
-    plt.close()
 
-    f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
     colour_count = 0
     for i, member in enumerate(group):
         with open(f"{member}/dist_data.pk", "rb") as f:
             log_data = pk.load(f)
-
         for variant, data in log_data.items():
             if len(data["stoch"]) == 0:
                 continue
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["VDE"], estimator=np.median, ci=None, label=produce_name(member, variant),
-                         ax=ax1,
+            sns.lineplot(data["stoch"], data["UBD"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax2,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "VDE"]].groupby("stoch").describe()
-            quart25 = data_stats[('VDE', '25%')]
-            quart75 = data_stats[('VDE', '75%')]
-            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UBD"]].groupby("stoch").describe()
+            quart25 = data_stats[('UBD', '25%')]
+            quart75 = data_stats[('UBD', '75%')]
+            ax2.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
-                ax1.lines[-1].set_linestyle("--")
+                ax2.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("Variance in Trajectory Distances Excl. No-Move Solutions")
-    ax1.set_ylabel("Variance")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/dist_var_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/dist_var_{'_'.join(group)}.png")
-    plt.close()
+    ax2.set_title("Object 2 with Noise")
 
-    f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
+
     colour_count = 0
     for i, member in enumerate(group):
-        with open(f"{member}/entropy_data.pk", "rb") as f:
+        with open(f"{member}/dist_data.pk", "rb") as f:
             log_data = pk.load(f)
-
         for variant, data in log_data.items():
             if len(data["stoch"]) == 0:
                 continue
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["EVE"], estimator=np.median, ci=None, label=produce_name(member, variant),
-                         ax=ax1,
+            sns.lineplot(data["stoch"], data["ULBD"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax3,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "EVE"]].groupby("stoch").describe()
-            quart25 = data_stats[('EVE', '25%')]
-            quart75 = data_stats[('EVE', '75%')]
-            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "ULBD"]].groupby("stoch").describe()
+            quart25 = data_stats[('ULBD', '25%')]
+            quart75 = data_stats[('ULBD', '75%')]
+            ax3.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
-                ax1.lines[-1].set_linestyle("--")
+                ax3.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("Entropy of Trajectory Positions Excl. No-Move")
-    ax1.set_ylabel("Entropy")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/entropy_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/entropy_{'_'.join(group)}.png")
+    ax3.set_title("Object 1")
+    ax3.set_ylabel("Distance")
+    ax3.set_xlabel("Stochasticity")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/dist_data.pk", "rb") as f:
+            log_data = pk.load(f)
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["UUBD"], estimator=np.median, ci=None, label=produce_name(member, variant),
+                         ax=ax4,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UUBD"]].groupby("stoch").describe()
+            quart25 = data_stats[('UUBD', '25%')]
+            quart75 = data_stats[('UUBD', '75%')]
+            ax4.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax4.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax4.set_title("Object 2")
+    ax4.set_xlabel("Stochasticity")
+    plt.suptitle("Distance Moved")
+    plt.savefig(f"{save_dir}/pdf/dist{'_'.join(group)}.pdf")
+    plt.savefig(f"{save_dir}/dist{'_'.join(group)}.png")
     plt.close()
 
-    f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
+    f = plt.figure(figsize=(30, 20))
+    spec = f.add_gridspec(2, 3)
+    ax1 = f.add_subplot(spec[0, 0])
+    ax2 = f.add_subplot(spec[0, 1])
+    ax3 = f.add_subplot(spec[0, 2])
+    ax4 = f.add_subplot(spec[1, 0])
+    ax5 = f.add_subplot(spec[1, 1])
+    ax6 = f.add_subplot(spec[1, 2])
+
     colour_count = 0
     for i, member in enumerate(group):
         with open(f"{member}/posvar_data.pk", "rb") as f:
@@ -294,54 +353,145 @@ for group in plotting_groups:
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["PV"], estimator=np.median, ci=None, label=produce_name(member, variant),
+            sns.lineplot(data["stoch"], data["LOWVAR"], estimator=np.median, ci=None, label=produce_name(member, variant),
                          ax=ax1,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "PV"]].groupby("stoch").describe()
-            quart25 = data_stats[('PV', '25%')]
-            quart75 = data_stats[('PV', '75%')]
+            data_stats = pd.DataFrame(data)[["stoch", "LOWVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('LOWVAR', '25%')]
+            quart75 = data_stats[('LOWVAR', '75%')]
             ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
                 ax1.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("Variance in Trajectories")
+    ax1.set_title("Object 1 with Noise")
     ax1.set_ylabel("Variance")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/posvar_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/posvar_{'_'.join(group)}.png")
-    plt.close()
 
-    f = plt.figure(figsize=(20, 20))
-    spec = f.add_gridspec(1, 2)
-    ax1 = f.add_subplot(spec[0, :])
     colour_count = 0
     for i, member in enumerate(group):
-        with open(f"{member}/recon_var_data.pk", "rb") as f:
+        with open(f"{member}/posvar_data.pk", "rb") as f:
             log_data = pk.load(f)
 
         for variant, data in log_data.items():
             if len(data["stoch"]) == 0:
                 continue
-            if "aurora" in variant:
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["UPPVAR"], estimator=np.median, ci=None,
+                         label=produce_name(member, variant),
+                         ax=ax2,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UPPVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('UPPVAR', '25%')]
+            quart75 = data_stats[('UPPVAR', '75%')]
+            ax2.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax2.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax2.set_title("Object 2 with Noise")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/posvar_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
                 continue
             if any({loss in variant for loss in skip_loss_type}):
                 continue
             variant_name = variant if not variant.startswith("ae") else "ae"
-            sns.lineplot(data["stoch"], data["NMV"], estimator=np.median, ci=None, label=produce_name(member, variant),
-                         ax=ax1,
+            sns.lineplot(data["stoch"], data["BOTVAR"], estimator=np.median, ci=None,
+                         label=produce_name(member, variant),
+                         ax=ax3,
                          color=colours[colour_count])
-            data_stats = pd.DataFrame(data)[["stoch", "NMV"]].groupby("stoch").describe()
-            quart25 = data_stats[('NMV', '25%')]
-            quart75 = data_stats[('NMV', '75%')]
-            ax1.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "BOTVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('BOTVAR', '25%')]
+            quart75 = data_stats[('BOTVAR', '75%')]
+            ax3.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
             if i == 0 and len(group) > 1:
-                ax1.lines[-1].set_linestyle("--")
+                ax3.lines[-1].set_linestyle("--")
             colour_count += 1
-    ax1.set_title("Variance in Constructions of No-Move solutions")
-    ax1.set_ylabel("Variance")
-    ax1.set_xlabel("Stochasticity")
-    plt.savefig(f"{save_dir}/pdf/recon_var_{'_'.join(group)}.pdf")
-    plt.savefig(f"{save_dir}/recon_var_{'_'.join(group)}.png")
+    ax3.set_title("Both Objects with Noise")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/posvar_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["UNLOWVAR"], estimator=np.median, ci=None,
+                         label=produce_name(member, variant),
+                         ax=ax4,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UNLOWVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('UNLOWVAR', '25%')]
+            quart75 = data_stats[('UNLOWVAR', '75%')]
+            ax4.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax4.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax4.set_title("Object 1")
+    ax4.set_xlabel("Stochasticity")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/posvar_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["UNUPPVAR"], estimator=np.median, ci=None,
+                         label=produce_name(member, variant),
+                         ax=ax5,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UNUPPVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('UNUPPVAR', '25%')]
+            quart75 = data_stats[('UNUPPVAR', '75%')]
+            ax5.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax5.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax5.set_title("Object 2")
+    ax5.set_xlabel("Stochasticity")
+
+    colour_count = 0
+    for i, member in enumerate(group):
+        with open(f"{member}/posvar_data.pk", "rb") as f:
+            log_data = pk.load(f)
+
+        for variant, data in log_data.items():
+            if len(data["stoch"]) == 0:
+                continue
+            if any({loss in variant for loss in skip_loss_type}):
+                continue
+            variant_name = variant if not variant.startswith("ae") else "ae"
+            sns.lineplot(data["stoch"], data["UNBOTVAR"], estimator=np.median, ci=None,
+                         label=produce_name(member, variant),
+                         ax=ax6,
+                         color=colours[colour_count])
+            data_stats = pd.DataFrame(data)[["stoch", "UNBOTVAR"]].groupby("stoch").describe()
+            quart25 = data_stats[('UNBOTVAR', '25%')]
+            quart75 = data_stats[('UNBOTVAR', '75%')]
+            ax6.fill_between([0, 1, 2, 3, 4, 5], quart25, quart75, alpha=0.3, color=colours[colour_count])
+            if i == 0 and len(group) > 1:
+                ax6.lines[-1].set_linestyle("--")
+            colour_count += 1
+    ax6.set_title("Both Objects")
+    ax6.set_xlabel("Stochasticity")
+    plt.suptitle("Variance in Object Positions")
+
+    plt.savefig(f"{save_dir}/pdf/posvar_{'_'.join(group)}.pdf")
+    plt.savefig(f"{save_dir}/posvar_{'_'.join(group)}.png")
     plt.close()
 
     f = plt.figure(figsize=(20, 20))
@@ -376,8 +526,6 @@ for group in plotting_groups:
     plt.savefig(f"{save_dir}/pdf/latent_var_{'_'.join(group)}.pdf")
     plt.savefig(f"{save_dir}/latent_var_{'_'.join(group)}.png")
     plt.close()
-
-
 
     f = plt.figure(figsize=(20, 20))
     spec = f.add_gridspec(1, 2)
