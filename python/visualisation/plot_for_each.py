@@ -13,7 +13,7 @@ from visualisation.ae_loss_VAE import plot_loss_in_dir_VAE
 from visualisation.latent_space import plot_latent_space_in_dir
 
 GENERATE_PID_IMAGES = False
-GENERATE_EXP_IMAGES = False
+GENERATE_EXP_IMAGES = True
 START_GEN_LOSS_PLOT = 500
 
 results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD2"
@@ -24,7 +24,7 @@ groups = {group_name for group_name in os.listdir(results_dir) if
 # groups -= exclude_dirs
 
 only_dirs = {
-"beta0",
+"best",
 }
 groups &= only_dirs
 
@@ -80,10 +80,11 @@ for group in groups:
                 variant_pos_var_dict[exp].append(plot_pos_var_in_dir(full_path, GENERATE_PID_IMAGES))
                 variant_pct_dict[exp].append(plot_pct_move_in_dir(full_path, GENERATE_PID_IMAGES))
                 # PID level plotting
-                if variant == "vae":
-                    variant_loss_dict[exp].append(plot_loss_in_dir_VAE(full_path, is_full_loss[i], GENERATE_PID_IMAGES))
-                else:
-                    variant_loss_dict[exp].append(plot_loss_in_dir_AE(full_path, GENERATE_PID_IMAGES))
+                if "manual" not in exp_path:
+                    if variant == "vae":
+                        variant_loss_dict[exp].append(plot_loss_in_dir_VAE(full_path, is_full_loss[i], GENERATE_PID_IMAGES))
+                    else:
+                        variant_loss_dict[exp].append(plot_loss_in_dir_AE(full_path, GENERATE_PID_IMAGES))
 
             if not GENERATE_EXP_IMAGES:
                 continue
@@ -228,6 +229,8 @@ for group in groups:
             plt.close()
 
             # at experiment level, plot losses
+            if "manual" in exp_path:
+                continue
             L2_values = np.array([repetition["L2"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]])
             UL_values = np.array([repetition["UL"][START_GEN_LOSS_PLOT:] for repetition in variant_loss_dict[exp]]).flatten()
             if variant == "vae":
@@ -516,6 +519,8 @@ for group in groups:
                                                            "PBOT": PBOT_values}
 
         # plot losses across stochasticity for each generation
+        if "manual" in variant:
+            continue
         for loss_type in ["fulllosstrue", "fulllossfalse"]:
             if variant != "vae" and loss_type == "fulllosstrue":
                 continue

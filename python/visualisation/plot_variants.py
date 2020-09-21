@@ -6,26 +6,15 @@ import numpy as np
 import pandas as pd
 from visualisation.produce_name import produce_name
 
-path = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD2"
+path = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD4"
 os.chdir(path)
 
 plotting_groups = [
     ["AURORA", "best"],
-    # ["l2", "l2withsampling"],
-    # ["l2", "l2beta0"],
-    # ["l2_nosampletrain", "l2"],
-    # ["l2_nosampletrain", "l2beta0_nosampletrain"],
-    # ["l2beta0", "l2"],
-    # [""]
-#     ["tsne_nosampletrain", "tsnebeta0_nosampletrain"],
-# ["sne_nosampletrain", "snebeta0_nosampletrain", "l2nosampletrain"],
-# ["snebeta0_nosampletrain", "l2nosampletrain"],
-# ["tsnebeta0_nosampletrain", "l2nosampletrain"],
-#     ["snebeta0_nosampletrain","tsnebeta0_nosampletrain"],
-# ["sigmoidbce_nosampletrain","l0nosampletrain"],
-# ["tsnebeta0_nosampletrain", "snebeta0_nosampletrain" ,"l2nosampletrain"],
-# [ "tsne_nosampletrain","tsnebeta0_nosampletrain", "l2nosampletrain"],
-    # ["l2beta0nosample"]
+    ["best", "sample"],
+    ["best", "beta0"],
+    ["AURORA", "manualBD"],
+    ["best", "manualBD"]
 ]
 colours = ["blue", "brown", "grey", "green", "purple", "red", "pink", "orange"]
 
@@ -63,8 +52,6 @@ for group in plotting_groups:
                 del data[k]
             if any({loss in variant for loss in skip_loss_type}):
                 continue
-            print(variant, member)
-            print(data)
             variant_name = variant if not variant.startswith("ae") else "ae"
             data.pop("TSNE", None)
             data.pop("TSNEstoch", None)

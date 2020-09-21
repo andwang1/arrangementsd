@@ -10,4 +10,6 @@ def produce_name(member, variant):
         return "BD-SAMPLING"
     if "beta0" in member:
         return "NO-GLOBAL-PULL"
+    if "manualBD" in member:
+        return "PREDEFINED-BD"
     return "-".join(name)
