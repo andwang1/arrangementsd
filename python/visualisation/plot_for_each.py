@@ -13,7 +13,7 @@ from visualisation.ae_loss_VAE import plot_loss_in_dir_VAE
 from visualisation.latent_space import plot_latent_space_in_dir
 
 GENERATE_PID_IMAGES = False
-GENERATE_EXP_IMAGES = True
+GENERATE_EXP_IMAGES = False
 START_GEN_LOSS_PLOT = 500
 
 results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD2"
@@ -93,16 +93,26 @@ for group in groups:
             os.chdir(f"{EXP_FOLDER}/{BASE_NAME}{variant}/{exp}")
 
             # at experiment level plot distance metrices
-            LBD_values = np.array([repetition["LBD"] for repetition in variant_dist_dict[exp]]).flatten()
-            UBD_values = np.array([repetition["UBD"] for repetition in variant_dist_dict[exp]]).flatten()
-            ULBD_values = np.array([repetition["ULBD"] for repetition in variant_dist_dict[exp]]).flatten()
-            UUBD_values = np.array([repetition["UUBD"] for repetition in variant_dist_dict[exp]]).flatten()
-            generations = np.array([repetition["gen"] for repetition in variant_dist_dict[exp]]).flatten()
+            LBD_values = []
+            UBD_values = []
+            ULBD_values = []
+            UUBD_values = []
+            generations = []
+            for repetition in variant_dist_dict[exp]:
+                for i in repetition["LBD"]:
+                    LBD_values.extend(i)
+                for i in repetition["UBD"]:
+                    UBD_values.extend(i)
+                for i in repetition["ULBD"]:
+                    ULBD_values.extend(i)
+                for i in repetition["UUBD"]:
+                    UUBD_values.extend(i)
+                for i in repetition["gen"]:
+                    generations.extend(i)
 
             f = plt.figure(figsize=(6, 10))
             spec = f.add_gridspec(2, 1)
             ax1 = f.add_subplot(spec[0, 0])
-
             ln1 = sns.lineplot(generations, LBD_values, estimator=np.median, ci=None, label="Object 1", ax=ax1,
                                color="red")
             ln2 = sns.lineplot(generations, UBD_values, estimator=np.median, ci=None, label="Object 2", ax=ax1,
