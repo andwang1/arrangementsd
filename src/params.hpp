@@ -106,7 +106,7 @@ struct Params {
 
     struct qd {
         SFERES_CONST size_t gen_dim = 8;
-        SFERES_CONST int behav_dim = 4;
+        SFERES_CONST int behav_dim = 2;
         // influences l = targeted size of pop
         SFERES_CONST int resolution = 8000; 
         SFERES_CONST int num_train_archives = 0;
