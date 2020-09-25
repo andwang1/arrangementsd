@@ -188,8 +188,14 @@ public:
                           torch::nn::AnyModule(AutoEncoder(TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::aurora_en_dim1, TParams::ae::aurora_en_dim2, TParams::ae::aurora_en_dim3, TParams::qd::behav_dim, 
                                                            TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::ae::de_hid_dim3, TParams::nov::discretisation * TParams::nov::discretisation, false))),
                           #else
-                          torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::ae::en_hid_dim2, TParams::ae::aurora_en_dim3, TParams::qd::behav_dim, 
-                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::ae::de_hid_dim3, TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::sample_train))),
+                          torch::nn::AnyModule(AutoEncoder(TParams::qd::gen_dim, TParams::ae::en_hid_dim1, TParams::ae::en_hid_dim2, 
+                                                            TParams::ae::en_hid_dim3, TParams::ae::en_hid_dim4, TParams::ae::en_hid_dim5, 
+                                                            TParams::ae::en_hid_dim6, TParams::qd::behav_dim, 
+                                                           TParams::ae::de_hid_dim1, TParams::ae::de_hid_dim2, TParams::ae::de_hid_dim3, 
+                                                           TParams::ae::de_hid_dim4, TParams::ae::de_hid_dim5, TParams::ae::de_hid_dim6, 
+                                                           TParams::ae::de_hid_dim7, 
+                                                           
+                                                           TParams::nov::discretisation * TParams::nov::discretisation, TParams::ae::sample_train))),
                           #endif
             _log_2_pi(log(2 * M_PI)),
             _huber_delta_exp(std::pow(0.5, 3)),

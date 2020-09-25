@@ -11,10 +11,11 @@
 #include "decoder_VAE.hpp"
 
 struct AutoEncoderImpl : torch::nn::Module {
-    AutoEncoderImpl(int input_dim, int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, 
-                    int latent_dim, int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int output_dim, bool sample_train) :
-            m_encoder(Encoder(input_dim, en_hid_dim1, en_hid_dim2, latent_dim)),
-            m_decoder(Decoder(de_hid_dim1, de_hid_dim2, de_hid_dim3, latent_dim)) 
+    AutoEncoderImpl(int input_dim, int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, int en_hid_dim4, int en_hid_dim5, int en_hid_dim6,
+                    int latent_dim, int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int de_hid_dim4, int de_hid_dim5, int de_hid_dim6, int de_hid_dim7,
+                    int output_dim, bool sample_train) :
+            m_encoder(Encoder(input_dim, en_hid_dim1, en_hid_dim2, en_hid_dim3, en_hid_dim4, en_hid_dim5, en_hid_dim6, latent_dim)),
+            m_decoder(Decoder(de_hid_dim1, de_hid_dim2, de_hid_dim3, de_hid_dim4, de_hid_dim5, de_hid_dim6, de_hid_dim7, latent_dim)) 
     {
         register_module("encoder", m_encoder);
         register_module("decoder", m_decoder);
