@@ -16,7 +16,7 @@ GENERATE_PID_IMAGES = False
 GENERATE_EXP_IMAGES = False
 START_GEN_LOSS_PLOT = 500
 
-results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/BD2"
+results_dir = "/media/andwang1/SAMSUNG/MSC_INDIV/ICLR/asd/largerarch"
 groups = {group_name for group_name in os.listdir(results_dir) if
             os.path.isdir(os.path.join(results_dir, group_name)) and group_name != "plots"}
 
@@ -24,7 +24,7 @@ groups = {group_name for group_name in os.listdir(results_dir) if
 # groups -= exclude_dirs
 
 only_dirs = {
-"best",
+"beta1",
 }
 groups &= only_dirs
 

@@ -36,10 +36,10 @@ def plot_pct_move_in_dir(path, generate_images=True, save_path=None):
 
         is_moved = np.logical_or(lower_ball_moved, higher_ball_moved)
         both_moved = np.logical_and(lower_ball_moved, higher_ball_moved)
-        lower_pct.append(lower_ball_moved.sum() / len(lower_ball_moved) * 100)
-        higher_pct.append(higher_ball_moved.sum() / len(higher_ball_moved) * 100)
-        either_pct.append(is_moved.sum() / len(is_moved) * 100)
-        both_pct.append(both_moved.sum() / len(both_moved) * 100)
+        lower_pct.append((1 - lower_ball_moved.sum() / len(lower_ball_moved)) * 100)
+        higher_pct.append((1 - higher_ball_moved.sum() / len(higher_ball_moved)) * 100)
+        either_pct.append((1 - is_moved.sum() / len(is_moved)) * 100)
+        both_pct.append((1 - both_moved.sum() / len(both_moved)) * 100)
 
     if generate_images:
         f = plt.figure(figsize=(5, 5))
