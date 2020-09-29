@@ -52,9 +52,9 @@ struct Params {
     SFERES_CONST float target_perplexity = batch_size * 0.1;
 
     // aurora num filter maps
-    SFERES_CONST size_t aurora_en_dim1 = 10;
-    SFERES_CONST size_t aurora_en_dim2 = 20;
-    SFERES_CONST size_t aurora_en_dim3 = 30;
+    SFERES_CONST size_t aurora_en_dim1 = 2;
+    SFERES_CONST size_t aurora_en_dim2 = 4;
+    SFERES_CONST size_t aurora_en_dim3 = 6;
 
     // network neurons, fully connected
     // input = qd::gen_dim
@@ -63,9 +63,9 @@ struct Params {
     // latent_dim = qd::behav_dim
     
     // filter maps
-    SFERES_CONST size_t de_hid_dim1 = 40;
-    SFERES_CONST size_t de_hid_dim2 = 20;
-    SFERES_CONST size_t de_hid_dim3 = 10;
+    SFERES_CONST size_t de_hid_dim1 = 6;
+    SFERES_CONST size_t de_hid_dim2 = 4;
+    SFERES_CONST size_t de_hid_dim3 = 2;
     // output_dim = sim::trajectory_length
 
     enum class sne : unsigned int {NoSNE, SNE, TSNE};

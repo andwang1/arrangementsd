@@ -9,16 +9,12 @@
 
 struct DecoderImpl : torch::nn::Module {
     DecoderImpl(int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int latent_dim) :
-        m_tconv_1(torch::nn::ConvTranspose2dOptions(latent_dim, de_hid_dim3, 3)),
-        m_tconv_2(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 3)),
-        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 4).stride(2)),
-        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 5)),
-        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 5).stride(2)),
-        m_tconv_4(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 6)),
+        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 7)),
+        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 7)),
+        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 8).stride(2)),
+        m_tconv_4(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 9)),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
-            register_module("m_tconv_1", m_tconv_1);
-            register_module("m_tconv_2", m_tconv_2);
             register_module("m_tconv_3", m_tconv_3);
             register_module("m_tconv_s2", m_tconv_s2);
             register_module("m_tconv_s3", m_tconv_s3);
@@ -29,8 +25,8 @@ struct DecoderImpl : torch::nn::Module {
         torch::Tensor forward(const torch::Tensor &z, torch::Tensor &tmp) 
         {
             return m_tconv_4(torch::relu(m_tconv_s3(torch::relu(m_tconv_3(
-                    torch::relu(m_tconv_s2(torch::relu(m_tconv_2(torch::relu(m_tconv_1(
-                        z.reshape({z.size(0), -1, 1, 1})))))))))))).reshape({z.size(0), -1});
+                    torch::relu(m_tconv_s2(
+                        z.reshape({z.size(0), -1, 1, 1})))))))).reshape({z.size(0), -1});
         }
 
         // https://github.com/pytorch/vision/blob/master/torchvision/csrc/models/googlenet.cpp#L150
@@ -43,7 +39,7 @@ struct DecoderImpl : torch::nn::Module {
             }
         }
 
-        torch::nn::ConvTranspose2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_4;
+        torch::nn::ConvTranspose2d m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_4;
         torch::Device m_device;
 };
 
