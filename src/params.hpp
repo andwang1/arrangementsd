@@ -11,9 +11,9 @@ struct Params {
     struct sim {
     SFERES_CONST float ROOM_H = 5.f;
     SFERES_CONST float ROOM_W = 5.f;
-    SFERES_CONST float ball1_x = 2.55f;
-    SFERES_CONST float ball1_y = 3.6f;
-    SFERES_CONST float ball2_x = 1.55f;
+    SFERES_CONST float ball1_x = 3.55f;
+    SFERES_CONST float ball1_y = 3.f;
+    SFERES_CONST float ball2_x = 2.55f;
     SFERES_CONST float ball2_y = 1.7f;
 
     SFERES_CONST int trajectory_length = 50;

@@ -110,6 +110,9 @@ FIT_QD(Trajectory)
         #ifdef AURORA
         simulate(_params, _ball_moved_by_noise, _apply_force);
         generate_image();
+        // Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "");
+        // std::cout << _image.format(CommaInitFmt)  << "\n" << std::endl;
+
         #endif
                
         // FITNESS: constant because we're interested in exploration
