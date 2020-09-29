@@ -8,9 +8,9 @@
 struct EncoderImpl : torch::nn::Module {
     EncoderImpl(int en_hid_dim1, int en_hid_dim2, int en_hid_dim3, int latent_dim) :
         m_conv_1(torch::nn::Conv2d(torch::nn::Conv2dOptions(1, en_hid_dim1, 9))),
-        m_conv_s1(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim1, 8).stride(2))),
-        m_conv_2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim2, 7))),
-        m_conv_s2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim2, 7))),
+        m_conv_s1(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim1, en_hid_dim2, 8).stride(2))),
+        m_conv_2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim2, en_hid_dim3, 7))),
+        m_conv_s2(torch::nn::Conv2d(torch::nn::Conv2dOptions(en_hid_dim3, latent_dim, 7))),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
             register_module("conv_1", m_conv_1);

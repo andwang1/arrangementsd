@@ -9,9 +9,9 @@
 
 struct DecoderImpl : torch::nn::Module {
     DecoderImpl(int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int latent_dim) :
-        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 7)),
-        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 7)),
-        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 8).stride(2)),
+        m_tconv_s2(torch::nn::ConvTranspose2dOptions(latent_dim, de_hid_dim3, 7)),
+        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 7)),
+        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 8).stride(2)),
         m_tconv_4(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 9)),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
