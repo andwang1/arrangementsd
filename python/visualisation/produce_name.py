@@ -2,12 +2,14 @@ def produce_name(member, variant):
     name = []
     if "l2ae" in member:
         return "L2-AE"
+    if "AURORA_smaller" in member:
+        return "AE-SMALL"
     if "AURORA" in member:
         return "AE"
     if "best" in member:
         return "RAED-LINPENALTY"
     if "sample" in member:
-        return "BD-KLPENALTY"
+        return "RAED-KLPENALTY"
     if "largerbeta0" in member:
         return "RAED-LARGE"
     if "beta0" in member:
