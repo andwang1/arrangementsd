@@ -9,30 +9,27 @@
 
 struct DecoderImpl : torch::nn::Module {
     DecoderImpl(int de_hid_dim1, int de_hid_dim2, int de_hid_dim3, int latent_dim) :
-        m_tconv_1(torch::nn::ConvTranspose2dOptions(latent_dim, de_hid_dim3, 3)),
-        m_tconv_2(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 3)),
-        m_tconv_s2(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim2, 4).stride(2)),
-        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 5)),
-        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim1, de_hid_dim1, 5).stride(2)),
-        m_tconv_m(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 6)),
-        m_tconv_v(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 6)),
+        m_tconv_s2(torch::nn::ConvTranspose2dOptions(latent_dim, de_hid_dim3, 7)),
+        m_tconv_3(torch::nn::ConvTranspose2dOptions(de_hid_dim3, de_hid_dim2, 7)),
+        m_tconv_s3(torch::nn::ConvTranspose2dOptions(de_hid_dim2, de_hid_dim1, 8).stride(2)),
+        m_tconv_m(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 9)),
+        m_tconv_v(torch::nn::ConvTranspose2dOptions(de_hid_dim1, 1, 9)),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
-            register_module("m_tconv_1", m_tconv_1);
-            register_module("m_tconv_2", m_tconv_2);
-            register_module("m_tconv_s2", m_tconv_s2);
             register_module("m_tconv_3", m_tconv_3);
+            register_module("m_tconv_s2", m_tconv_s2);
             register_module("m_tconv_s3", m_tconv_s3);
             register_module("m_tconv_m", m_tconv_m);
             register_module("m_tconv_v", m_tconv_v);
             _initialise_weights();
         }
 
+
         void decode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
         {
             torch::Tensor out = torch::relu(m_tconv_s3(torch::relu(m_tconv_3(
-                    torch::relu(m_tconv_s2(torch::relu(m_tconv_2(torch::relu(m_tconv_1(
-                        x.reshape({x.size(0), -1, 1, 1})))))))))));
+                    torch::relu(m_tconv_s2(
+                        x.reshape({x.size(0), -1, 1, 1})))))));
             mu = m_tconv_m(out).reshape({out.size(0), -1});
             logvar = m_tconv_v(out).reshape({out.size(0), -1});
         }
@@ -62,7 +59,7 @@ struct DecoderImpl : torch::nn::Module {
             }
         }
 
-        torch::nn::ConvTranspose2d m_tconv_1, m_tconv_2, m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_m, m_tconv_v;
+        torch::nn::ConvTranspose2d m_tconv_s2, m_tconv_3, m_tconv_s3, m_tconv_m, m_tconv_v;
         torch::Device m_device;
 };
 
