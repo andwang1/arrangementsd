@@ -12,18 +12,14 @@ struct EncoderImpl : torch::nn::Module {
         m_linear_2(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim1, en_hid_dim2))),
         m_linear_3(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim2, en_hid_dim3))),
         m_linear_4(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim3, en_hid_dim4))),
-        m_linear_5(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim4, en_hid_dim5))),
-        m_linear_6(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim5, en_hid_dim6))),
-        m_linear_m(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim6, latent_dim))),
-        m_linear_v(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim6, latent_dim))),
+        m_linear_m(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim4, latent_dim))),
+        m_linear_v(torch::nn::Linear(torch::nn::LinearOptions(en_hid_dim4, latent_dim))),
         m_device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
         {
             register_module("linear_1", m_linear_1);
             register_module("linear_2", m_linear_2);
             register_module("linear_3", m_linear_3);
             register_module("linear_4", m_linear_4);
-            register_module("linear_5", m_linear_5);
-            register_module("linear_6", m_linear_6);
             register_module("linear_m", m_linear_m);
             register_module("linear_v", m_linear_v);
             _initialise_weights();
@@ -32,8 +28,8 @@ struct EncoderImpl : torch::nn::Module {
         void encode(const torch::Tensor &x, torch::Tensor &mu, torch::Tensor &logvar)
         {
             torch::Tensor out;
-            out = torch::relu(m_linear_6(torch::relu(m_linear_5(torch::relu(m_linear_4(torch::relu(m_linear_3(
-                torch::relu(m_linear_2(torch::relu(m_linear_1(x))))))))))));
+            out = torch::relu(m_linear_4(torch::relu(m_linear_3(
+                torch::relu(m_linear_2(torch::relu(m_linear_1(x))))))));
             mu = m_linear_m(out);
             logvar = m_linear_v(out);
         }
@@ -67,7 +63,7 @@ struct EncoderImpl : torch::nn::Module {
         }
 
 
-        torch::nn::Linear m_linear_1, m_linear_2, m_linear_3, m_linear_4, m_linear_5, m_linear_6, m_linear_m, m_linear_v;
+        torch::nn::Linear m_linear_1, m_linear_2, m_linear_3, m_linear_4, m_linear_m, m_linear_v;
         torch::Device m_device;
 };
 
